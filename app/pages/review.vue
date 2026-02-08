@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { MissReasonCode } from '~/types/app-data'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
+import { addDays, compareDateKeys, todayDateKey } from '~/utils/date'
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
@@ -71,9 +72,51 @@ const hasNextPending = computed(
   () => Boolean(selectedEntryId.value) && pendingModels.value.some((model) => model.entry.id !== selectedEntryId.value)
 )
 
-const recentSuggestions = computed(() =>
-  [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 12)
-)
+const suggestionsCutoffDate = computed(() => addDays(todayDateKey(), -6))
+const suggestionGroups = computed(() => {
+  const sorted = [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+  const entriesById = new Map(entriesStore.entries.map((entry) => [entry.id, entry]))
+  const groups = new Map<
+    string,
+    {
+      habitId: string
+      habitName: string
+      suggestions: typeof sorted
+    }
+  >()
+
+  for (const suggestion of sorted) {
+    const entry = entriesById.get(suggestion.entryId)
+    if (!entry || entry.status !== 'missed') {
+      continue
+    }
+
+    if (compareDateKeys(entry.date, suggestionsCutoffDate.value) < 0) {
+      continue
+    }
+
+    const habit = habitsStore.habitById(entry.habitId)
+    if (!habit) {
+      continue
+    }
+
+    const existing = groups.get(habit.id)
+    if (existing) {
+      if (existing.suggestions.length < 2) {
+        existing.suggestions.push(suggestion)
+      }
+      continue
+    }
+
+    groups.set(habit.id, {
+      habitId: habit.id,
+      habitName: habit.name,
+      suggestions: [suggestion]
+    })
+  }
+
+  return [...groups.values()]
+})
 
 function openReflection(entryId: string): void {
   selectedEntryId.value = entryId
@@ -116,14 +159,6 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
   }
 }
 
-function suggestionHabitName(entryId: string): string {
-  const entry = entriesStore.entries.find((candidate) => candidate.id === entryId)
-  if (!entry) {
-    return 'Unknown habit'
-  }
-
-  return habitsStore.habitById(entry.habitId)?.name ?? 'Unknown habit'
-}
 </script>
 
 <template>
@@ -180,28 +215,61 @@ function suggestionHabitName(entryId: string): string {
 
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold">Recent coaching suggestions</h2>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold">Coaching suggestions</h2>
+            <UTooltip text="Shows up to 2 suggestions per habit based on habits missed in the last 7 days.">
+              <UButton
+                icon="i-lucide-circle-help"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                aria-label="Suggestions info"
+              />
+            </UTooltip>
+          </div>
         </template>
 
         <UEmpty
-          v-if="!recentSuggestions.length"
+          v-if="!suggestionGroups.length"
           icon="i-lucide-lightbulb"
           title="No coaching yet"
           description="Add reflection details to generate Atomic Habits recommendations."
         />
 
         <div v-else class="grid gap-3 md:grid-cols-2">
-          <UCard v-for="suggestion in recentSuggestions" :key="suggestion.id" variant="outline">
+          <UCard v-for="group in suggestionGroups" :key="group.habitId" variant="outline">
             <div class="space-y-2">
-              <div class="flex flex-wrap items-center gap-2">
-                <UBadge color="neutral" variant="outline">{{ suggestionHabitName(suggestion.entryId) }}</UBadge>
-                <UBadge :color="suggestion.direction === 'increase' ? 'success' : 'warning'" variant="subtle">
-                  {{ suggestion.law }} · {{ suggestion.direction }}
-                </UBadge>
+              <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                <div class="min-w-0 space-y-1">
+                  <h3 class="truncate font-semibold">{{ group.habitName }}</h3>
+                  <p class="text-xs text-muted">
+                    {{ group.suggestions.length }} suggestion{{ group.suggestions.length === 1 ? '' : 's' }} from last 7 days
+                  </p>
+                </div>
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="outline"
+                  class="shrink-0 whitespace-nowrap"
+                  icon="i-lucide-arrow-up-right"
+                  :to="`/habits/${group.habitId}`"
+                >
+                  Edit habit
+                </UButton>
               </div>
-              <p class="font-semibold">{{ suggestion.title }}</p>
-              <p class="text-sm text-muted">{{ suggestion.action }}</p>
-              <p class="text-xs text-muted">{{ suggestion.rationale }}</p>
+
+              <div class="border-t border-default/60 pt-3">
+                <div class="space-y-3">
+                  <div v-for="suggestion in group.suggestions" :key="suggestion.id" class="space-y-1">
+                    <UBadge :color="suggestion.direction === 'increase' ? 'success' : 'warning'" variant="subtle">
+                      {{ suggestion.law }} · {{ suggestion.direction }}
+                    </UBadge>
+                    <p class="font-semibold">{{ suggestion.title }}</p>
+                    <p class="text-sm text-muted">{{ suggestion.action }}</p>
+                    <p class="text-xs text-muted">{{ suggestion.rationale }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </UCard>
         </div>

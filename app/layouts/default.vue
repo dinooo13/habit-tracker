@@ -20,7 +20,7 @@ function isActivePath(path: string): boolean {
   <div>
     <header class="sticky top-0 z-40 border-b border-default/60 bg-default/70 shadow-sm backdrop-blur-xl">
       <UContainer class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <NuxtLink class="text-base font-semibold tracking-tight md:text-primary" to="/">
+        <NuxtLink class="text-base font-semibold tracking-tight text-primary" to="/">
           Atomic Habit Tracker
         </NuxtLink>
 

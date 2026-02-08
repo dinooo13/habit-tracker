@@ -68,7 +68,7 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
               <h1 class="text-2xl font-semibold">{{ dateKey }}</h1>
             </div>
             <UButton to="/habits/new" icon="i-lucide-plus">
-              Add habit
+              Create habit
             </UButton>
           </div>
         </template>
@@ -101,7 +101,7 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
           v-if="!dueHabitModels.length"
           icon="i-lucide-calendar-check-2"
           title="No habits due today"
-          description="Add a habit or adjust schedule weekdays."
+          description="Create a habit or adjust schedule weekdays."
           :actions="[{ label: 'Create habit', to: '/habits/new', icon: 'i-lucide-plus' }]"
         />
 

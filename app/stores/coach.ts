@@ -30,6 +30,33 @@ export const useCoachStore = defineStore('coach', {
       const generated = generateSuggestionsForMissedEntry(entry, habit)
       this.suggestions.push(...generated)
       return generated
+    },
+    reconcileMissingSuggestions(habits: Habit[], entries: HabitEntry[]): number {
+      const habitsById = new Map(habits.map((habit) => [habit.id, habit]))
+      const suggestionEntryIds = new Set(this.suggestions.map((suggestion) => suggestion.entryId))
+      let createdSuggestions = 0
+
+      for (const entry of entries) {
+        if (entry.status !== 'missed' || !entry.missReasonCode || suggestionEntryIds.has(entry.id)) {
+          continue
+        }
+
+        const habit = habitsById.get(entry.habitId)
+        if (!habit) {
+          continue
+        }
+
+        const generated = generateSuggestionsForMissedEntry(entry, habit)
+        if (!generated.length) {
+          continue
+        }
+
+        this.suggestions.push(...generated)
+        suggestionEntryIds.add(entry.id)
+        createdSuggestions += generated.length
+      }
+
+      return createdSuggestions
     }
   }
 })

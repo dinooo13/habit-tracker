@@ -142,8 +142,13 @@ async function importJson(event: Event): Promise<void> {
     coachStore.hydrate(parsed.suggestions)
     settingsStore.hydrate(parsed.settings)
     entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
+    coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
 
-    persistence.save(parsed)
+    persistence.save({
+      ...parsed,
+      entries: entriesStore.snapshot(),
+      suggestions: coachStore.snapshot()
+    })
 
     const parsedTime = parseTimeString(settingsStore.dailyReviewTime)
     dailyReviewTime.value = parsedTime ? new Time(parsedTime.hour, parsedTime.minute, 0) : null

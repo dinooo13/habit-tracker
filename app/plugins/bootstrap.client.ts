@@ -18,6 +18,7 @@ export default defineNuxtPlugin(() => {
   applyPrimaryColorPalette(settingsStore.primaryColor)
 
   entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
+  coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
 
   watch(
     () => settingsStore.primaryColor,

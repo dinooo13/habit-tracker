@@ -31,6 +31,23 @@ export function parseDateKey(dateKey: string): Date {
   return new Date(year, month - 1, day)
 }
 
+export function formatDateKeyForLocale(
+  dateKey: string,
+  locale: string | undefined,
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium' }
+): string {
+  const date = parseDateKey(dateKey)
+  if (Number.isNaN(date.getTime())) {
+    return dateKey
+  }
+
+  try {
+    return new Intl.DateTimeFormat(locale || undefined, options).format(date)
+  } catch {
+    return new Intl.DateTimeFormat(undefined, options).format(date)
+  }
+}
+
 export function addDays(dateKey: string, amount: number): string {
   const date = parseDateKey(dateKey)
   date.setDate(date.getDate() + amount)

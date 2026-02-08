@@ -1,11 +1,26 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import { todayDateKey } from '~/utils/date'
+import { formatDateKeyForLocale, todayDateKey } from '~/utils/date'
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 
 const dateKey = computed(() => todayDateKey())
+const requestHeaders = useRequestHeaders(['accept-language'])
+const dateLocale = computed(() => {
+  if (import.meta.client) {
+    return navigator.languages?.[0] || navigator.language || 'en-US'
+  }
+
+  return requestHeaders['accept-language']?.split(',')[0] || 'en-US'
+})
+const displayDate = computed(() =>
+  formatDateKeyForLocale(dateKey.value, dateLocale.value, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+)
 
 const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))
 
@@ -49,6 +64,10 @@ const activeHabitStreaks = computed(() =>
       streak: entriesStore.streakForHabit(habit.id)
     }))
     .sort((left, right) => right.streak - left.streak || left.name.localeCompare(right.name))
+)
+const activeStreakCount = computed(() => activeHabitStreaks.value.filter((item) => item.streak > 0).length)
+const activeStreakCountLabel = computed(() =>
+  activeStreakCount.value > 99 ? '99+' : String(activeStreakCount.value)
 )
 
 const tabItems: TabsItem[] = [
@@ -123,11 +142,15 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p class="text-sm text-muted">Today</p>
-              <h1 class="text-2xl font-semibold">{{ dateKey }}</h1>
+              <h1 class="text-2xl font-semibold">{{ displayDate }}</h1>
             </div>
-            <UButton to="/habits/new" icon="i-lucide-plus">
-              Create habit
-            </UButton>
+            <div class="flex items-center gap-2">
+              <BrandLogo
+                class="size-16 shrink-0"
+                :center-text="activeStreakCountLabel"
+                :aria-label="`Active streaks: ${activeStreakCountLabel}`"
+              />
+            </div>
           </div>
         </template>
 

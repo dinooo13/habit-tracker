@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dateKeyRange, isHabitDueOnDate, parseTimeString } from '~/utils/date'
+import { dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, parseTimeString } from '~/utils/date'
 import type { Habit } from '~/types/app-data'
 
 const sampleHabit: Habit = {
@@ -34,5 +34,19 @@ describe('date utilities', () => {
     expect(parseTimeString('08:15')).toEqual({ hour: 8, minute: 15 })
     expect(parseTimeString('25:99')).toBeNull()
     expect(parseTimeString(null)).toBeNull()
+  })
+
+  it('formats dates with locale language and region preferences', () => {
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+    const usFormatted = formatDateKeyForLocale('2026-02-08', 'en-US', options)
+    const deFormatted = formatDateKeyForLocale('2026-02-08', 'en-DE', options)
+
+    expect(usFormatted).toMatch(/^February/)
+    expect(deFormatted).toMatch(/^8\b/)
+    expect(deFormatted).toContain('February')
+  })
+
+  it('falls back to the raw date key when parsing fails', () => {
+    expect(formatDateKeyForLocale('not-a-date', 'en-DE')).toBe('not-a-date')
   })
 })

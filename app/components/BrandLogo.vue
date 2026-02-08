@@ -1,8 +1,41 @@
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 
 const gradientId = useId()
 const shadowId = useId()
+
+const props = withDefaults(
+  defineProps<{
+    centerText?: string | number | null
+    ariaLabel?: string
+  }>(),
+  {
+    centerText: null,
+    ariaLabel: 'Atomic Habit Tracker logo'
+  }
+)
+
+const centerTextDisplay = computed(() => {
+  if (props.centerText === null || props.centerText === undefined) {
+    return null
+  }
+
+  const value = String(props.centerText).trim()
+  return value.length ? value : null
+})
+
+const centerTextSize = computed(() => {
+  const length = centerTextDisplay.value?.length ?? 0
+  if (length >= 3) {
+    return 72
+  }
+
+  if (length === 2) {
+    return 86
+  }
+
+  return 100
+})
 </script>
 
 <template>
@@ -10,7 +43,7 @@ const shadowId = useId()
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
     role="img"
-    aria-label="Atomic Habit Tracker logo"
+    :aria-label="props.ariaLabel"
   >
     <defs>
       <linearGradient :id="gradientId" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
@@ -33,7 +66,21 @@ const shadowId = useId()
       <circle cx="256" cy="256" r="72" :fill="`url(#${gradientId})`" opacity="0.14" />
     </g>
 
+    <text
+      v-if="centerTextDisplay"
+      x="256"
+      y="288"
+      text-anchor="middle"
+      font-weight="900"
+      :font-size="centerTextSize"
+      letter-spacing="-1"
+      :fill="`url(#${gradientId})`"
+    >
+      {{ centerTextDisplay }}
+    </text>
+
     <path
+      v-else
       d="M226 264l18 18 44-54"
       fill="none"
       :stroke="`url(#${gradientId})`"

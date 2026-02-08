@@ -211,7 +211,10 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
 
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold">Today's habit queue</h2>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-list-todo" class="size-5 text-muted" />
+            <h2 class="text-lg font-semibold">Today's habit queue</h2>
+          </div>
         </template>
 
         <UEmpty

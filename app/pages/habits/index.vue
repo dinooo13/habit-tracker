@@ -28,12 +28,14 @@ const pagedHabits = computed(() => {
 
 type HabitType = 'build' | 'break'
 
-const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'soft' }> = {
+const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' }> = {
   build: {
     label: 'Build',
     color: 'primary',
     cardClass: 'border-primary',
     dotClass: 'bg-primary',
+    icon: 'i-lucide-circle-check',
+    iconClass: 'text-primary',
     badgeVariant: 'soft'
   },
   break: {
@@ -41,6 +43,8 @@ const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warn
     color: 'warning',
     cardClass: 'border-warning',
     dotClass: 'bg-warning',
+    icon: 'i-lucide-circle-x',
+    iconClass: 'text-warning',
     badgeVariant: 'soft'
   }
 }
@@ -65,7 +69,7 @@ function scheduleLabel(weekdays: number[]): string {
   return weekdays.map((day) => weekdayLabels[day] ?? String(day)).join(', ')
 }
 
-function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'soft' } {
+function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' } {
   return habitTypeMeta[type]
 }
 </script>
@@ -109,7 +113,7 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
-                  <span class="size-2 rounded-full" :class="typeMeta(habit.type).dotClass" aria-hidden="true" />
+                  <UIcon :name="typeMeta(habit.type).icon" class="size-4" :class="typeMeta(habit.type).iconClass" />
                   <h2 class="font-semibold">{{ habit.name }}</h2>
                 </div>
                 <p class="text-sm text-muted">{{ habit.identityStatement }}</p>

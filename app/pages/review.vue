@@ -270,7 +270,10 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
 
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold">Pending reflections</h2>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-clipboard-list" class="size-5 text-muted" />
+            <h2 class="text-lg font-semibold">Pending reflections</h2>
+          </div>
         </template>
 
         <UEmpty
@@ -301,6 +304,7 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-lightbulb" class="size-5 text-muted" />
             <h2 class="text-lg font-semibold">Coaching suggestions</h2>
             <UTooltip text="Suggestions are based on habits missed in the last 7 days. One suggestion is shown at a time.">
               <UButton

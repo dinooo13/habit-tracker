@@ -39,9 +39,11 @@ const primaryColorChips: Record<PrimaryColor, ChipProps> = {
   amber: { ui: { base: 'primary-color-chip-base primary-color-chip-amber' } }
 }
 
-const primaryColorItems = Object.entries(PRIMARY_COLOR_LABELS).map(([value, label]) => ({
+const primaryColorOrder: PrimaryColor[] = ['emerald', 'sky', 'violet', 'rose', 'amber']
+
+const primaryColorItems = primaryColorOrder.map((value) => ({
   value: value as PrimaryColor,
-  label,
+  label: PRIMARY_COLOR_LABELS[value],
   chip: primaryColorChips[value as PrimaryColor]
 })) satisfies SelectItem[]
 
@@ -224,6 +226,201 @@ function persistCurrentState(): void {
   })
 }
 
+function pluralize(value: number, singular: string, plural = `${singular}s`): string {
+  return value === 1 ? singular : plural
+}
+
+function mergeHabitsForImport(importedHabits: Habit[]): { mergedHabits: Habit[]; addedCount: number; updatedCount: number } {
+  const existingHabits = habitsStore.snapshot()
+  const existingHabitsById = new Map(existingHabits.map((habit) => [habit.id, habit]))
+  const dedupedImported = [...new Map(importedHabits.map((habit) => [habit.id, habit])).values()]
+  const mergedHabits: Habit[] = []
+  const importedIds = new Set<string>()
+  let addedCount = 0
+  let updatedCount = 0
+
+  for (const importedHabit of dedupedImported) {
+    const existingHabit = existingHabitsById.get(importedHabit.id)
+
+    if (existingHabit) {
+      mergedHabits.push({
+        ...existingHabit,
+        ...importedHabit,
+        id: existingHabit.id,
+        createdAt: existingHabit.createdAt,
+        updatedAt: nowIso()
+      })
+      updatedCount += 1
+    } else {
+      mergedHabits.push(importedHabit)
+      addedCount += 1
+    }
+
+    importedIds.add(importedHabit.id)
+  }
+
+  for (const existingHabit of existingHabits) {
+    if (!importedIds.has(existingHabit.id)) {
+      mergedHabits.push(existingHabit)
+    }
+  }
+
+  return { mergedHabits, addedCount, updatedCount }
+}
+
+function buildGettingStartedPrompt(): string {
+  const today = todayDateKey()
+
+  return `You are my habit setup assistant for a habit-tracker app.
+
+Goal:
+- Ask me short, practical questions to design a starter habit list.
+- Ask one question at a time and wait for my answer.
+- Keep going until you have enough data for each habit.
+
+Required fields for each habit:
+- name: short habit title
+- type: "build" or "break"
+- identityStatement: identity-based statement in first person
+- scheduleWeekdays: array of weekday numbers (0=Sun, 1=Mon, ... 6=Sat)
+- reminderTime: "HH:mm" 24-hour string or null
+- startDate: "YYYY-MM-DD" (default to ${today} if I do not specify)
+- archived: boolean (default false)
+
+Constraints:
+- Only return habits that are specific and realistic.
+- Prefer 3 to 7 habits unless I ask for more.
+- Keep naming concise.
+- If any detail is missing, ask me before generating output.
+
+Output format:
+- After questions are complete, generate a downloadable file named "habits-import.json".
+- The file content must be ONLY valid JSON.
+- If file download is not possible in this chat, then show ONLY valid JSON in one code block as fallback.
+- JSON shape must be:
+{
+  "habits": [
+    {
+      "name": "string",
+      "type": "build|break",
+      "identityStatement": "string",
+      "scheduleWeekdays": [1,2,3],
+      "reminderTime": "HH:mm or null",
+      "startDate": "YYYY-MM-DD",
+      "archived": false
+    }
+  ]
+}`.trim()
+}
+
+function buildCurrentHabitsPrompt(): string {
+  const currentHabitsJson = JSON.stringify(
+    {
+      habits: habitsStore.snapshot().map((habit) => ({
+        id: habit.id,
+        name: habit.name,
+        type: habit.type,
+        identityStatement: habit.identityStatement,
+        scheduleWeekdays: habit.scheduleWeekdays,
+        reminderTime: habit.reminderTime,
+        startDate: habit.startDate,
+        archived: habit.archived
+      }))
+    },
+    null,
+    2
+  )
+
+  return `You are helping me refine my existing habits for a habit-tracker app.
+
+Instructions:
+- Review the current habits JSON I provide below.
+- Ask clarifying questions before making changes.
+- Propose better habit wording, schedules, and reminders if useful.
+- Keep existing ids so the app can update matching habits.
+- You may add new habits with new ids when needed.
+- Final output should be a downloadable file named "habits-import.json".
+- The file content must be only valid JSON in the same shape.
+- If file download is not possible in this chat, then return only valid JSON in one code block.
+
+Output format:
+{
+  "habits": [
+    {
+      "id": "existing-or-new-id",
+      "name": "string",
+      "type": "build|break",
+      "identityStatement": "string",
+      "scheduleWeekdays": [1,2,3],
+      "reminderTime": "HH:mm or null",
+      "startDate": "YYYY-MM-DD",
+      "archived": false
+    }
+  ]
+}
+
+Current habits JSON:
+\`\`\`json
+${currentHabitsJson}
+\`\`\`
+`.trim()
+}
+
+async function copyToClipboard(text: string): Promise<void> {
+  if (!import.meta.client) {
+    return
+  }
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand('copy')
+  document.body.removeChild(textarea)
+}
+
+async function copyGettingStartedPrompt(): Promise<void> {
+  try {
+    await copyToClipboard(buildGettingStartedPrompt())
+    toast.add({
+      title: 'Prompt copied',
+      description: 'Getting-started AI prompt copied to clipboard.',
+      color: 'success'
+    })
+  } catch {
+    toast.add({
+      title: 'Copy failed',
+      description: 'Could not copy the prompt. Please try again.',
+      color: 'error'
+    })
+  }
+}
+
+async function copyCurrentHabitsPrompt(): Promise<void> {
+  try {
+    await copyToClipboard(buildCurrentHabitsPrompt())
+    toast.add({
+      title: 'Prompt copied',
+      description: 'Current-habits AI prompt copied to clipboard.',
+      color: 'success'
+    })
+  } catch {
+    toast.add({
+      title: 'Copy failed',
+      description: 'Could not copy the prompt. Please try again.',
+      color: 'error'
+    })
+  }
+}
+
 function syncDailyReviewTimeFromSettings(): void {
   const parsedTime = parseTimeString(settingsStore.dailyReviewTime)
   dailyReviewTime.value = parsedTime ? new Time(parsedTime.hour, parsedTime.minute, 0) : null
@@ -260,16 +457,13 @@ async function confirmImport(): Promise<void> {
         return
       }
 
-      const existingHabits = habitsStore.snapshot()
-      const existingIds = new Set(existingHabits.map((habit) => habit.id))
-      const habitsToAdd = importedHabits.filter((habit) => !existingIds.has(habit.id))
-
-      habitsStore.hydrate([...habitsToAdd, ...existingHabits])
+      const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(importedHabits)
+      habitsStore.hydrate(mergedHabits)
       persistCurrentState()
 
       toast.add({
         title: 'Habits imported',
-        description: `${habitsToAdd.length} new habit${habitsToAdd.length === 1 ? '' : 's'} added. History was ignored.`,
+        description: `${addedCount} ${pluralize(addedCount, 'habit')} added, ${updatedCount} ${pluralize(updatedCount, 'habit')} updated. History was ignored.`,
         color: 'success'
       })
     } else {
@@ -429,13 +623,59 @@ function deleteAllData(withBackup: boolean): void {
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-sparkles" class="size-5 text-muted" />
+            <h2 class="text-lg font-semibold">AI habit prompts</h2>
+          </div>
+        </template>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <UCard variant="outline">
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <p class="font-medium">Getting started prompt</p>
+                <p class="text-sm text-muted">
+                  Copies a guided prompt that asks questions and generates a downloadable import-ready habits JSON.
+                </p>
+              </div>
+              <UButton color="neutral" variant="outline" icon="i-lucide-copy" @click="copyGettingStartedPrompt">
+                Copy getting started prompt
+              </UButton>
+            </div>
+          </UCard>
+
+          <UCard variant="outline">
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <p class="font-medium">Current habits prompt</p>
+                <p class="text-sm text-muted">
+                  Copies a prompt with your current habits JSON so AI can refine and export an updated downloadable JSON.
+                </p>
+              </div>
+              <UButton color="neutral" variant="outline" icon="i-lucide-copy" @click="copyCurrentHabitsPrompt">
+                Copy current habits prompt
+              </UButton>
+            </div>
+          </UCard>
+        </div>
+
+        <div class="mt-4 border-t border-default pt-3">
+          <p class="flex items-start gap-2 text-xs text-muted">
+            <UIcon name="i-lucide-arrow-down-to-line" class="mt-0.5 size-3.5 shrink-0" />
+            <span>Next step: import your downloaded AI JSON in Backup and restore below.</span>
+          </p>
+        </div>
+      </UCard>
+
+      <UCard id="backup-restore">
+        <template #header>
+          <div class="flex items-center gap-2">
             <UIcon name="i-lucide-database" class="size-5 text-muted" />
             <h2 class="text-lg font-semibold">Backup and restore</h2>
           </div>
         </template>
 
         <div class="flex flex-wrap items-center gap-3">
-          <UButton icon="i-lucide-download" @click="exportJson">
+          <UButton color="neutral" variant="outline" icon="i-lucide-download" @click="exportJson">
             Export JSON
           </UButton>
           <UButton color="neutral" variant="outline" icon="i-lucide-upload" @click="importModalOpen = true">

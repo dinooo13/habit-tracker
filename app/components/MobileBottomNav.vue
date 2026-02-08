@@ -15,7 +15,7 @@ function isActivePath(path: string): boolean {
 <template>
   <nav
     aria-label="Primary navigation"
-    class="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),0.5rem)] md:hidden"
+    class="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),0px)] z-30 px-4 pb-2 md:hidden"
   >
     <div
       class="mx-auto w-full max-w-md overflow-hidden rounded-full border border-default/80 bg-default/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur"

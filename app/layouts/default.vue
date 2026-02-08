@@ -41,7 +41,7 @@ function isActivePath(path: string): boolean {
     </header>
 
     <UMain>
-      <UContainer class="py-6 pb-28 md:pb-6">
+      <UContainer class="py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-6">
         <slot />
       </UContainer>
     </UMain>

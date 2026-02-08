@@ -21,7 +21,7 @@ describe('storage schema', () => {
     delete legacyPayload.settings.primaryColor
 
     const parsed = parseAppData(legacyPayload)
-    expect(parsed.settings.primaryColor).toBe('sky')
+    expect(parsed.settings.primaryColor).toBe('emerald')
   })
 
   it('rejects malformed habit fields', () => {

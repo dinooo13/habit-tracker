@@ -87,5 +87,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   dailyReviewTime: '20:00',
   weekStartsOn: 1,
-  primaryColor: 'sky'
+  primaryColor: 'emerald'
 }

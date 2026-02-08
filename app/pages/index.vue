@@ -167,9 +167,13 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
                 :key="item.id"
                 class="w-36 shrink-0 rounded-md border border-default/80 bg-elevated/60 px-2 py-1.5"
               >
-                <div class="flex items-center gap-2">
-                  <span class="size-1.5 rounded-full" :class="typeMeta(item.type).dotClass" aria-hidden="true" />
-                  <p class="truncate text-xs font-medium">{{ item.name }}</p>
+                <div class="flex items-baseline gap-2">
+                  <span class="-translate-y-[1px] size-1.5 shrink-0 rounded-full" :class="typeMeta(item.type).dotClass" aria-hidden="true" />
+                  <p
+                    class="min-w-0 text-xs font-medium leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+                  >
+                    {{ item.name }}
+                  </p>
                 </div>
                 <div class="mt-1 flex items-center gap-1 text-xs text-muted">
                   <UIcon name="i-lucide-flame" class="size-3.5" />

@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'Atomic Habit Tracker',
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
+      ],
       meta: [
         {
           name: 'description',
@@ -35,9 +40,22 @@ export default defineNuxtConfig({
       start_url: '/',
       icons: [
         {
-          src: '/favicon.ico',
-          sizes: '64x64',
-          type: 'image/x-icon'
+          src: '/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: '/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: '/icon-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
         }
       ]
     },

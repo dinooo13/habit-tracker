@@ -14,7 +14,7 @@ function safeNotify(title: string, body: string): void {
 
   new Notification(title, {
     body,
-    icon: '/favicon.ico'
+    icon: '/icon-192.png'
   })
 }
 

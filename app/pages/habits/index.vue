@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { addDays, todayDateKey } from '~/utils/date'
-
 const habitsStore = useHabitsStore()
-const entriesStore = useEntriesStore()
 
 const showArchived = ref(false)
 const page = ref(1)
@@ -29,8 +26,24 @@ const pagedHabits = computed(() => {
   return filteredHabits.value.slice(offset, offset + itemsPerPage)
 })
 
-const today = computed(() => todayDateKey())
-const since30Days = computed(() => addDays(today.value, -29))
+type HabitType = 'build' | 'break'
+
+const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'soft' }> = {
+  build: {
+    label: 'Build',
+    color: 'primary',
+    cardClass: 'border-primary',
+    dotClass: 'bg-primary',
+    badgeVariant: 'soft'
+  },
+  break: {
+    label: 'Break',
+    color: 'warning',
+    cardClass: 'border-warning',
+    dotClass: 'bg-warning',
+    badgeVariant: 'soft'
+  }
+}
 
 watch(total, (value) => {
   const maxPage = Math.max(1, Math.ceil(value / itemsPerPage))
@@ -38,15 +51,6 @@ watch(total, (value) => {
     page.value = maxPage
   }
 })
-
-function completionRateForHabit(habitId: string): number {
-  const habit = habitsStore.habitById(habitId)
-  if (!habit) {
-    return 0
-  }
-
-  return entriesStore.completionRateForHabit(habit, since30Days.value, today.value)
-}
 
 function toggleArchive(habitId: string, archived: boolean): void {
   if (archived) {
@@ -60,6 +64,10 @@ function toggleArchive(habitId: string, archived: boolean): void {
 function scheduleLabel(weekdays: number[]): string {
   return weekdays.map((day) => weekdayLabels[day] ?? String(day)).join(', ')
 }
+
+function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'soft' } {
+  return habitTypeMeta[type]
+}
 </script>
 
 <template>
@@ -67,22 +75,25 @@ function scheduleLabel(weekdays: number[]): string {
     <div class="space-y-6">
       <UCard>
         <template #header>
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
+          <div class="space-y-2">
+            <div class="flex items-start justify-between gap-3">
               <h1 class="text-2xl font-semibold">Habits</h1>
-              <p class="text-sm text-muted">Plan, edit, and archive your good and bad habit systems.</p>
+              <UButton to="/habits/new" icon="i-lucide-plus" class="shrink-0">
+                Create habit
+              </UButton>
             </div>
-            <UButton to="/habits/new" icon="i-lucide-plus">
-              Create habit
-            </UButton>
+            <p class="text-sm text-muted">Plan, edit, and archive your good and bad habit systems.</p>
           </div>
         </template>
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="space-y-2">
           <UCheckbox v-model="showArchived" label="Show archived habits" color="neutral" />
-          <p class="text-sm text-muted">{{ total }} habits</p>
         </div>
       </UCard>
+
+      <p v-if="total" class="px-1 text-sm text-muted">
+        {{ total }} habits shown
+      </p>
 
       <UEmpty
         v-if="!total"
@@ -93,15 +104,18 @@ function scheduleLabel(weekdays: number[]): string {
       />
 
       <div v-else class="grid gap-4 md:grid-cols-2">
-        <UCard v-for="habit in pagedHabits" :key="habit.id">
+        <UCard v-for="habit in pagedHabits" :key="habit.id" variant="outline" :class="typeMeta(habit.type).cardClass">
           <template #header>
             <div class="flex items-start justify-between gap-3">
-              <div>
-                <h2 class="font-semibold">{{ habit.name }}</h2>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="size-2 rounded-full" :class="typeMeta(habit.type).dotClass" aria-hidden="true" />
+                  <h2 class="font-semibold">{{ habit.name }}</h2>
+                </div>
                 <p class="text-sm text-muted">{{ habit.identityStatement }}</p>
               </div>
-              <UBadge :color="habit.type === 'build' ? 'success' : 'warning'" variant="subtle">
-                {{ habit.type }}
+              <UBadge :color="typeMeta(habit.type).color" :variant="typeMeta(habit.type).badgeVariant">
+                {{ typeMeta(habit.type).label }}
               </UBadge>
             </div>
           </template>
@@ -115,22 +129,15 @@ function scheduleLabel(weekdays: number[]): string {
                 Reminder: {{ habit.reminderTime ?? 'none' }}
               </UBadge>
               <UBadge :color="habit.archived ? 'warning' : 'success'" variant="subtle">
-                {{ habit.archived ? 'archived' : 'active' }}
+                {{ habit.archived ? 'Archived' : 'Active' }}
               </UBadge>
             </div>
 
-            <div class="space-y-1">
-              <div class="flex items-center justify-between text-sm text-muted">
-                <span>30-day completion</span>
-                <span>{{ completionRateForHabit(habit.id) }}%</span>
-              </div>
-              <UProgress :model-value="completionRateForHabit(habit.id)" />
-            </div>
           </div>
 
           <template #footer>
             <div class="flex flex-wrap justify-end gap-2">
-              <UButton size="sm" color="neutral" variant="ghost" :to="`/habits/${habit.id}`" icon="i-lucide-pencil">
+              <UButton size="sm" color="neutral" variant="outline" :to="`/habits/${habit.id}`" icon="i-lucide-pencil">
                 Edit
               </UButton>
               <UButton

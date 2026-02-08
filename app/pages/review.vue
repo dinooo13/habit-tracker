@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MissReasonCode } from '~/types/app-data'
+import type { CoachingSuggestion, MissReasonCode } from '~/types/app-data'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
 import { addDays, compareDateKeys, todayDateKey } from '~/utils/date'
 
@@ -72,8 +72,15 @@ const hasNextPending = computed(
   () => Boolean(selectedEntryId.value) && pendingModels.value.some((model) => model.entry.id !== selectedEntryId.value)
 )
 
+interface SuggestionGroup {
+  habitId: string
+  habitName: string
+  suggestions: CoachingSuggestion[]
+  missedCount: number
+}
+
 const suggestionsCutoffDate = computed(() => addDays(todayDateKey(), -6))
-const suggestionGroups = computed(() => {
+const suggestionGroups = computed<SuggestionGroup[]>(() => {
   const sorted = [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
   const entriesById = new Map(entriesStore.entries.map((entry) => [entry.id, entry]))
   const groups = new Map<
@@ -81,7 +88,8 @@ const suggestionGroups = computed(() => {
     {
       habitId: string
       habitName: string
-      suggestions: typeof sorted
+      suggestions: CoachingSuggestion[]
+      missedEntryIds: Set<string>
     }
   >()
 
@@ -102,25 +110,102 @@ const suggestionGroups = computed(() => {
 
     const existing = groups.get(habit.id)
     if (existing) {
-      if (existing.suggestions.length < 2) {
-        existing.suggestions.push(suggestion)
-      }
+      existing.suggestions.push(suggestion)
+      existing.missedEntryIds.add(entry.id)
       continue
     }
 
     groups.set(habit.id, {
       habitId: habit.id,
       habitName: habit.name,
-      suggestions: [suggestion]
+      suggestions: [suggestion],
+      missedEntryIds: new Set([entry.id])
     })
   }
 
-  return [...groups.values()]
+  return [...groups.values()].map((group) => ({
+    habitId: group.habitId,
+    habitName: group.habitName,
+    suggestions: group.suggestions,
+    missedCount: group.missedEntryIds.size
+  }))
 })
+
+const expandedSuggestionRationale = ref<Record<string, boolean>>({})
+const suggestionIndexByHabit = ref<Record<string, number>>({})
+
+function suggestionLabel(suggestion: CoachingSuggestion): string {
+  return `${suggestion.law} · ${suggestion.direction}`
+}
+
+function suggestionBadgeColor(direction: CoachingSuggestion['direction']): 'success' | 'warning' {
+  return direction === 'increase' ? 'success' : 'warning'
+}
+
+function activeSuggestion(group: SuggestionGroup): CoachingSuggestion | null {
+  if (!group.suggestions.length) {
+    return null
+  }
+
+  const index = suggestionIndexByHabit.value[group.habitId] ?? 0
+  return group.suggestions[index] ?? group.suggestions[0] ?? null
+}
+
+function showAnotherSuggestion(group: SuggestionGroup): void {
+  if (group.suggestions.length < 2) {
+    return
+  }
+
+  const currentIndex = suggestionIndexByHabit.value[group.habitId] ?? 0
+  suggestionIndexByHabit.value[group.habitId] = (currentIndex + 1) % group.suggestions.length
+}
+
+function activeSuggestionId(group: SuggestionGroup): string | null {
+  return activeSuggestion(group)?.id ?? null
+}
+
+function activeSuggestionLabel(group: SuggestionGroup): string {
+  const suggestion = activeSuggestion(group)
+  return suggestion ? suggestionLabel(suggestion) : ''
+}
+
+function activeSuggestionBadgeColor(group: SuggestionGroup): 'success' | 'warning' {
+  const suggestion = activeSuggestion(group)
+  return suggestionBadgeColor(suggestion?.direction ?? 'increase')
+}
+
+function activeSuggestionTitle(group: SuggestionGroup): string {
+  return activeSuggestion(group)?.title ?? ''
+}
+
+function activeSuggestionAction(group: SuggestionGroup): string {
+  return activeSuggestion(group)?.action ?? ''
+}
+
+function activeSuggestionRationale(group: SuggestionGroup): string {
+  return activeSuggestion(group)?.rationale ?? ''
+}
+
+function isSuggestionRationaleExpanded(suggestionId: string): boolean {
+  return Boolean(expandedSuggestionRationale.value[suggestionId])
+}
+
+function toggleSuggestionRationale(suggestionId: string): void {
+  expandedSuggestionRationale.value[suggestionId] = !isSuggestionRationaleExpanded(suggestionId)
+}
 
 function openReflection(entryId: string): void {
   selectedEntryId.value = entryId
   modalOpen.value = true
+}
+
+function openLatestReflection(entryIds: string[]): void {
+  const entryId = entryIds[0]
+  if (!entryId) {
+    return
+  }
+
+  openReflection(entryId)
 }
 
 function submitReflection(payload: { reason: MissReasonCode; note: string | null; action: 'close' | 'next' }): void {
@@ -205,7 +290,7 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
                   · latest miss on {{ group.latestDate }}
                 </p>
               </div>
-              <UButton color="warning" variant="soft" icon="i-lucide-pencil" @click="openReflection(group.entryIds[0] as string)">
+              <UButton color="warning" variant="soft" icon="i-lucide-pencil" @click="openLatestReflection(group.entryIds)">
                 Reflect latest
               </UButton>
             </div>
@@ -217,7 +302,7 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
         <template #header>
           <div class="flex items-center gap-2">
             <h2 class="text-lg font-semibold">Coaching suggestions</h2>
-            <UTooltip text="Shows up to 2 suggestions per habit based on habits missed in the last 7 days.">
+            <UTooltip text="Suggestions are based on habits missed in the last 7 days. One suggestion is shown at a time.">
               <UButton
                 icon="i-lucide-circle-help"
                 color="neutral"
@@ -239,35 +324,59 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
         <div v-else class="grid gap-3 md:grid-cols-2">
           <UCard v-for="group in suggestionGroups" :key="group.habitId" variant="outline">
             <div class="space-y-2">
-              <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+              <div class="space-y-2 sm:flex sm:items-start sm:justify-between sm:gap-2">
                 <div class="min-w-0 space-y-1">
-                  <h3 class="truncate font-semibold">{{ group.habitName }}</h3>
+                  <h3
+                    class="overflow-hidden font-semibold leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+                  >
+                    {{ group.habitName }}
+                  </h3>
                   <p class="text-xs text-muted">
-                    {{ group.suggestions.length }} suggestion{{ group.suggestions.length === 1 ? '' : 's' }} from last 7 days
+                    Missed {{ group.missedCount }} time{{ group.missedCount === 1 ? '' : 's' }} in the last 7 days
                   </p>
                 </div>
-                <UButton
-                  size="sm"
-                  color="neutral"
-                  variant="outline"
-                  class="shrink-0 whitespace-nowrap"
-                  icon="i-lucide-arrow-up-right"
-                  :to="`/habits/${group.habitId}`"
-                >
-                  Edit habit
-                </UButton>
               </div>
 
               <div class="border-t border-default/60 pt-3">
-                <div class="space-y-3">
-                  <div v-for="suggestion in group.suggestions" :key="suggestion.id" class="space-y-1">
-                    <UBadge :color="suggestion.direction === 'increase' ? 'success' : 'warning'" variant="subtle">
-                      {{ suggestion.law }} · {{ suggestion.direction }}
-                    </UBadge>
-                    <p class="font-semibold">{{ suggestion.title }}</p>
-                    <p class="text-sm text-muted">{{ suggestion.action }}</p>
-                    <p class="text-xs text-muted">{{ suggestion.rationale }}</p>
+                <div v-if="activeSuggestion(group)" class="space-y-2">
+                  <UBadge :color="activeSuggestionBadgeColor(group)" variant="soft">
+                    {{ activeSuggestionLabel(group) }}
+                  </UBadge>
+                  <p class="font-semibold">{{ activeSuggestionTitle(group) }}</p>
+                  <p class="text-sm text-muted">{{ activeSuggestionAction(group) }}</p>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      :icon="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '') ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                      @click="toggleSuggestionRationale(activeSuggestionId(group) ?? '')"
+                    >
+                      Why this helps
+                    </UButton>
+                    <UButton
+                      v-if="group.suggestions.length > 1"
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      icon="i-lucide-refresh-cw"
+                      @click="showAnotherSuggestion(group)"
+                    >
+                      Show another suggestion
+                    </UButton>
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      icon="i-lucide-arrow-up-right"
+                      :to="`/habits/${group.habitId}`"
+                    >
+                      Edit habit
+                    </UButton>
                   </div>
+                  <p v-if="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '')" class="text-xs text-muted">
+                    {{ activeSuggestionRationale(group) }}
+                  </p>
                 </div>
               </div>
             </div>

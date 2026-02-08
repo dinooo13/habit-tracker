@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
 import type { PrimaryNavItem } from '~/types/navigation'
 
 const route = useRoute()
@@ -12,14 +11,6 @@ const primaryNavItems: PrimaryNavItem[] = [
   { label: 'Settings', to: '/settings', icon: 'i-lucide-settings' }
 ]
 
-const quickMenu = computed<DropdownMenuItem[][]>(() => [
-  [
-    { label: 'Create habit', icon: 'i-lucide-plus', to: '/habits/new' },
-    { label: 'Review missed habits', icon: 'i-lucide-clipboard-check', to: '/review' }
-  ],
-  [{ label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }]
-])
-
 function isActivePath(path: string): boolean {
   return path === '/' ? route.path === path : route.path.startsWith(path)
 }
@@ -27,9 +18,9 @@ function isActivePath(path: string): boolean {
 
 <template>
   <div>
-    <header class="sticky top-0 z-40 border-b border-default/70 bg-default/80 backdrop-blur">
+    <header class="sticky top-0 z-40 border-b border-default/60 bg-default/70 shadow-sm backdrop-blur-xl">
       <UContainer class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <NuxtLink class="text-base font-semibold tracking-tight" to="/">
+        <NuxtLink class="text-base font-semibold tracking-tight md:text-primary" to="/">
           Atomic Habit Tracker
         </NuxtLink>
 
@@ -39,17 +30,11 @@ function isActivePath(path: string): boolean {
             :key="item.to"
             :to="item.to"
             :variant="isActivePath(item.to) ? 'solid' : 'ghost'"
-            color="neutral"
+            :color="isActivePath(item.to) ? 'primary' : 'neutral'"
             size="sm"
           >
             {{ item.label }}
           </UButton>
-
-          <UTooltip text="Quick actions">
-            <UDropdownMenu :items="quickMenu">
-              <UButton icon="i-lucide-menu" color="neutral" variant="outline" size="sm" />
-            </UDropdownMenu>
-          </UTooltip>
         </div>
       </UContainer>
     </header>

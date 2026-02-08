@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Time } from '@internationalized/date'
+import type { ChipProps, SelectItem } from '@nuxt/ui'
+import type { PrimaryColor } from '~/types/app-data'
 import { parseAppData } from '~/utils/storage-schema'
 import { formatTimeString, parseTimeString, todayDateKey } from '~/utils/date'
+import { PRIMARY_COLOR_LABELS } from '~/utils/primary-color'
 
 const settingsStore = useSettingsStore()
 const habitsStore = useHabitsStore()
@@ -27,6 +30,29 @@ const weekStartsOn = computed({
   set: (value: 0 | 1) => settingsStore.setWeekStartsOn(value)
 })
 
+const primaryColorChips: Record<PrimaryColor, ChipProps> = {
+  sky: { ui: { base: 'primary-color-chip-base primary-color-chip-sky' } },
+  emerald: { ui: { base: 'primary-color-chip-base primary-color-chip-emerald' } },
+  violet: { ui: { base: 'primary-color-chip-base primary-color-chip-violet' } },
+  rose: { ui: { base: 'primary-color-chip-base primary-color-chip-rose' } },
+  amber: { ui: { base: 'primary-color-chip-base primary-color-chip-amber' } }
+}
+
+const primaryColorItems = Object.entries(PRIMARY_COLOR_LABELS).map(([value, label]) => ({
+  value: value as PrimaryColor,
+  label,
+  chip: primaryColorChips[value as PrimaryColor]
+})) satisfies SelectItem[]
+
+function getPrimaryColorChip(value: string | undefined): ChipProps | undefined {
+  return primaryColorItems.find(item => item.value === value)?.chip
+}
+
+const primaryColor = computed({
+  get: () => settingsStore.primaryColor,
+  set: (value: PrimaryColor) => settingsStore.setPrimaryColor(value)
+})
+
 const initialTime = parseTimeString(settingsStore.dailyReviewTime)
 const dailyReviewTime = shallowRef<Time | null>(
   initialTime ? new Time(initialTime.hour, initialTime.minute, 0) : null
@@ -42,6 +68,30 @@ watch(dailyReviewTime, (value) => {
 })
 
 const notificationPermission = ref<NotificationPermission>(reminderEngine.currentPermission())
+
+const notificationPermissionIndicator = computed(() => {
+  if (notificationPermission.value === 'granted') {
+    return { icon: 'i-lucide-bell-ring', color: 'success' as const }
+  }
+
+  if (notificationPermission.value === 'denied') {
+    return { icon: 'i-lucide-bell-off', color: 'error' as const }
+  }
+
+  return { icon: 'i-lucide-bell-dot', color: 'warning' as const }
+})
+
+const notificationPermissionLabel = computed(() => {
+  if (notificationPermission.value === 'granted') {
+    return 'granted'
+  }
+
+  if (notificationPermission.value === 'denied') {
+    return 'denied'
+  }
+
+  return 'not set'
+})
 
 async function requestPermission(): Promise<void> {
   notificationPermission.value = await reminderEngine.requestPermission()
@@ -125,11 +175,10 @@ async function importJson(event: Event): Promise<void> {
 
         <div class="space-y-4">
           <UAlert
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-bell"
-            :title="`Notification permission: ${notificationPermission}`"
-            description="Without backend push, reminders are best-effort in browser/PWA contexts."
+            :color="notificationPermissionIndicator.color"
+            variant="soft"
+            :icon="notificationPermissionIndicator.icon"
+            :title="`Notification permission ${notificationPermissionLabel}`"
           />
 
           <div class="grid gap-4 md:grid-cols-2">
@@ -150,6 +199,30 @@ async function importJson(event: Event): Promise<void> {
               <div class="space-y-3">
                 <UFormField label="Daily review reminder">
                   <UInputTime v-model="dailyReviewTime" :hour-cycle="24" icon="i-lucide-clock-3" />
+                </UFormField>
+                <UFormField label="Theme mode" help="Default is System. You can switch to Light or Dark anytime.">
+                  <ClientOnly>
+                    <UColorModeSelect class="w-full" color="neutral" />
+                    <template #fallback>
+                      <UButton color="neutral" variant="outline" class="w-full justify-start" disabled>
+                        Theme mode
+                      </UButton>
+                    </template>
+                  </ClientOnly>
+                </UFormField>
+                <UFormField label="Accent color">
+                  <USelect v-model="primaryColor" :items="primaryColorItems" value-key="value" class="w-full">
+                    <template #leading="{ modelValue, ui }">
+                      <UChip
+                        v-if="modelValue"
+                        inset
+                        standalone
+                        v-bind="getPrimaryColorChip(modelValue as string)"
+                        :size="(ui.itemLeadingChipSize() as ChipProps['size'])"
+                        :class="ui.itemLeadingChip()"
+                      />
+                    </template>
+                  </USelect>
                 </UFormField>
                 <UFormField label="Week starts on">
                   <USelect v-model="weekStartsOn" :items="weekStartsOnItems" value-key="value" class="w-full" />

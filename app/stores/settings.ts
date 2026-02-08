@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { DEFAULT_SETTINGS, type AppSettings } from '~/types/app-data'
+import { DEFAULT_SETTINGS, type AppSettings, type PrimaryColor } from '~/types/app-data'
 
 interface SettingsState {
   settings: AppSettings
@@ -12,7 +12,8 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     notificationsEnabled: (state) => state.settings.notificationsEnabled,
     dailyReviewTime: (state) => state.settings.dailyReviewTime,
-    weekStartsOn: (state) => state.settings.weekStartsOn
+    weekStartsOn: (state) => state.settings.weekStartsOn,
+    primaryColor: (state) => state.settings.primaryColor
   },
   actions: {
     hydrate(settings: AppSettings): void {
@@ -29,6 +30,9 @@ export const useSettingsStore = defineStore('settings', {
     },
     setWeekStartsOn(value: 0 | 1): void {
       this.settings.weekStartsOn = value
+    },
+    setPrimaryColor(value: PrimaryColor): void {
+      this.settings.primaryColor = value
     }
   }
 })

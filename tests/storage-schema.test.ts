@@ -16,6 +16,14 @@ describe('storage schema', () => {
     expect(() => parseAppData(invalid)).toThrow()
   })
 
+  it('fills default primaryColor for legacy payloads', () => {
+    const legacyPayload = createEmptyAppData() as any
+    delete legacyPayload.settings.primaryColor
+
+    const parsed = parseAppData(legacyPayload)
+    expect(parsed.settings.primaryColor).toBe('sky')
+  })
+
   it('rejects malformed habit fields', () => {
     const payload = createEmptyAppData()
     payload.habits.push({

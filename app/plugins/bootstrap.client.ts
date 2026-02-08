@@ -1,5 +1,6 @@
 import { watch } from 'vue'
 import { todayDateKey } from '~/utils/date'
+import { applyPrimaryColorPalette } from '~/utils/primary-color'
 
 export default defineNuxtPlugin(() => {
   const persistence = usePersistence()
@@ -14,8 +15,16 @@ export default defineNuxtPlugin(() => {
   entriesStore.hydrate(loaded.entries)
   coachStore.hydrate(loaded.suggestions)
   settingsStore.hydrate(loaded.settings)
+  applyPrimaryColorPalette(settingsStore.primaryColor)
 
   entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
+
+  watch(
+    () => settingsStore.primaryColor,
+    (value) => {
+      applyPrimaryColorPalette(value)
+    }
+  )
 
   watch(
     () => ({

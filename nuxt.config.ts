@@ -18,6 +18,11 @@ export default defineNuxtConfig({
       ]
     }
   },
+  colorMode: {
+    preference: 'system',
+    fallback: 'light',
+    classSuffix: ''
+  },
   pwa: {
     registerType: 'autoUpdate',
     manifest: {

@@ -2,6 +2,8 @@ export const APP_DATA_SCHEMA_VERSION = 1 as const
 
 export type HabitType = 'build' | 'break'
 export type HabitStatus = 'done' | 'missed' | 'skipped'
+export const PRIMARY_COLOR_OPTIONS = ['sky', 'emerald', 'violet', 'rose', 'amber'] as const
+export type PrimaryColor = (typeof PRIMARY_COLOR_OPTIONS)[number]
 
 export const MISS_REASON_CODES = [
   'forgot',
@@ -57,6 +59,7 @@ export interface AppSettings {
   notificationsEnabled: boolean
   dailyReviewTime: string | null
   weekStartsOn: 0 | 1
+  primaryColor: PrimaryColor
 }
 
 export interface AppDataV1 {
@@ -83,5 +86,6 @@ export interface HabitUpdateInput extends HabitCreateInput {
 export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   dailyReviewTime: '20:00',
-  weekStartsOn: 1
+  weekStartsOn: 1,
+  primaryColor: 'sky'
 }

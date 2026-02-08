@@ -3,10 +3,60 @@
 
 :root {
   --ui-container: 1200px;
-  --app-bg: radial-gradient(circle at 20% 10%, #e2e8f0 0%, #f8fafc 45%, #eef2ff 100%);
+  --ui-primary: var(--ui-color-primary-600);
+  --app-primary-solid-text-light: #ffffff;
+  --app-primary-solid-text-dark: #0f172a;
+  --app-primary-solid-text: var(--app-primary-solid-text-light);
+  --app-bg-light-start: #bfdbfe;
+  --app-bg-light-end: #bbf7d0;
+  --app-bg-dark-start: #0c4a6e;
+  --app-bg-dark-end: #022c22;
+  --app-bg-start: var(--app-bg-light-start);
+  --app-bg-end: var(--app-bg-light-end);
+  --app-bg: radial-gradient(circle at 20% 10%, var(--app-bg-start) 0%, #f8fafc 45%, var(--app-bg-end) 100%);
+  --app-bg-overlay: linear-gradient(180deg, rgb(255 255 255 / 0.7) 0%, rgb(255 255 255 / 0.4) 100%);
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+  --app-primary-solid-text: var(--app-primary-solid-text-dark);
+  --app-bg-start: var(--app-bg-dark-start);
+  --app-bg-end: var(--app-bg-dark-end);
+  --app-bg: radial-gradient(circle at 20% 10%, var(--app-bg-start) 0%, #020617 45%, var(--app-bg-end) 100%);
+  --app-bg-overlay: linear-gradient(180deg, rgb(2 6 23 / 0.66) 0%, rgb(2 6 23 / 0.38) 100%);
 }
 
 body {
   min-height: 100vh;
-  background: var(--app-bg);
+  background-image: var(--app-bg-overlay), var(--app-bg);
+  background-attachment: fixed;
+  transition: background-image 200ms ease;
+}
+
+:where([class*="bg-primary"].text-inverted, .text-inverted[class*="bg-primary"]) {
+  color: var(--app-primary-solid-text) !important;
+}
+
+.primary-color-chip-base {
+  background-color: var(--primary-color-chip-swatch) !important;
+}
+
+.primary-color-chip-sky {
+  --primary-color-chip-swatch: #0ea5e9;
+}
+
+.primary-color-chip-emerald {
+  --primary-color-chip-swatch: #10b981;
+}
+
+.primary-color-chip-violet {
+  --primary-color-chip-swatch: #8b5cf6;
+}
+
+.primary-color-chip-rose {
+  --primary-color-chip-swatch: #f43f5e;
+}
+
+.primary-color-chip-amber {
+  --primary-color-chip-swatch: #f59e0b;
 }

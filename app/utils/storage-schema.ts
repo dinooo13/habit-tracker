@@ -3,6 +3,7 @@ import {
   APP_DATA_SCHEMA_VERSION,
   DEFAULT_SETTINGS,
   MISS_REASON_CODES,
+  PRIMARY_COLOR_OPTIONS,
   type AppDataV1
 } from '~/types/app-data'
 
@@ -49,7 +50,8 @@ const SettingsSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
     .nullable(),
-  weekStartsOn: z.union([z.literal(0), z.literal(1)])
+  weekStartsOn: z.union([z.literal(0), z.literal(1)]),
+  primaryColor: z.enum(PRIMARY_COLOR_OPTIONS).default(DEFAULT_SETTINGS.primaryColor)
 })
 
 export const AppDataV1Schema = z.object({

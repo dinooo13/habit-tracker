@@ -344,7 +344,7 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
                   </UBadge>
                   <p class="font-semibold">{{ activeSuggestionTitle(group) }}</p>
                   <p class="text-sm text-muted">{{ activeSuggestionAction(group) }}</p>
-                  <div class="flex flex-wrap items-center gap-2">
+                  <div class="space-y-2">
                     <UButton
                       size="xs"
                       color="neutral"
@@ -354,29 +354,33 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
                     >
                       Why this helps
                     </UButton>
-                    <UButton
-                      v-if="group.suggestions.length > 1"
-                      size="xs"
-                      color="neutral"
-                      variant="outline"
-                      icon="i-lucide-refresh-cw"
-                      @click="showAnotherSuggestion(group)"
-                    >
-                      Show another suggestion
-                    </UButton>
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="outline"
-                      icon="i-lucide-arrow-up-right"
-                      :to="`/habits/${group.habitId}`"
-                    >
-                      Edit habit
-                    </UButton>
+                    <p v-if="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '')" class="text-xs text-muted">
+                      {{ activeSuggestionRationale(group) }}
+                    </p>
+                    <div class="border-t border-default/50 pt-3 -mb-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                      <UButton
+                        v-if="group.suggestions.length > 1"
+                        size="xs"
+                        color="neutral"
+                        variant="outline"
+                        icon="i-lucide-refresh-cw"
+                        @click="showAnotherSuggestion(group)"
+                      >
+                        Show another suggestion
+                      </UButton>
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="outline"
+                        icon="i-lucide-arrow-up-right"
+                        :to="`/habits/${group.habitId}`"
+                      >
+                        Edit habit
+                      </UButton>
+                      </div>
+                    </div>
                   </div>
-                  <p v-if="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '')" class="text-xs text-muted">
-                    {{ activeSuggestionRationale(group) }}
-                  </p>
                 </div>
               </div>
             </div>

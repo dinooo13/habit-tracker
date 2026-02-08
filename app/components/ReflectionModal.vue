@@ -6,11 +6,12 @@ const props = defineProps<{
   open: boolean
   habitName: string
   date: string
+  hasNext: boolean
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  submit: [payload: { reason: MissReasonCode; note: string | null }]
+  submit: [payload: { reason: MissReasonCode; note: string | null; action: 'close' | 'next' }]
 }>()
 
 const state = reactive({
@@ -33,10 +34,11 @@ watch(
   }
 )
 
-function submit(): void {
+function submit(action: 'close' | 'next'): void {
   emit('submit', {
     reason: state.reason,
-    note: state.note.trim() || null
+    note: state.note.trim() || null,
+    action
   })
   emit('update:open', false)
 }
@@ -74,9 +76,14 @@ function submit(): void {
         <UButton color="neutral" variant="ghost" @click="emit('update:open', false)">
           Cancel
         </UButton>
-        <UButton icon="i-lucide-check" @click="submit">
-          Save reflection
+        <UButton color="neutral" variant="outline" size="sm" class="whitespace-nowrap" icon="i-lucide-check" @click="submit('close')">
+          Save
         </UButton>
+        <UTooltip v-if="hasNext" text="Saves and opens next reflection">
+          <UButton size="sm" class="whitespace-nowrap" icon="i-lucide-arrow-right" @click="submit('next')">
+            Next
+          </UButton>
+        </UTooltip>
       </div>
     </template>
   </UModal>

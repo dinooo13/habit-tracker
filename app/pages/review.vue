@@ -16,6 +16,32 @@ const pendingModels = computed(() =>
     .filter((model) => Boolean(model.habit))
 )
 
+const pendingHabitGroups = computed(() => {
+  const grouped = new Map<string, { habitId: string, habitName: string, entryIds: string[], latestDate: string }>()
+
+  for (const model of pendingModels.value) {
+    const habit = model.habit
+    if (!habit) {
+      continue
+    }
+
+    const existing = grouped.get(habit.id)
+    if (existing) {
+      existing.entryIds.push(model.entry.id)
+      continue
+    }
+
+    grouped.set(habit.id, {
+      habitId: habit.id,
+      habitName: habit.name,
+      entryIds: [model.entry.id],
+      latestDate: model.entry.date
+    })
+  }
+
+  return [...grouped.values()]
+})
+
 const selectedEntryId = ref<string | null>(null)
 const modalOpen = ref(false)
 
@@ -41,6 +67,9 @@ watch(
 const selectedModel = computed(() =>
   pendingModels.value.find((model) => model.entry.id === selectedEntryId.value) ?? null
 )
+const hasNextPending = computed(
+  () => Boolean(selectedEntryId.value) && pendingModels.value.some((model) => model.entry.id !== selectedEntryId.value)
+)
 
 const recentSuggestions = computed(() =>
   [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 12)
@@ -51,22 +80,40 @@ function openReflection(entryId: string): void {
   modalOpen.value = true
 }
 
-function submitReflection(payload: { reason: MissReasonCode; note: string | null }): void {
-  if (!selectedModel.value) {
+function submitReflection(payload: { reason: MissReasonCode; note: string | null; action: 'close' | 'next' }): void {
+  const model = selectedModel.value
+  if (!model?.habit) {
     return
   }
 
-  const entry = entriesStore.setMissReason(selectedModel.value.entry.id, payload.reason, payload.note)
-  if (!entry || !selectedModel.value.habit) {
+  const currentEntryId = model.entry.id
+  const nextEntryId =
+    payload.action === 'next'
+      ? pendingModels.value.find((model) => model.entry.id !== currentEntryId)?.entry.id ?? null
+      : null
+
+  const entry = entriesStore.setMissReason(model.entry.id, payload.reason, payload.note)
+  if (!entry) {
     return
   }
 
-  coachStore.generateForEntry(entry, selectedModel.value.habit)
+  coachStore.generateForEntry(entry, model.habit)
+  const remaining = pendingModels.value.length
   toast.add({
     title: 'Reflection saved',
-    description: `Reason captured: ${MISS_REASON_LABELS[payload.reason]}`,
+    description:
+      remaining > 0
+        ? `Reason captured: ${MISS_REASON_LABELS[payload.reason]} · ${remaining} remaining`
+        : `Reason captured: ${MISS_REASON_LABELS[payload.reason]} · all done`,
     color: 'success'
   })
+
+  if (nextEntryId) {
+    selectedEntryId.value = nextEntryId
+    modalOpen.value = true
+  } else {
+    modalOpen.value = false
+  }
 }
 
 function suggestionHabitName(entryId: string): string {
@@ -114,14 +161,17 @@ function suggestionHabitName(entryId: string): string {
         />
 
         <div v-else class="space-y-3">
-          <UCard v-for="model in pendingModels" :key="model.entry.id" variant="outline">
+          <UCard v-for="group in pendingHabitGroups" :key="group.habitId" variant="outline">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p class="font-semibold">{{ model.habit?.name }}</p>
-                <p class="text-sm text-muted">Missed on {{ model.entry.date }}</p>
+                <p class="font-semibold">{{ group.habitName }}</p>
+                <p class="text-sm text-muted">
+                  {{ group.entryIds.length }} pending
+                  · latest miss on {{ group.latestDate }}
+                </p>
               </div>
-              <UButton color="warning" variant="soft" icon="i-lucide-pencil" @click="openReflection(model.entry.id)">
-                Reflect now
+              <UButton color="warning" variant="soft" icon="i-lucide-pencil" @click="openReflection(group.entryIds[0] as string)">
+                Reflect latest
               </UButton>
             </div>
           </UCard>
@@ -163,6 +213,7 @@ function suggestionHabitName(entryId: string): string {
       v-model:open="modalOpen"
       :habit-name="selectedModel.habit?.name ?? ''"
       :date="selectedModel.entry.date"
+      :has-next="hasNextPending"
       @submit="submitReflection"
     />
   </UPage>

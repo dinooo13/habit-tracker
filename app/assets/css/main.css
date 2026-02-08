@@ -33,6 +33,16 @@ body {
   transition: background-image 200ms ease;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  :where(button, [type="button"], [type="submit"], [type="reset"], [role="button"], a[href], summary):not(
+      :disabled,
+      [aria-disabled="true"],
+      [data-disabled="true"]
+    ) {
+    cursor: pointer;
+  }
+}
+
 :where([class*="bg-primary"].text-inverted, .text-inverted[class*="bg-primary"]) {
   color: var(--app-primary-solid-text) !important;
 }

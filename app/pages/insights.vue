@@ -1,17 +1,61 @@
 <script setup lang="ts">
-import { addDays, compareDateKeys, dateKeyRange, isHabitDueOnDate, todayDateKey } from '~/utils/date'
+import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/date'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
+const requestHeaders = useRequestHeaders(['accept-language'])
 
 const today = computed(() => todayDateKey())
 const activeHabits = computed(() => habitsStore.activeHabits)
 
-const completionWindow = ref<'7d' | '30d'>('7d')
-const selectedCompletionDays = computed(() => (completionWindow.value === '7d' ? 7 : 30))
-const selectedWindowStart = computed(() => addDays(today.value, -(selectedCompletionDays.value - 1)))
+const completionWindow = ref<'7d' | '30d' | 'all'>('7d')
+const selectedCompletionDays = computed<number | null>(() => {
+  if (completionWindow.value === 'all') {
+    return null
+  }
+
+  return completionWindow.value === '7d' ? 7 : 30
+})
+const earliestTrackedDate = computed(() => {
+  let earliest = today.value
+
+  for (const habit of habitsStore.habits) {
+    if (compareDateKeys(habit.startDate, earliest) < 0) {
+      earliest = habit.startDate
+    }
+  }
+
+  for (const entry of entriesStore.entries) {
+    if (compareDateKeys(entry.date, earliest) < 0) {
+      earliest = entry.date
+    }
+  }
+
+  return earliest
+})
+const selectedWindowStart = computed(() => {
+  if (completionWindow.value === 'all') {
+    return earliestTrackedDate.value
+  }
+
+  return addDays(today.value, -(selectedCompletionDays.value! - 1))
+})
+const selectedWindowLabel = computed(() => {
+  if (completionWindow.value === 'all') {
+    return 'all time'
+  }
+
+  return `last ${selectedCompletionDays.value} days`
+})
+const dateLocale = computed(() => {
+  if (import.meta.client) {
+    return navigator.languages?.[0] || navigator.language || 'en-US'
+  }
+
+  return requestHeaders['accept-language']?.split(',')[0] || 'en-US'
+})
 
 const performanceFilter = ref<'needs' | 'best' | 'all'>('needs')
 const showAllHabits = ref(false)
@@ -38,18 +82,50 @@ function overallCompletionRate(fromDate: string, toDate: string): number {
   return dueCount === 0 ? 0 : Math.round((doneCount / dueCount) * 100)
 }
 
+function dailyCompletionRate(date: string): number {
+  let dueCount = 0
+  let doneCount = 0
+
+  for (const habit of activeHabits.value) {
+    if (!isHabitDueOnDate(habit, date)) {
+      continue
+    }
+
+    dueCount += 1
+    if (entriesStore.entryByHabitAndDate(habit.id, date)?.status === 'done') {
+      doneCount += 1
+    }
+  }
+
+  return dueCount === 0 ? 0 : Math.round((doneCount / dueCount) * 100)
+}
+
 const selectedCompletionRate = computed(() =>
   overallCompletionRate(selectedWindowStart.value, today.value)
 )
 
 const previousCompletionRate = computed(() => {
+  if (completionWindow.value === 'all') {
+    return null
+  }
+
   const previousEnd = addDays(selectedWindowStart.value, -1)
-  const previousStart = addDays(previousEnd, -(selectedCompletionDays.value - 1))
+  const previousStart = addDays(previousEnd, -(selectedCompletionDays.value! - 1))
   return overallCompletionRate(previousStart, previousEnd)
 })
 
-const completionDelta = computed(() => selectedCompletionRate.value - previousCompletionRate.value)
+const completionDelta = computed(() => {
+  if (previousCompletionRate.value === null) {
+    return null
+  }
+
+  return selectedCompletionRate.value - previousCompletionRate.value
+})
 const completionDeltaLabel = computed(() => {
+  if (completionDelta.value === null || selectedCompletionDays.value === null) {
+    return null
+  }
+
   if (completionDelta.value === 0) {
     return `No change vs previous ${selectedCompletionDays.value} days`
   }
@@ -59,6 +135,10 @@ const completionDeltaLabel = computed(() => {
 })
 
 const completionDeltaColor = computed<'success' | 'warning' | 'neutral'>(() => {
+  if (completionDelta.value === null) {
+    return 'neutral'
+  }
+
   if (completionDelta.value > 0) {
     return 'success'
   }
@@ -150,6 +230,85 @@ const visibleReasonDistribution = computed(() =>
 
 const canToggleAllReasons = computed(() => reasonDistribution.value.length > 3)
 
+const completionTrendSeries = computed(() =>
+  dateKeyRange(selectedWindowStart.value, today.value).map((date) => ({
+    date,
+    rate: dailyCompletionRate(date)
+  }))
+)
+
+const completionChartViewWidth = 100
+const completionChartViewHeight = 56
+const completionChartPlot = {
+  left: 2,
+  right: 98,
+  top: 4,
+  bottom: 52
+} as const
+
+const completionChartPlotWidth = completionChartPlot.right - completionChartPlot.left
+const completionChartPlotHeight = completionChartPlot.bottom - completionChartPlot.top
+const completionChartMidY = completionChartPlot.top + completionChartPlotHeight / 2
+
+function formatTrendDate(dateKey: string | undefined): string {
+  if (!dateKey) {
+    return ''
+  }
+
+  return formatDateKeyForLocale(dateKey, dateLocale.value, {
+    day: 'numeric',
+    month: 'short'
+  })
+}
+
+const completionTrendPoints = computed(() => {
+  const series = completionTrendSeries.value
+  const denominator = Math.max(series.length - 1, 1)
+
+  return series.map((point, index) => {
+    const clampedRate = Math.min(100, Math.max(0, point.rate))
+    const x = series.length === 1
+      ? (completionChartPlot.left + completionChartPlot.right) / 2
+      : completionChartPlot.left + (index / denominator) * completionChartPlotWidth
+    const y = completionChartPlot.bottom - (clampedRate / 100) * completionChartPlotHeight
+
+    return {
+      ...point,
+      x,
+      y
+    }
+  })
+})
+
+const completionTrendLinePoints = computed(() =>
+  completionTrendPoints.value.map((point) => `${point.x},${point.y}`).join(' ')
+)
+
+const completionTrendGuideX = computed(() => {
+  const points = completionTrendPoints.value
+  if (!points.length) {
+    return []
+  }
+
+  const values = points
+    .filter((_, index) => points.length <= 8 || index === 0 || index === points.length - 1 || index % 5 === 0)
+    .map((point) => point.x)
+
+  return [...new Set(values)]
+})
+
+const completionTrendGuideY = computed(() => [
+  completionChartPlot.top,
+  completionChartPlot.top + completionChartPlotHeight * 0.25,
+  completionChartPlot.top + completionChartPlotHeight * 0.5,
+  completionChartPlot.top + completionChartPlotHeight * 0.75,
+  completionChartPlot.bottom
+])
+
+function completionChartYPercent(y: number): string {
+  return `${(y / completionChartViewHeight) * 100}%`
+}
+
 const inferredCoachUptake = computed(() => {
   const suggestionsWithEntries = coachStore.suggestions
     .map((suggestion) => ({
@@ -176,7 +335,9 @@ const inferredCoachUptake = computed(() => {
 
   for (const item of suggestionsWithEntries) {
     const observationStart = addDays(item.entry.date, 1)
-    const proposedEnd = addDays(item.entry.date, selectedCompletionDays.value)
+    const proposedEnd = completionWindow.value === 'all'
+      ? today.value
+      : addDays(item.entry.date, selectedCompletionDays.value!)
     const observationEnd = compareDateKeys(proposedEnd, today.value) > 0 ? today.value : proposedEnd
 
     if (compareDateKeys(observationStart, observationEnd) > 0) {
@@ -226,6 +387,14 @@ const inferredCoachUptake = computed(() => {
               >
                 30 days
               </UButton>
+              <UButton
+                size="xs"
+                :color="completionWindow === 'all' ? 'primary' : 'neutral'"
+                :variant="completionWindow === 'all' ? 'solid' : 'ghost'"
+                @click="completionWindow = 'all'"
+              >
+                All time
+              </UButton>
             </div>
           </div>
         </template>
@@ -253,15 +422,74 @@ const inferredCoachUptake = computed(() => {
             </div>
           </template>
 
-          <div class="space-y-2 p-1">
-            <div class="flex items-end justify-between gap-3">
-              <p class="text-sm text-muted">Completion in the last {{ selectedCompletionDays }} days</p>
-              <p class="text-3xl font-semibold">{{ selectedCompletionRate }}%</p>
+          <div class="flex h-full flex-col gap-3 p-1 lg:min-h-[24rem] lg:gap-0">
+            <div class="flex lg:flex-1">
+              <div class="flex w-full flex-col rounded-lg border border-default/60 p-3 lg:h-full">
+                <div class="mb-2 flex items-center justify-between text-[10px] text-muted sm:text-xs">
+                  <span>{{ formatTrendDate(completionTrendSeries[0]?.date) }}</span>
+                  <span>{{ formatTrendDate(completionTrendSeries[completionTrendSeries.length - 1]?.date) }}</span>
+                </div>
+                <div class="relative h-32 overflow-hidden rounded-md bg-elevated/20 px-1 py-1 lg:h-auto lg:min-h-[10rem] lg:flex-1">
+                  <svg class="absolute inset-0 h-full w-full text-muted/30" :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`" preserveAspectRatio="none">
+                    <line
+                      v-for="y in completionTrendGuideY"
+                      :key="`y-${y}`"
+                      x1="0"
+                      :y1="y"
+                      :x2="completionChartViewWidth"
+                      :y2="y"
+                      stroke="currentColor"
+                      stroke-width="0.4"
+                    />
+                    <line
+                      v-for="x in completionTrendGuideX"
+                      :key="`x-${x}`"
+                      :x1="x"
+                      :y1="completionChartPlot.top - 2"
+                      :x2="x"
+                      :y2="completionChartPlot.bottom + 2"
+                      stroke="currentColor"
+                      stroke-width="0.4"
+                    />
+                  </svg>
+                  <svg class="absolute inset-0 h-full w-full text-primary" :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`" preserveAspectRatio="none">
+                    <polyline
+                      :points="completionTrendLinePoints"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="0.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <circle
+                      v-for="point in completionTrendPoints"
+                      :key="`point-${point.date}`"
+                      :cx="point.x"
+                      :cy="point.y"
+                      r="0.5"
+                      fill="currentColor"
+                    >
+                      <title>{{ point.date }}: {{ point.rate }}%</title>
+                    </circle>
+                  </svg>
+                  <div class="pointer-events-none absolute inset-0 right-1 text-[10px] text-muted/70">
+                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartPlot.top) }">100%</span>
+                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartMidY) }">50%</span>
+                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartPlot.bottom) }">0%</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <UProgress :model-value="selectedCompletionRate" />
-            <UBadge :color="completionDeltaColor" variant="subtle">
-              {{ completionDeltaLabel }}
-            </UBadge>
+            <div class="mt-auto space-y-2">
+              <UProgress :model-value="selectedCompletionRate" />
+              <div class="flex items-end justify-between gap-3">
+                <p class="text-sm text-muted">Completion for {{ selectedWindowLabel }}</p>
+                <p class="text-3xl font-semibold">{{ selectedCompletionRate }}%</p>
+              </div>
+              <UBadge v-if="completionDeltaLabel" :color="completionDeltaColor" variant="subtle">
+                {{ completionDeltaLabel }}
+              </UBadge>
+            </div>
           </div>
         </UCard>
 
@@ -334,7 +562,7 @@ const inferredCoachUptake = computed(() => {
                     </UBadge>
                   </div>
                   <div class="mt-2 flex items-center justify-between gap-3 text-xs text-muted">
-                    <span>{{ selectedCompletionDays }}-day completion</span>
+                    <span>{{ completionWindow === 'all' ? 'All-time completion' : `${selectedCompletionDays}-day completion` }}</span>
                     <UBadge color="neutral" variant="outline">Streak: {{ item.streak }}</UBadge>
                   </div>
                 </div>
@@ -367,7 +595,11 @@ const inferredCoachUptake = computed(() => {
               v-if="!reasonDistribution.length"
               icon="i-lucide-pie-chart"
               title="No miss reasons captured"
-              :description="`No missed reasons in the last ${selectedCompletionDays} days.`"
+              :description="
+                completionWindow === 'all'
+                  ? 'No missed reasons captured yet.'
+                  : `No missed reasons in the last ${selectedCompletionDays} days.`
+              "
             />
 
             <div v-else class="space-y-2">

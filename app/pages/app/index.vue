@@ -78,9 +78,9 @@ const tabItems: TabsItem[] = [
 ]
 
 const tabsUi = {
-  list: 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-  trigger: 'shrink-0',
-  label: 'overflow-visible text-clip whitespace-nowrap'
+  list: 'grid w-full grid-cols-2',
+  trigger: 'min-w-0 justify-center py-1 text-sm leading-none !font-medium data-[state=active]:!font-medium',
+  label: 'truncate whitespace-nowrap'
 }
 
 const openHabits = computed(() => dueHabitModels.value.filter((model) => !model.entry))
@@ -298,7 +298,7 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
                     <div class="space-y-1">
                       <div class="flex items-center gap-2">
                         <span class="size-2 rounded-full" :class="typeMeta(model.habit.type).dotClass" aria-hidden="true" />
-                        <p class="font-medium">{{ model.habit.name }}</p>
+                        <h3 class="font-semibold">{{ model.habit.name }}</h3>
                       </div>
                       <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
                     </div>

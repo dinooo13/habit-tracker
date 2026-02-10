@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 import type { HabitType } from '~/types/app-data'
 
 const route = useRoute()
@@ -43,7 +45,7 @@ function onSubmit(payload: {
     color: 'success'
   })
 
-  router.push('/habits')
+  router.push('/app/habits')
 }
 </script>
 
@@ -65,7 +67,7 @@ function onSubmit(payload: {
       icon="i-lucide-search-x"
       title="Habit not found"
       description="This habit may have been deleted."
-      :actions="[{ label: 'Back to habits', to: '/habits', color: 'neutral' }]"
+      :actions="[{ label: 'Back to habits', to: '/app/habits', color: 'neutral' }]"
     />
   </UPage>
 </template>

@@ -1,331 +1,322 @@
 <script setup lang="ts">
-import type { TabsItem } from '@nuxt/ui'
-import { formatDateKeyForLocale, todayDateKey } from '~/utils/date'
+import { resolveRedirectTarget } from '~/utils/dummy-auth'
 
-const habitsStore = useHabitsStore()
-const entriesStore = useEntriesStore()
-
-const dateKey = computed(() => todayDateKey())
-const requestHeaders = useRequestHeaders(['accept-language'])
-const dateLocale = computed(() => {
-  if (import.meta.client) {
-    return navigator.languages?.[0] || navigator.language || 'en-US'
-  }
-
-  return requestHeaders['accept-language']?.split(',')[0] || 'en-US'
-})
-const displayDate = computed(() =>
-  formatDateKeyForLocale(dateKey.value, dateLocale.value, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-)
-
-const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))
-
-const dueHabitModels = computed(() =>
-  dueHabits.value.map((habit) => ({
-    habit,
-    entry: entriesStore.entryByHabitAndDate(habit.id, dateKey.value)
-  }))
-)
-
-const doneCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'done').length
-)
-
-const skippedCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'skipped').length
-)
-
-const missedCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'missed').length
-)
-
-const reviewedCount = computed(() => doneCount.value + skippedCount.value + missedCount.value)
-
-const queueProgressValue = computed(() => {
-  if (!dueHabitModels.value.length) {
-    return 0
-  }
-
-  return Math.round((reviewedCount.value / dueHabitModels.value.length) * 100)
-})
-
-const pendingReflections = computed(() => entriesStore.pendingReflectionEntries)
-const activeHabitStreaks = computed(() =>
-  habitsStore.habits
-    .filter((habit) => !habit.archived)
-    .map((habit) => ({
-      id: habit.id,
-      name: habit.name,
-      type: habit.type,
-      streak: entriesStore.streakForHabit(habit.id)
-    }))
-    .sort((left, right) => right.streak - left.streak || left.name.localeCompare(right.name))
-)
-const activeStreakCount = computed(() => activeHabitStreaks.value.filter((item) => item.streak > 0).length)
-const activeStreakCountLabel = computed(() =>
-  activeStreakCount.value > 99 ? '99+' : String(activeStreakCount.value)
-)
-
-const tabItems: TabsItem[] = [
-  { label: 'Open', icon: 'i-lucide-clock-3', slot: 'open', value: 'open' },
-  { label: 'All due', icon: 'i-lucide-list-checks', slot: 'all', value: 'all' }
-]
-
-const tabsUi = {
-  list: 'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-  trigger: 'shrink-0',
-  label: 'overflow-visible text-clip whitespace-nowrap'
-}
-
-const openHabits = computed(() => dueHabitModels.value.filter((model) => !model.entry))
-
-type QueueStatus = 'open' | 'done' | 'missed' | 'skipped'
-type HabitType = 'build' | 'break'
-
-const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'subtle' | 'soft' }> = {
-  build: {
-    label: 'Build',
-    color: 'primary',
-    cardClass: 'border-primary',
-    dotClass: 'bg-primary',
-    badgeVariant: 'soft'
-  },
-  break: {
-    label: 'Break',
-    color: 'warning',
-    cardClass: 'border-warning',
-    dotClass: 'bg-warning',
-    badgeVariant: 'soft'
-  }
-}
-
-const statusMeta: Record<QueueStatus, { label: string, color: 'primary' | 'success' | 'warning' | 'neutral', variant: 'outline' | 'subtle' }> = {
-  open: { label: 'Open', color: 'primary', variant: 'outline' },
-  done: { label: 'Done', color: 'success', variant: 'subtle' },
-  missed: { label: 'Missed', color: 'warning', variant: 'subtle' },
-  skipped: { label: 'Skipped', color: 'neutral', variant: 'subtle' }
-}
-
-function queueStatus(status: 'done' | 'missed' | 'skipped' | undefined): QueueStatus {
-  return status ?? 'open'
-}
-
-function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'subtle' | 'soft' } {
-  return habitTypeMeta[type]
-}
-
+const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 
-function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'): void {
-  entriesStore.setStatus(habitId, dateKey.value, status)
+const dummyAuth = useDummyAuth()
+const demoData = useDemoData()
 
-  const title =
-    status === 'done'
-      ? 'Nice work'
-      : status === 'missed'
-        ? 'Marked as missed'
-        : 'Marked as skipped'
+const replaceDemoDataModalOpen = ref(false)
 
-  toast.add({ title, color: status === 'done' ? 'success' : 'neutral' })
+dummyAuth.initFromStorage()
+
+const primaryActionLabel = computed(() =>
+  dummyAuth.isLoggedIn.value ? 'Open app' : 'Login'
+)
+
+const redirectTarget = computed(() => resolveRedirectTarget(route.query.redirect, '/app'))
+
+const featurePreviews = [
+  {
+    title: 'Today queue',
+    subtitle: 'Plan and execute',
+    description:
+      'Start each day with a focused queue. Mark habits done, skipped, or missed, and keep momentum with visible streak context.',
+    bullets: [
+      'Daily progress bar across all due habits',
+      'Fast status actions directly in the queue',
+      'Streak chips for active habits'
+    ],
+    screenshot: '/screenshots/mobile-today.png',
+    alt: 'Mobile screenshot of the today queue page',
+    to: '/app',
+    cta: 'Open Today',
+    icon: 'i-lucide-layout-grid'
+  },
+  {
+    title: 'Review flow',
+    subtitle: 'Learn from misses',
+    description:
+      'When habits slip, capture the reason and turn it into concrete guidance so misses become useful feedback instead of noise.',
+    bullets: [
+      'Pending reflection list grouped by habit',
+      'Structured miss-reason capture workflow',
+      'Actionable coaching suggestions generated from reflections'
+    ],
+    screenshot: '/screenshots/mobile-review.png',
+    alt: 'Mobile screenshot of the review page',
+    to: '/app/review',
+    cta: 'Open Review',
+    icon: 'i-lucide-clipboard-check'
+  },
+  {
+    title: 'Insights',
+    subtitle: 'Track what works',
+    description:
+      'Analyze completion trends, performance by habit, and miss patterns to decide exactly what to improve next.',
+    bullets: [
+      'Completion trend visualization by time window',
+      'Habit-level completion and streak comparisons',
+      'Miss reason distribution to spot recurring friction'
+    ],
+    screenshot: '/screenshots/mobile-insights.png',
+    alt: 'Mobile screenshot of the insights page',
+    to: '/app/insights',
+    cta: 'Open Insights',
+    icon: 'i-lucide-chart-line'
+  }
+] as const
+
+async function handlePrimaryAction(): Promise<void> {
+  dummyAuth.initFromStorage()
+
+  if (!dummyAuth.isLoggedIn.value) {
+    dummyAuth.login()
+  }
+
+  await router.push(redirectTarget.value)
+}
+
+async function loadDemoData(replaceExisting: boolean): Promise<void> {
+  try {
+    const result = await demoData.loadDemoData({ replaceExisting })
+
+    if (!result.loaded && result.reason === 'existing-data') {
+      replaceDemoDataModalOpen.value = true
+      return
+    }
+
+    replaceDemoDataModalOpen.value = false
+
+    toast.add({
+      title: 'Demo data loaded',
+      description: 'Fixture habits and history are now available in the app.',
+      color: 'success'
+    })
+  } catch {
+    toast.add({
+      title: 'Demo data failed',
+      description: 'Could not load the fixture JSON. Please try again.',
+      color: 'error'
+    })
+  }
 }
 </script>
 
 <template>
-  <UPage>
-    <div class="space-y-6">
-      <UCard>
-        <template #header>
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p class="text-sm text-muted">Today</p>
-              <h1 class="text-2xl font-semibold">{{ displayDate }}</h1>
+  <div>
+    <section class="relative overflow-hidden border-b border-default/70">
+      <div class="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" aria-hidden="true" />
+      <UContainer class="relative py-14 md:py-20">
+        <div class="grid items-center gap-10 md:grid-cols-[1.2fr_1fr]">
+          <div class="space-y-6">
+            <UBadge color="primary" variant="soft" class="rounded-full px-3 py-1">
+              Atomic Habit Tracker
+            </UBadge>
+            <div class="space-y-4">
+              <h1 class="text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+                Build better routines with a clear daily system.
+              </h1>
+              <p class="max-w-xl text-pretty text-base text-muted md:text-lg">
+                Plan identity-based habits, review misses with coaching, and track progress trends in a focused mobile-first workflow.
+              </p>
             </div>
-            <div class="flex items-center gap-2">
-              <BrandLogo
-                class="size-16 shrink-0"
-                :center-text="activeStreakCountLabel"
-                :aria-label="`Active streaks: ${activeStreakCountLabel}`"
-              />
+            <div class="flex flex-wrap items-center gap-3">
+              <UButton size="xl" icon="i-lucide-log-in" @click="handlePrimaryAction">
+                {{ primaryActionLabel }}
+              </UButton>
+              <UButton
+                size="xl"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-database"
+                :loading="demoData.isLoading.value"
+                @click="loadDemoData(false)"
+              >
+                Load demo data
+              </UButton>
             </div>
           </div>
-        </template>
 
-        <div class="space-y-3">
-          <div v-if="activeHabitStreaks.length" class="space-y-2">
-            <div class="flex items-center justify-between text-xs text-muted">
-              <p class="font-medium uppercase tracking-wide">Active streaks</p>
-              <p>{{ activeHabitStreaks.length }} habits</p>
-            </div>
+          <UCard class="md:max-w-sm md:justify-self-end" variant="outline">
+            <template #header>
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-muted">What you get</p>
+                <h2 class="text-xl font-semibold">All core habit loops</h2>
+              </div>
+            </template>
 
-            <div class="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div
-                v-for="item in activeHabitStreaks"
-                :key="item.id"
-                class="w-36 shrink-0 rounded-md border border-default/80 bg-elevated/60 px-2 py-1.5"
-              >
-                <div class="flex items-baseline gap-2">
-                  <span class="-translate-y-[1px] size-1.5 shrink-0 rounded-full" :class="typeMeta(item.type).dotClass" aria-hidden="true" />
-                  <p
-                    class="min-w-0 text-xs font-medium leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+            <ul class="space-y-3 text-sm text-muted">
+              <li class="flex items-start gap-2">
+                <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-success" />
+                <span>Daily queue for done, missed, and skipped outcomes.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-success" />
+                <span>Build and break habits with reminders and schedules.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-success" />
+                <span>Reflection flow with Atomic Habits coaching suggestions.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-success" />
+                <span>Insights, streak tracking, and JSON backup/restore.</span>
+              </li>
+            </ul>
+          </UCard>
+        </div>
+      </UContainer>
+    </section>
+
+    <section class="border-b border-default/70">
+      <UContainer class="py-12 md:py-16">
+        <div class="space-y-2">
+          <h2 class="text-2xl font-semibold tracking-tight md:text-3xl">See each workflow in action</h2>
+          <p class="text-sm text-muted">Real mobile captures, each paired with what the screen is designed to help you do.</p>
+        </div>
+
+        <div class="mt-8 space-y-6 md:space-y-8">
+          <article
+            v-for="(preview, index) in featurePreviews"
+            :key="preview.title"
+            class="rounded-2xl border border-default/70 bg-default/40 p-5 shadow-sm md:p-7"
+          >
+            <div class="grid items-center gap-6 md:grid-cols-2">
+              <div :class="index % 2 === 1 ? 'space-y-4 md:order-2' : 'space-y-4'">
+                <UBadge color="neutral" variant="soft" class="rounded-full px-3 py-1">
+                  <UIcon :name="preview.icon" class="mr-1 size-3.5" />
+                  {{ preview.subtitle }}
+                </UBadge>
+                <h3 class="text-xl font-semibold tracking-tight md:text-2xl">
+                  {{ preview.title }}
+                </h3>
+                <p class="text-sm text-muted md:text-base">
+                  {{ preview.description }}
+                </p>
+
+                <ul class="space-y-2 text-sm text-muted">
+                  <li v-for="bullet in preview.bullets" :key="bullet" class="flex items-start gap-2">
+                    <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-primary" />
+                    <span>{{ bullet }}</span>
+                  </li>
+                </ul>
+
+                <UButton color="primary" variant="outline" :to="preview.to">
+                  {{ preview.cta }}
+                </UButton>
+              </div>
+
+              <div :class="index % 2 === 1 ? 'mx-auto md:order-1' : 'mx-auto'">
+                <div class="relative w-[292px] overflow-hidden rounded-[2.6rem] border border-black/70 bg-black p-2.5 pt-8 shadow-2xl shadow-black/20">
+                  <div class="pointer-events-none absolute inset-2.5 rounded-[1.9rem] bg-white" />
+                  <div
+                    class="pointer-events-none absolute left-1/2 top-4 z-10 flex h-6 w-28 -translate-x-1/2 items-center justify-end rounded-full border border-zinc-700 bg-zinc-900 px-2"
                   >
-                    {{ item.name }}
-                  </p>
-                </div>
-                <div class="mt-1 flex items-center gap-1 text-xs text-muted">
-                  <UIcon name="i-lucide-flame" class="size-3.5" />
-                  <span>{{ item.streak }}d streak</span>
+                    <span class="size-1.5 rounded-full bg-zinc-500" />
+                  </div>
+                  <img
+                    :src="preview.screenshot"
+                    :alt="preview.alt"
+                    class="relative z-20 mt-2 block w-full rounded-[1.8rem] bg-white"
+                    loading="lazy"
+                  >
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="flex items-center justify-between text-sm text-muted">
-            <span>{{ reviewedCount }} of {{ dueHabitModels.length }} reviewed</span>
-            <span>{{ queueProgressValue }}%</span>
-          </div>
-          <UProgress :model-value="queueProgressValue" />
-
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge color="success" variant="subtle">
-              Done: {{ doneCount }}
-            </UBadge>
-            <UBadge color="neutral" variant="subtle">
-              Skipped: {{ skippedCount }}
-            </UBadge>
-            <UBadge color="warning" variant="subtle">
-              Missed: {{ missedCount }}
-            </UBadge>
-          </div>
+          </article>
         </div>
-      </UCard>
+      </UContainer>
+    </section>
 
-      <UAlert
-        v-if="pendingReflections.length"
-        color="warning"
-        variant="subtle"
-        icon="i-lucide-message-square-warning"
-        :title="`${pendingReflections.length} missed habits need reflection`"
-        description="Open review to capture why it slipped and get Atomic Habits tactics."
-        :actions="[{ label: 'Open review', to: '/review', color: 'warning', variant: 'soft' }]"
-      />
+    <section>
+      <UContainer class="py-10">
+        <UCard class="border-primary/30 bg-primary/5">
+          <div class="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-center">
+            <div class="space-y-4">
+              <div class="space-y-2">
+                <UBadge color="primary" variant="soft" class="rounded-full px-3 py-1">
+                  <UIcon name="i-lucide-sparkles" class="mr-1 size-3.5" />
+                  AI integration
+                </UBadge>
+                <h2 class="text-2xl font-semibold tracking-tight">Start faster with ready-to-copy AI prompts</h2>
+                <p class="text-sm text-muted md:text-base">
+                  The app includes prebuilt prompts that help you generate a full habits JSON from scratch or refine your current habits with AI.
+                </p>
+              </div>
 
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-list-todo" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Today's habit queue</h2>
+              <ul class="space-y-2 text-sm text-muted">
+                <li class="flex items-start gap-2">
+                  <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-primary" />
+                  <span><strong>Getting started prompt:</strong> asks guided questions and outputs import-ready habits JSON.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <UIcon name="i-lucide-check-circle-2" class="mt-0.5 size-4 text-primary" />
+                  <span><strong>Current habits prompt:</strong> uses your existing habits JSON so AI can suggest better wording and schedules.</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="rounded-xl border border-default/70 bg-default/70 p-4">
+              <p class="text-sm font-medium">How it works</p>
+              <ol class="mt-3 space-y-2 text-sm text-muted">
+                <li>1. Open Settings in the app.</li>
+                <li>2. Copy one of the AI habit prompts.</li>
+                <li>3. Run it in your preferred AI tool.</li>
+                <li>4. Import the generated JSON backup.</li>
+              </ol>
+              <UButton class="mt-4" color="primary" variant="outline" to="/app/settings">
+                Open AI prompts in Settings
+              </UButton>
+            </div>
           </div>
-        </template>
+        </UCard>
+      </UContainer>
+    </section>
 
-        <UEmpty
-          v-if="!dueHabitModels.length"
-          icon="i-lucide-calendar-check-2"
-          title="No habits due today"
-          description="Create a habit or adjust schedule weekdays."
-          :actions="[{ label: 'Create habit', to: '/habits/new', icon: 'i-lucide-plus' }]"
+    <section>
+      <UContainer class="py-10">
+        <UCard>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-semibold">Ready to start?</h2>
+              <p class="text-sm text-muted">Login with one click and open the full app.</p>
+            </div>
+            <UButton icon="i-lucide-arrow-right" @click="handlePrimaryAction">
+              {{ primaryActionLabel }}
+            </UButton>
+          </div>
+        </UCard>
+      </UContainer>
+    </section>
+
+    <UModal
+      :open="replaceDemoDataModalOpen"
+      title="Replace existing data?"
+      description="Loading the demo fixture now will overwrite current habits, entries, suggestions, and settings."
+      @update:open="replaceDemoDataModalOpen = $event"
+    >
+      <template #body>
+        <UAlert
+          color="warning"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          title="This replaces local app data"
+          description="Use this only when you want a fresh demo state for screenshots or exploration."
         />
-
-        <UTabs
-          v-else
-          :items="tabItems"
-          default-value="open"
-          :ui="tabsUi"
-          variant="link"
-          color="neutral"
-          class="w-full"
-        >
-          <template #all>
-            <div class="mt-4 grid gap-4">
-              <UCard
-                v-for="model in dueHabitModels"
-                :key="model.habit.id"
-                variant="outline"
-                :class="typeMeta(model.habit.type).cardClass"
-              >
-                <div class="space-y-3">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="space-y-1">
-                      <div class="flex items-center gap-2">
-                        <span class="size-2 rounded-full" :class="typeMeta(model.habit.type).dotClass" aria-hidden="true" />
-                        <h3 class="font-semibold">{{ model.habit.name }}</h3>
-                      </div>
-                      <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
-                    </div>
-                    <UBadge :color="typeMeta(model.habit.type).color" :variant="typeMeta(model.habit.type).badgeVariant">
-                      {{ typeMeta(model.habit.type).label }}
-                    </UBadge>
-                  </div>
-
-                  <div class="flex flex-wrap items-center gap-2">
-                    <UBadge color="neutral" variant="outline">
-                      Reminder: {{ model.habit.reminderTime ?? 'none' }}
-                    </UBadge>
-                    <UBadge
-                      :color="statusMeta[queueStatus(model.entry?.status)].color"
-                      :variant="statusMeta[queueStatus(model.entry?.status)].variant"
-                    >
-                      {{ statusMeta[queueStatus(model.entry?.status)].label }}
-                    </UBadge>
-                  </div>
-                </div>
-              </UCard>
-            </div>
-          </template>
-
-          <template #open>
-            <div class="mt-4 space-y-2">
-              <UAlert
-                v-if="!openHabits.length"
-                color="success"
-                variant="subtle"
-                title="No open habits"
-                description="Everything due today has already been reviewed."
-              />
-              <UCard
-                v-for="model in openHabits"
-                :key="model.habit.id"
-                variant="outline"
-                :class="typeMeta(model.habit.type).cardClass"
-              >
-                <div class="space-y-3">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="space-y-1">
-                      <div class="flex items-center gap-2">
-                        <span class="size-2 rounded-full" :class="typeMeta(model.habit.type).dotClass" aria-hidden="true" />
-                        <p class="font-medium">{{ model.habit.name }}</p>
-                      </div>
-                      <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
-                    </div>
-                    <UBadge :color="typeMeta(model.habit.type).color" :variant="typeMeta(model.habit.type).badgeVariant">
-                      {{ typeMeta(model.habit.type).label }}
-                    </UBadge>
-                  </div>
-
-                  <div class="flex flex-wrap gap-2">
-                    <UTooltip text="Mark completed">
-                      <UButton size="sm" color="success" icon="i-lucide-check" @click="setHabitStatus(model.habit.id, 'done')">
-                        Done
-                      </UButton>
-                    </UTooltip>
-                    <UTooltip text="Mark missed">
-                      <UButton size="sm" color="warning" variant="soft" icon="i-lucide-alert-circle" @click="setHabitStatus(model.habit.id, 'missed')">
-                        Missed
-                      </UButton>
-                    </UTooltip>
-                    <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-skip-forward" @click="setHabitStatus(model.habit.id, 'skipped')">
-                      Skip
-                    </UButton>
-                  </div>
-                </div>
-              </UCard>
-            </div>
-          </template>
-        </UTabs>
-      </UCard>
-    </div>
-  </UPage>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton color="neutral" variant="ghost" @click="replaceDemoDataModalOpen = false">
+            Cancel
+          </UButton>
+          <UButton color="warning" :loading="demoData.isLoading.value" @click="loadDemoData(true)">
+            Replace and load demo
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+  </div>
 </template>

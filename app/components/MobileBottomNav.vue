@@ -8,7 +8,7 @@ const props = defineProps<{
 const route = useRoute()
 
 function isActivePath(path: string): boolean {
-  return path === '/' ? route.path === path : route.path.startsWith(path)
+  return path === '/app' ? route.path === path : route.path.startsWith(path)
 }
 </script>
 

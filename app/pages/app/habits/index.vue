@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 const habitsStore = useHabitsStore()
 
 const showArchived = ref(false)
@@ -82,7 +84,7 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
           <div class="space-y-2">
             <div class="flex items-start justify-between gap-3">
               <h1 class="text-2xl font-semibold">Habits</h1>
-              <UButton to="/habits/new" icon="i-lucide-plus" class="shrink-0">
+              <UButton to="/app/habits/new" icon="i-lucide-plus" class="shrink-0">
                 Create habit
               </UButton>
             </div>
@@ -104,7 +106,7 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
         icon="i-lucide-list-checks"
         title="No habits yet"
         description="Create your first habit and start collecting identity votes."
-        :actions="[{ label: 'Create habit', to: '/habits/new', icon: 'i-lucide-plus' }]"
+        :actions="[{ label: 'Create habit', to: '/app/habits/new', icon: 'i-lucide-plus' }]"
       />
 
       <div v-else class="grid gap-4 md:grid-cols-2">

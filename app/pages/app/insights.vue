@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/date'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
 

@@ -1,0 +1,1756 @@
+{
+  "schemaVersion": 1,
+  "habits": [
+    {
+      "id": "habit_morning_run",
+      "name": "Morning run",
+      "type": "build",
+      "identityStatement": "I am an active person.",
+      "scheduleWeekdays": [
+        1,
+        3,
+        5
+      ],
+      "reminderTime": "07:00",
+      "startDate": "2025-12-26",
+      "archived": false,
+      "createdAt": "2025-12-20T08:00:00.000Z",
+      "updatedAt": "2026-02-08T08:00:00.000Z"
+    },
+    {
+      "id": "habit_reading",
+      "name": "Read 20 pages",
+      "type": "build",
+      "identityStatement": "I am a daily learner.",
+      "scheduleWeekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "reminderTime": "21:00",
+      "startDate": "2025-12-20",
+      "archived": false,
+      "createdAt": "2025-12-18T20:00:00.000Z",
+      "updatedAt": "2026-02-08T20:00:00.000Z"
+    },
+    {
+      "id": "habit_no_snacks",
+      "name": "No late-night snacks",
+      "type": "break",
+      "identityStatement": "I protect my energy and sleep.",
+      "scheduleWeekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "reminderTime": "20:30",
+      "startDate": "2025-12-26",
+      "archived": false,
+      "createdAt": "2025-12-24T20:30:00.000Z",
+      "updatedAt": "2026-02-08T20:30:00.000Z"
+    },
+    {
+      "id": "habit_meditation",
+      "name": "10-minute meditation",
+      "type": "build",
+      "identityStatement": "I am calm and focused.",
+      "scheduleWeekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "reminderTime": "08:30",
+      "startDate": "2026-01-05",
+      "archived": false,
+      "createdAt": "2026-01-02T08:30:00.000Z",
+      "updatedAt": "2026-02-08T08:30:00.000Z"
+    },
+    {
+      "id": "habit_social_media_limit",
+      "name": "No social media before 18:00",
+      "type": "break",
+      "identityStatement": "I control my attention.",
+      "scheduleWeekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "reminderTime": "18:00",
+      "startDate": "2026-01-01",
+      "archived": false,
+      "createdAt": "2025-12-30T18:00:00.000Z",
+      "updatedAt": "2026-02-08T18:00:00.000Z"
+    }
+  ],
+  "entries": [
+    {
+      "id": "entry_habit_morning_run_2025-12-26",
+      "habitId": "habit_morning_run",
+      "date": "2025-12-26",
+      "status": "done",
+      "completedAt": "2025-12-26T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2025-12-26",
+      "habitId": "habit_reading",
+      "date": "2025-12-26",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_time",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-26",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-26",
+      "status": "done",
+      "completedAt": "2025-12-26T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2025-12-27",
+      "habitId": "habit_reading",
+      "date": "2025-12-27",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-27",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-27",
+      "status": "done",
+      "completedAt": "2025-12-27T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2025-12-28",
+      "habitId": "habit_reading",
+      "date": "2025-12-28",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-28",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-28",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "bad_environment",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_morning_run_2025-12-29",
+      "habitId": "habit_morning_run",
+      "date": "2025-12-29",
+      "status": "done",
+      "completedAt": "2025-12-29T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2025-12-29",
+      "habitId": "habit_reading",
+      "date": "2025-12-29",
+      "status": "done",
+      "completedAt": "2025-12-29T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-29",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-29",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_immediate_reward",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_reading_2025-12-30",
+      "habitId": "habit_reading",
+      "date": "2025-12-30",
+      "status": "done",
+      "completedAt": "2025-12-30T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-30",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-30",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2025-12-31",
+      "habitId": "habit_morning_run",
+      "date": "2025-12-31",
+      "status": "done",
+      "completedAt": "2025-12-31T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2025-12-31",
+      "habitId": "habit_reading",
+      "date": "2025-12-31",
+      "status": "done",
+      "completedAt": "2025-12-31T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2025-12-31",
+      "habitId": "habit_no_snacks",
+      "date": "2025-12-31",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-01",
+      "habitId": "habit_reading",
+      "date": "2026-01-01",
+      "status": "done",
+      "completedAt": "2026-01-01T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-01",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-01",
+      "status": "done",
+      "completedAt": "2026-01-01T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-01",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-01",
+      "status": "done",
+      "completedAt": "2026-01-01T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-02",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-02",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "other",
+      "missReasonNote": "Pattern note for morning run."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-02",
+      "habitId": "habit_reading",
+      "date": "2026-01-02",
+      "status": "done",
+      "completedAt": "2026-01-02T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-02",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-02",
+      "status": "done",
+      "completedAt": "2026-01-02T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-02",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-02",
+      "status": "done",
+      "completedAt": "2026-01-02T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-03",
+      "habitId": "habit_reading",
+      "date": "2026-01-03",
+      "status": "done",
+      "completedAt": "2026-01-03T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-03",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-03",
+      "status": "done",
+      "completedAt": "2026-01-03T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-04",
+      "habitId": "habit_reading",
+      "date": "2026-01-04",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "low_motivation",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-04",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-04",
+      "status": "done",
+      "completedAt": "2026-01-04T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-05",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-05",
+      "status": "done",
+      "completedAt": "2026-01-05T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-05",
+      "habitId": "habit_reading",
+      "date": "2026-01-05",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "too_hard",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-05",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-05",
+      "status": "done",
+      "completedAt": "2026-01-05T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-05",
+      "habitId": "habit_meditation",
+      "date": "2026-01-05",
+      "status": "done",
+      "completedAt": "2026-01-05T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-05",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-05",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-06",
+      "habitId": "habit_reading",
+      "date": "2026-01-06",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-06",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-06",
+      "status": "done",
+      "completedAt": "2026-01-06T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-06",
+      "habitId": "habit_meditation",
+      "date": "2026-01-06",
+      "status": "done",
+      "completedAt": "2026-01-06T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-06",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-06",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-07",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-07",
+      "status": "done",
+      "completedAt": "2026-01-07T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-07",
+      "habitId": "habit_reading",
+      "date": "2026-01-07",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-07",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-07",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "social_pressure",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-07",
+      "habitId": "habit_meditation",
+      "date": "2026-01-07",
+      "status": "done",
+      "completedAt": "2026-01-07T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-07",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-07",
+      "status": "done",
+      "completedAt": "2026-01-07T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-08",
+      "habitId": "habit_reading",
+      "date": "2026-01-08",
+      "status": "done",
+      "completedAt": "2026-01-08T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-08",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-08",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "other",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-08",
+      "habitId": "habit_meditation",
+      "date": "2026-01-08",
+      "status": "done",
+      "completedAt": "2026-01-08T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-08",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-08",
+      "status": "done",
+      "completedAt": "2026-01-08T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-09",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-09",
+      "status": "done",
+      "completedAt": "2026-01-09T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-09",
+      "habitId": "habit_reading",
+      "date": "2026-01-09",
+      "status": "done",
+      "completedAt": "2026-01-09T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-09",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-09",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-09",
+      "habitId": "habit_meditation",
+      "date": "2026-01-09",
+      "status": "done",
+      "completedAt": "2026-01-09T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-09",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-09",
+      "status": "done",
+      "completedAt": "2026-01-09T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-10",
+      "habitId": "habit_reading",
+      "date": "2026-01-10",
+      "status": "done",
+      "completedAt": "2026-01-10T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-10",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-10",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-11",
+      "habitId": "habit_reading",
+      "date": "2026-01-11",
+      "status": "done",
+      "completedAt": "2026-01-11T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-11",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-11",
+      "status": "done",
+      "completedAt": "2026-01-11T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-12",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-12",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_time",
+      "missReasonNote": "Pattern note for morning run."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-12",
+      "habitId": "habit_reading",
+      "date": "2026-01-12",
+      "status": "done",
+      "completedAt": "2026-01-12T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-12",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-12",
+      "status": "done",
+      "completedAt": "2026-01-12T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-12",
+      "habitId": "habit_meditation",
+      "date": "2026-01-12",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-12",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-12",
+      "status": "done",
+      "completedAt": "2026-01-12T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-13",
+      "habitId": "habit_reading",
+      "date": "2026-01-13",
+      "status": "done",
+      "completedAt": "2026-01-13T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-13",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-13",
+      "status": "done",
+      "completedAt": "2026-01-13T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-13",
+      "habitId": "habit_meditation",
+      "date": "2026-01-13",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-13",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-13",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "social_pressure",
+      "missReasonNote": "Pattern note for no social media before 18:00."
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-14",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-14",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-14",
+      "habitId": "habit_reading",
+      "date": "2026-01-14",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "bad_environment",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-14",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-14",
+      "status": "done",
+      "completedAt": "2026-01-14T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-14",
+      "habitId": "habit_meditation",
+      "date": "2026-01-14",
+      "status": "done",
+      "completedAt": "2026-01-14T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-14",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-14",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "other",
+      "missReasonNote": "Pattern note for no social media before 18:00."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-15",
+      "habitId": "habit_reading",
+      "date": "2026-01-15",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_immediate_reward",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-15",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-15",
+      "status": "done",
+      "completedAt": "2026-01-15T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-15",
+      "habitId": "habit_meditation",
+      "date": "2026-01-15",
+      "status": "done",
+      "completedAt": "2026-01-15T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-15",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-15",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-16",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-16",
+      "status": "done",
+      "completedAt": "2026-01-16T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-16",
+      "habitId": "habit_reading",
+      "date": "2026-01-16",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-16",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-16",
+      "status": "done",
+      "completedAt": "2026-01-16T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-16",
+      "habitId": "habit_meditation",
+      "date": "2026-01-16",
+      "status": "done",
+      "completedAt": "2026-01-16T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-16",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-16",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-17",
+      "habitId": "habit_reading",
+      "date": "2026-01-17",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-17",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-17",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "forgot",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-18",
+      "habitId": "habit_reading",
+      "date": "2026-01-18",
+      "status": "done",
+      "completedAt": "2026-01-18T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-18",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-18",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_time",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-19",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-19",
+      "status": "done",
+      "completedAt": "2026-01-19T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-19",
+      "habitId": "habit_reading",
+      "date": "2026-01-19",
+      "status": "done",
+      "completedAt": "2026-01-19T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-19",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-19",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-19",
+      "habitId": "habit_meditation",
+      "date": "2026-01-19",
+      "status": "done",
+      "completedAt": "2026-01-19T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-19",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-19",
+      "status": "done",
+      "completedAt": "2026-01-19T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-20",
+      "habitId": "habit_reading",
+      "date": "2026-01-20",
+      "status": "done",
+      "completedAt": "2026-01-20T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-20",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-20",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-20",
+      "habitId": "habit_meditation",
+      "date": "2026-01-20",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "bad_environment",
+      "missReasonNote": "Pattern note for 10-minute meditation."
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-20",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-20",
+      "status": "done",
+      "completedAt": "2026-01-20T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-21",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-21",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "low_motivation",
+      "missReasonNote": "Pattern note for morning run."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-21",
+      "habitId": "habit_reading",
+      "date": "2026-01-21",
+      "status": "done",
+      "completedAt": "2026-01-21T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-21",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-21",
+      "status": "done",
+      "completedAt": "2026-01-21T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-21",
+      "habitId": "habit_meditation",
+      "date": "2026-01-21",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_immediate_reward",
+      "missReasonNote": "Pattern note for 10-minute meditation."
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-21",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-21",
+      "status": "done",
+      "completedAt": "2026-01-21T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-22",
+      "habitId": "habit_reading",
+      "date": "2026-01-22",
+      "status": "done",
+      "completedAt": "2026-01-22T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-22",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-22",
+      "status": "done",
+      "completedAt": "2026-01-22T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-22",
+      "habitId": "habit_meditation",
+      "date": "2026-01-22",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-22",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-22",
+      "status": "done",
+      "completedAt": "2026-01-22T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-23",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-23",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-23",
+      "habitId": "habit_reading",
+      "date": "2026-01-23",
+      "status": "done",
+      "completedAt": "2026-01-23T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-23",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-23",
+      "status": "done",
+      "completedAt": "2026-01-23T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-23",
+      "habitId": "habit_meditation",
+      "date": "2026-01-23",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-23",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-23",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "forgot",
+      "missReasonNote": "Pattern note for no social media before 18:00."
+    },
+    {
+      "id": "entry_habit_reading_2026-01-24",
+      "habitId": "habit_reading",
+      "date": "2026-01-24",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "social_pressure",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-24",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-24",
+      "status": "done",
+      "completedAt": "2026-01-24T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-25",
+      "habitId": "habit_reading",
+      "date": "2026-01-25",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "other",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-25",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-25",
+      "status": "done",
+      "completedAt": "2026-01-25T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-26",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-26",
+      "status": "done",
+      "completedAt": "2026-01-26T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-26",
+      "habitId": "habit_reading",
+      "date": "2026-01-26",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-26",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-26",
+      "status": "done",
+      "completedAt": "2026-01-26T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-26",
+      "habitId": "habit_meditation",
+      "date": "2026-01-26",
+      "status": "done",
+      "completedAt": "2026-01-26T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-26",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-26",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-27",
+      "habitId": "habit_reading",
+      "date": "2026-01-27",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-27",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-27",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "low_motivation",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-27",
+      "habitId": "habit_meditation",
+      "date": "2026-01-27",
+      "status": "done",
+      "completedAt": "2026-01-27T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-27",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-27",
+      "status": "done",
+      "completedAt": "2026-01-27T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-28",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-28",
+      "status": "done",
+      "completedAt": "2026-01-28T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-28",
+      "habitId": "habit_reading",
+      "date": "2026-01-28",
+      "status": "done",
+      "completedAt": "2026-01-28T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-28",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-28",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "too_hard",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-28",
+      "habitId": "habit_meditation",
+      "date": "2026-01-28",
+      "status": "done",
+      "completedAt": "2026-01-28T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-28",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-28",
+      "status": "done",
+      "completedAt": "2026-01-28T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-29",
+      "habitId": "habit_reading",
+      "date": "2026-01-29",
+      "status": "done",
+      "completedAt": "2026-01-29T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-29",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-29",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-29",
+      "habitId": "habit_meditation",
+      "date": "2026-01-29",
+      "status": "done",
+      "completedAt": "2026-01-29T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-29",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-29",
+      "status": "done",
+      "completedAt": "2026-01-29T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-01-30",
+      "habitId": "habit_morning_run",
+      "date": "2026-01-30",
+      "status": "done",
+      "completedAt": "2026-01-30T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-30",
+      "habitId": "habit_reading",
+      "date": "2026-01-30",
+      "status": "done",
+      "completedAt": "2026-01-30T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-30",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-30",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-01-30",
+      "habitId": "habit_meditation",
+      "date": "2026-01-30",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "social_pressure",
+      "missReasonNote": "Pattern note for 10-minute meditation."
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-01-30",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-01-30",
+      "status": "done",
+      "completedAt": "2026-01-30T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-01-31",
+      "habitId": "habit_reading",
+      "date": "2026-01-31",
+      "status": "done",
+      "completedAt": "2026-01-31T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-01-31",
+      "habitId": "habit_no_snacks",
+      "date": "2026-01-31",
+      "status": "done",
+      "completedAt": "2026-01-31T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-01",
+      "habitId": "habit_reading",
+      "date": "2026-02-01",
+      "status": "done",
+      "completedAt": "2026-02-01T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-01",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-01",
+      "status": "done",
+      "completedAt": "2026-02-01T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-02-02",
+      "habitId": "habit_morning_run",
+      "date": "2026-02-02",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-02",
+      "habitId": "habit_reading",
+      "date": "2026-02-02",
+      "status": "done",
+      "completedAt": "2026-02-02T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-02",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-02",
+      "status": "done",
+      "completedAt": "2026-02-02T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-02-02",
+      "habitId": "habit_meditation",
+      "date": "2026-02-02",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-02-02",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-02-02",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "low_motivation",
+      "missReasonNote": "Pattern note for no social media before 18:00."
+    },
+    {
+      "id": "entry_habit_reading_2026-02-03",
+      "habitId": "habit_reading",
+      "date": "2026-02-03",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "forgot",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-03",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-03",
+      "status": "done",
+      "completedAt": "2026-02-03T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-02-03",
+      "habitId": "habit_meditation",
+      "date": "2026-02-03",
+      "status": "done",
+      "completedAt": "2026-02-03T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-02-03",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-02-03",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "too_hard",
+      "missReasonNote": "Pattern note for no social media before 18:00."
+    },
+    {
+      "id": "entry_habit_morning_run_2026-02-04",
+      "habitId": "habit_morning_run",
+      "date": "2026-02-04",
+      "status": "done",
+      "completedAt": "2026-02-04T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-04",
+      "habitId": "habit_reading",
+      "date": "2026-02-04",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_time",
+      "missReasonNote": "Pattern note for read 20 pages."
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-04",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-04",
+      "status": "done",
+      "completedAt": "2026-02-04T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-02-04",
+      "habitId": "habit_meditation",
+      "date": "2026-02-04",
+      "status": "done",
+      "completedAt": "2026-02-04T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-02-04",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-02-04",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-05",
+      "habitId": "habit_reading",
+      "date": "2026-02-05",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-05",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-05",
+      "status": "done",
+      "completedAt": "2026-02-05T20:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_meditation_2026-02-05",
+      "habitId": "habit_meditation",
+      "date": "2026-02-05",
+      "status": "done",
+      "completedAt": "2026-02-05T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-02-05",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-02-05",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_morning_run_2026-02-06",
+      "habitId": "habit_morning_run",
+      "date": "2026-02-06",
+      "status": "done",
+      "completedAt": "2026-02-06T07:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-06",
+      "habitId": "habit_reading",
+      "date": "2026-02-06",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-06",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-06",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "bad_environment",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_meditation_2026-02-06",
+      "habitId": "habit_meditation",
+      "date": "2026-02-06",
+      "status": "done",
+      "completedAt": "2026-02-06T08:30:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_social_media_limit_2026-02-06",
+      "habitId": "habit_social_media_limit",
+      "date": "2026-02-06",
+      "status": "done",
+      "completedAt": "2026-02-06T18:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_reading_2026-02-07",
+      "habitId": "habit_reading",
+      "date": "2026-02-07",
+      "status": "done",
+      "completedAt": "2026-02-07T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-07",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-07",
+      "status": "missed",
+      "completedAt": null,
+      "missReasonCode": "no_immediate_reward",
+      "missReasonNote": "Pattern note for no late-night snacks."
+    },
+    {
+      "id": "entry_habit_reading_2026-02-08",
+      "habitId": "habit_reading",
+      "date": "2026-02-08",
+      "status": "done",
+      "completedAt": "2026-02-08T21:00:00.000Z",
+      "missReasonCode": null,
+      "missReasonNote": null
+    },
+    {
+      "id": "entry_habit_no_snacks_2026-02-08",
+      "habitId": "habit_no_snacks",
+      "date": "2026-02-08",
+      "status": "skipped",
+      "completedAt": null,
+      "missReasonCode": null,
+      "missReasonNote": null
+    }
+  ],
+  "suggestions": [
+    {
+      "id": "suggestion_entry_habit_reading_2025-12-26_1",
+      "entryId": "entry_habit_reading_2025-12-26",
+      "law": "obvious",
+      "direction": "increase",
+      "title": "Reset visible cue",
+      "action": "Prepare the first step before bedtime.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2025-12-26T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_reading_2025-12-26_2",
+      "entryId": "entry_habit_reading_2025-12-26",
+      "law": "easy",
+      "direction": "increase",
+      "title": "Scale down minimum action",
+      "action": "Commit to a 2-minute version on low-energy days.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2025-12-26T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_morning_run_2026-01-02_1",
+      "entryId": "entry_habit_morning_run_2026-01-02",
+      "law": "obvious",
+      "direction": "increase",
+      "title": "Reset visible cue",
+      "action": "Prepare the first step before bedtime.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-02T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_morning_run_2026-01-02_2",
+      "entryId": "entry_habit_morning_run_2026-01-02",
+      "law": "easy",
+      "direction": "increase",
+      "title": "Scale down minimum action",
+      "action": "Commit to a 2-minute version on low-energy days.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-02T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_no_snacks_2026-01-07_1",
+      "entryId": "entry_habit_no_snacks_2026-01-07",
+      "law": "obvious",
+      "direction": "decrease",
+      "title": "Hide trigger cue",
+      "action": "Remove the easiest trigger from your environment.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-07T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_no_snacks_2026-01-07_2",
+      "entryId": "entry_habit_no_snacks_2026-01-07",
+      "law": "easy",
+      "direction": "decrease",
+      "title": "Add a short delay rule",
+      "action": "Wait 10 minutes before acting on the urge.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-07T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-01-13_1",
+      "entryId": "entry_habit_social_media_limit_2026-01-13",
+      "law": "obvious",
+      "direction": "decrease",
+      "title": "Hide trigger cue",
+      "action": "Remove the easiest trigger from your environment.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-13T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-01-13_2",
+      "entryId": "entry_habit_social_media_limit_2026-01-13",
+      "law": "easy",
+      "direction": "decrease",
+      "title": "Add a short delay rule",
+      "action": "Wait 10 minutes before acting on the urge.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-13T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_reading_2026-01-15_1",
+      "entryId": "entry_habit_reading_2026-01-15",
+      "law": "obvious",
+      "direction": "increase",
+      "title": "Reset visible cue",
+      "action": "Prepare the first step before bedtime.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-15T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_reading_2026-01-15_2",
+      "entryId": "entry_habit_reading_2026-01-15",
+      "law": "easy",
+      "direction": "increase",
+      "title": "Scale down minimum action",
+      "action": "Commit to a 2-minute version on low-energy days.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-15T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_meditation_2026-01-20_1",
+      "entryId": "entry_habit_meditation_2026-01-20",
+      "law": "obvious",
+      "direction": "increase",
+      "title": "Reset visible cue",
+      "action": "Prepare the first step before bedtime.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-20T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_meditation_2026-01-20_2",
+      "entryId": "entry_habit_meditation_2026-01-20",
+      "law": "easy",
+      "direction": "increase",
+      "title": "Scale down minimum action",
+      "action": "Commit to a 2-minute version on low-energy days.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-20T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-01-23_1",
+      "entryId": "entry_habit_social_media_limit_2026-01-23",
+      "law": "obvious",
+      "direction": "decrease",
+      "title": "Hide trigger cue",
+      "action": "Remove the easiest trigger from your environment.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-23T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-01-23_2",
+      "entryId": "entry_habit_social_media_limit_2026-01-23",
+      "law": "easy",
+      "direction": "decrease",
+      "title": "Add a short delay rule",
+      "action": "Wait 10 minutes before acting on the urge.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-23T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_no_snacks_2026-01-27_1",
+      "entryId": "entry_habit_no_snacks_2026-01-27",
+      "law": "obvious",
+      "direction": "decrease",
+      "title": "Hide trigger cue",
+      "action": "Remove the easiest trigger from your environment.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-01-27T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_no_snacks_2026-01-27_2",
+      "entryId": "entry_habit_no_snacks_2026-01-27",
+      "law": "easy",
+      "direction": "decrease",
+      "title": "Add a short delay rule",
+      "action": "Wait 10 minutes before acting on the urge.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-01-27T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-02-02_1",
+      "entryId": "entry_habit_social_media_limit_2026-02-02",
+      "law": "obvious",
+      "direction": "decrease",
+      "title": "Hide trigger cue",
+      "action": "Remove the easiest trigger from your environment.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-02-02T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_social_media_limit_2026-02-02_2",
+      "entryId": "entry_habit_social_media_limit_2026-02-02",
+      "law": "easy",
+      "direction": "decrease",
+      "title": "Add a short delay rule",
+      "action": "Wait 10 minutes before acting on the urge.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-02-02T21:01:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_reading_2026-02-04_1",
+      "entryId": "entry_habit_reading_2026-02-04",
+      "law": "obvious",
+      "direction": "increase",
+      "title": "Reset visible cue",
+      "action": "Prepare the first step before bedtime.",
+      "rationale": "Small environment changes lower friction and improve consistency.",
+      "createdAt": "2026-02-04T21:00:00.000Z"
+    },
+    {
+      "id": "suggestion_entry_habit_reading_2026-02-04_2",
+      "entryId": "entry_habit_reading_2026-02-04",
+      "law": "easy",
+      "direction": "increase",
+      "title": "Scale down minimum action",
+      "action": "Commit to a 2-minute version on low-energy days.",
+      "rationale": "Lowering activation energy protects streaks during difficult days.",
+      "createdAt": "2026-02-04T21:01:00.000Z"
+    }
+  ],
+  "settings": {
+    "notificationsEnabled": true,
+    "dailyReviewTime": "20:00",
+    "weekStartsOn": 1,
+    "primaryColor": "emerald"
+  }
+}

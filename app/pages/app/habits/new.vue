@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 import type { HabitType } from '~/types/app-data'
 
 const habitsStore = useHabitsStore()
@@ -33,7 +35,7 @@ function onSubmit(payload: {
     color: 'success'
   })
 
-  router.push('/habits')
+  router.push('/app/habits')
 }
 </script>
 

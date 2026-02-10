@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'app' })
+
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
@@ -15,6 +17,7 @@ const coachStore = useCoachStore()
 const reminderEngine = useReminderEngine()
 const persistence = usePersistence()
 const toast = useToast()
+const demoData = useDemoData()
 
 const notificationEnabled = computed({
   get: () => settingsStore.notificationsEnabled,
@@ -100,6 +103,7 @@ const importModalOpen = ref(false)
 const importHabitsOnly = ref(false)
 const importFile = ref<File | null>(null)
 const deleteAllModalOpen = ref(false)
+const replaceDemoDataModalOpen = ref(false)
 
 function resetImportModalState(): void {
   importHabitsOnly.value = false
@@ -523,6 +527,33 @@ function deleteAllData(withBackup: boolean): void {
     color: 'warning'
   })
 }
+
+async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void> {
+  try {
+    const result = await demoData.loadDemoData({ replaceExisting })
+
+    if (!result.loaded && result.reason === 'existing-data') {
+      replaceDemoDataModalOpen.value = true
+      return
+    }
+
+    replaceDemoDataModalOpen.value = false
+    syncDailyReviewTimeFromSettings()
+    notificationPermission.value = reminderEngine.currentPermission()
+
+    toast.add({
+      title: 'Demo data loaded',
+      description: 'Fixture habits and history are now available.',
+      color: 'success'
+    })
+  } catch {
+    toast.add({
+      title: 'Demo data failed',
+      description: 'Could not load the fixture JSON. Please try again.',
+      color: 'error'
+    })
+  }
+}
 </script>
 
 <template>
@@ -675,6 +706,9 @@ function deleteAllData(withBackup: boolean): void {
         </template>
 
         <div class="flex flex-wrap items-center gap-3">
+          <UButton color="primary" variant="outline" icon="i-lucide-database" :loading="demoData.isLoading.value" @click="loadDemoDataFromSettings(false)">
+            Load demo data
+          </UButton>
           <UButton color="neutral" variant="outline" icon="i-lucide-download" @click="exportJson">
             Export JSON
           </UButton>
@@ -731,6 +765,34 @@ function deleteAllData(withBackup: boolean): void {
           </UButton>
           <UButton icon="i-lucide-upload" @click="confirmImport">
             Import
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      :open="replaceDemoDataModalOpen"
+      title="Replace existing data?"
+      description="Loading the demo fixture now will overwrite current habits, entries, suggestions, and settings."
+      @update:open="replaceDemoDataModalOpen = $event"
+    >
+      <template #body>
+        <UAlert
+          color="warning"
+          variant="soft"
+          icon="i-lucide-triangle-alert"
+          title="This replaces local app data"
+          description="Use this when you need a predictable demo state."
+        />
+      </template>
+
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton color="neutral" variant="ghost" @click="replaceDemoDataModalOpen = false">
+            Cancel
+          </UButton>
+          <UButton color="warning" :loading="demoData.isLoading.value" @click="loadDemoDataFromSettings(true)">
+            Replace and load demo
           </UButton>
         </div>
       </template>

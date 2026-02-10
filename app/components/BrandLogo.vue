@@ -2,7 +2,6 @@
 import { computed, useId } from 'vue'
 
 const gradientId = useId()
-const shadowId = useId()
 const props = withDefaults(
   defineProps<{
     centerText?: string | number | null
@@ -49,20 +48,12 @@ const centerTextSize = computed(() => {
         <stop offset="0" style="stop-color: var(--ui-color-primary-700)" />
         <stop offset="1" style="stop-color: var(--ui-color-primary-400)" />
       </linearGradient>
-      <filter :id="shadowId" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.18" />
-      </filter>
     </defs>
 
     <g fill="none" :stroke="`url(#${gradientId})`" stroke-width="22" stroke-linecap="round">
       <ellipse cx="256" cy="256" rx="178" ry="112" />
       <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(60 256 256)" />
       <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(-60 256 256)" />
-    </g>
-
-    <g v-if="!centerTextDisplay" :filter="`url(#${shadowId})`">
-      <circle cx="256" cy="256" r="72" fill="#0b1220" opacity="0.96" />
-      <circle cx="256" cy="256" r="72" :fill="`url(#${gradientId})`" opacity="0.14" />
     </g>
 
     <text

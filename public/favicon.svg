@@ -5,6 +5,5 @@
     <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(60 256 256)" />
     <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(-60 256 256)" />
   </g>
-  <circle cx="256" cy="256" r="72" fill="#000" fill-opacity="0.08" />
   <path d="M226 264l18 18 44-54" fill="none" stroke="#000" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

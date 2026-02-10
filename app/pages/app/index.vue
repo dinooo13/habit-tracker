@@ -87,11 +87,9 @@ const rightBadgeClass = 'w-[50px] justify-center text-center whitespace-nowrap t
 const actionRowClass = 'flex flex-wrap items-center gap-2'
 const statusActionBadgeClass = 'inline-flex h-7 min-w-[64px] items-center justify-center rounded-md px-2 text-xs font-medium leading-none'
 
-const openHabits = computed(() => dueHabitModels.value.filter((model) => !model.entry))
-const reviewedHabits = computed(() => dueHabitModels.value.filter((model) => Boolean(model.entry)))
-
 type QueueStatus = 'open' | 'done' | 'missed' | 'skipped'
 type HabitType = 'build' | 'break'
+type ReviewedStatus = Exclude<QueueStatus, 'open'>
 
 const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'subtle' | 'soft' }> = {
   build: {
@@ -116,6 +114,58 @@ const statusMeta: Record<QueueStatus, { label: string, color: 'primary' | 'succe
   missed: { label: 'Missed', color: 'warning', variant: 'subtle' },
   skipped: { label: 'Skipped', color: 'neutral', variant: 'subtle' }
 }
+const reviewedStatusOrder: Record<ReviewedStatus, number> = {
+  done: 0,
+  missed: 1,
+  skipped: 2
+}
+
+function reminderSortValue(reminderTime: string | null): number {
+  if (!reminderTime) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  const [hourRaw, minuteRaw] = reminderTime.split(':')
+  const hour = Number(hourRaw)
+  const minute = Number(minuteRaw)
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  return hour * 60 + minute
+}
+
+function compareByReminderThenName(
+  left: (typeof dueHabitModels.value)[number],
+  right: (typeof dueHabitModels.value)[number]
+): number {
+  return (
+    reminderSortValue(left.habit.reminderTime) - reminderSortValue(right.habit.reminderTime)
+    || left.habit.name.localeCompare(right.habit.name)
+  )
+}
+
+const openHabits = computed(() =>
+  dueHabitModels.value
+    .filter((model) => !model.entry)
+    .sort(compareByReminderThenName)
+)
+
+const reviewedHabits = computed(() =>
+  dueHabitModels.value
+    .filter((model) => Boolean(model.entry))
+    .sort((left, right) => {
+      const leftStatus = left.entry?.status
+      const rightStatus = right.entry?.status
+      const leftStatusRank = leftStatus ? reviewedStatusOrder[leftStatus] : Number.MAX_SAFE_INTEGER
+      const rightStatusRank = rightStatus ? reviewedStatusOrder[rightStatus] : Number.MAX_SAFE_INTEGER
+
+      return (
+        leftStatusRank - rightStatusRank
+        || compareByReminderThenName(left, right)
+      )
+    })
+)
 
 function queueStatus(status: 'done' | 'missed' | 'skipped' | undefined): QueueStatus {
   return status ?? 'open'

@@ -2,6 +2,7 @@
 definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
+const settingsStore = useSettingsStore()
 
 const showArchived = ref(false)
 const page = ref(1)
@@ -68,7 +69,13 @@ function toggleArchive(habitId: string, archived: boolean): void {
 }
 
 function scheduleLabel(weekdays: number[]): string {
-  return weekdays.map((day) => weekdayLabels[day] ?? String(day)).join(', ')
+  const sortedDays = [...weekdays].sort((left, right) => {
+    const leftRank = (left - settingsStore.weekStartsOn + 7) % 7
+    const rightRank = (right - settingsStore.weekStartsOn + 7) % 7
+    return leftRank - rightRank || left - right
+  })
+
+  return sortedDays.map((day) => weekdayLabels[day] ?? String(day)).join(', ')
 }
 
 function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' } {

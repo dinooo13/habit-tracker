@@ -2,10 +2,11 @@
 definePageMeta({ layout: 'app' })
 
 import type { TabsItem } from '@nuxt/ui'
-import { formatDateKeyForLocale, todayDateKey } from '~/utils/date'
+import { formatDateKeyForLocale, formatTimeString, todayDateKey } from '~/utils/date'
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
+const coachStore = useCoachStore()
 
 const dateKey = computed(() => todayDateKey())
 const requestHeaders = useRequestHeaders(['accept-language'])
@@ -74,7 +75,7 @@ const activeStreakCountLabel = computed(() =>
 
 const tabItems: TabsItem[] = [
   { label: 'Open', icon: 'i-lucide-clock-3', slot: 'open', value: 'open' },
-  { label: 'All due', icon: 'i-lucide-list-checks', slot: 'all', value: 'all' }
+  { label: 'Reviewed', icon: 'i-lucide-list-checks', slot: 'all', value: 'all' }
 ]
 
 const tabsUi = {
@@ -82,8 +83,12 @@ const tabsUi = {
   trigger: 'min-w-0 justify-center py-1 text-sm leading-none !font-medium data-[state=active]:!font-medium',
   label: 'truncate whitespace-nowrap'
 }
+const rightBadgeClass = 'w-[50px] justify-center text-center whitespace-nowrap tabular-nums text-xs'
+const actionRowClass = 'flex flex-wrap items-center gap-2'
+const statusActionBadgeClass = 'inline-flex h-7 min-w-[64px] items-center justify-center rounded-md px-2 text-xs font-medium leading-none'
 
 const openHabits = computed(() => dueHabitModels.value.filter((model) => !model.entry))
+const reviewedHabits = computed(() => dueHabitModels.value.filter((model) => Boolean(model.entry)))
 
 type QueueStatus = 'open' | 'done' | 'missed' | 'skipped'
 type HabitType = 'build' | 'break'
@@ -133,6 +138,31 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
         : 'Marked as skipped'
 
   toast.add({ title, color: status === 'done' ? 'success' : 'neutral' })
+}
+
+function reminderLabel(reminderTime: string | null): string {
+  if (!reminderTime) {
+    return 'None'
+  }
+
+  const [hourRaw, minuteRaw] = reminderTime.split(':')
+  const hour = Number(hourRaw)
+  const minute = Number(minuteRaw)
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    return reminderTime
+  }
+
+  return formatTimeString(hour, minute)
+}
+
+function reopenHabit(habitId: string): void {
+  const removedEntry = entriesStore.clearStatus(habitId, dateKey.value)
+  if (!removedEntry) {
+    return
+  }
+
+  coachStore.removeForEntry(removedEntry.id)
+  toast.add({ title: 'Moved back to open', color: 'neutral' })
 }
 </script>
 
@@ -242,8 +272,15 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
         >
           <template #all>
             <div class="mt-4 grid gap-4">
+              <UAlert
+                v-if="!reviewedHabits.length"
+                color="neutral"
+                variant="subtle"
+                title="No reviewed habits yet"
+                description="Mark habits as done, missed, or skipped in Open to track progress."
+              />
               <UCard
-                v-for="model in dueHabitModels"
+                v-for="model in reviewedHabits"
                 :key="model.habit.id"
                 variant="outline"
                 :class="typeMeta(model.habit.type).cardClass"
@@ -257,21 +294,37 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
                       </div>
                       <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
                     </div>
-                    <UBadge :color="typeMeta(model.habit.type).color" :variant="typeMeta(model.habit.type).badgeVariant">
-                      {{ typeMeta(model.habit.type).label }}
-                    </UBadge>
+                    <div class="flex shrink-0 flex-col items-end gap-1.5">
+                      <UBadge
+                        :color="typeMeta(model.habit.type).color"
+                        :variant="typeMeta(model.habit.type).badgeVariant"
+                        :class="rightBadgeClass"
+                      >
+                        {{ typeMeta(model.habit.type).label }}
+                      </UBadge>
+                      <UBadge color="neutral" variant="soft" :class="rightBadgeClass">
+                        {{ reminderLabel(model.habit.reminderTime) }}
+                      </UBadge>
+                    </div>
                   </div>
 
-                  <div class="flex flex-wrap items-center gap-2">
-                    <UBadge color="neutral" variant="outline">
-                      Reminder: {{ model.habit.reminderTime ?? 'none' }}
-                    </UBadge>
+                  <div v-if="model.entry" :class="actionRowClass">
                     <UBadge
-                      :color="statusMeta[queueStatus(model.entry?.status)].color"
-                      :variant="statusMeta[queueStatus(model.entry?.status)].variant"
+                      :color="statusMeta[queueStatus(model.entry.status)].color"
+                      :variant="statusMeta[queueStatus(model.entry.status)].variant"
+                      :class="statusActionBadgeClass"
                     >
-                      {{ statusMeta[queueStatus(model.entry?.status)].label }}
+                      {{ statusMeta[queueStatus(model.entry.status)].label }}
                     </UBadge>
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-rotate-ccw"
+                      @click="reopenHabit(model.habit.id)"
+                    >
+                      Reopen
+                    </UButton>
                   </div>
                 </div>
               </UCard>
@@ -302,12 +355,21 @@ function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'):
                       </div>
                       <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
                     </div>
-                    <UBadge :color="typeMeta(model.habit.type).color" :variant="typeMeta(model.habit.type).badgeVariant">
-                      {{ typeMeta(model.habit.type).label }}
-                    </UBadge>
+                    <div class="flex shrink-0 flex-col items-end gap-1.5">
+                      <UBadge
+                        :color="typeMeta(model.habit.type).color"
+                        :variant="typeMeta(model.habit.type).badgeVariant"
+                        :class="rightBadgeClass"
+                      >
+                        {{ typeMeta(model.habit.type).label }}
+                      </UBadge>
+                      <UBadge color="neutral" variant="soft" :class="rightBadgeClass">
+                        {{ reminderLabel(model.habit.reminderTime) }}
+                      </UBadge>
+                    </div>
                   </div>
 
-                  <div class="flex flex-wrap gap-2">
+                  <div :class="actionRowClass">
                     <UTooltip text="Mark completed">
                       <UButton size="sm" color="success" icon="i-lucide-check" @click="setHabitStatus(model.habit.id, 'done')">
                         Done

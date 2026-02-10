@@ -65,6 +65,15 @@ export const useEntriesStore = defineStore('entries', {
       this.entries.push(created)
       return created
     },
+    clearStatus(habitId: string, date: string): HabitEntry | null {
+      const index = this.entries.findIndex((entry) => entry.habitId === habitId && entry.date === date)
+      if (index < 0) {
+        return null
+      }
+
+      const [removed] = this.entries.splice(index, 1)
+      return removed ?? null
+    },
     setMissReason(entryId: string, reason: MissReasonCode, note: string | null): HabitEntry | null {
       const entry = this.entries.find((candidate) => candidate.id === entryId)
       if (!entry) {

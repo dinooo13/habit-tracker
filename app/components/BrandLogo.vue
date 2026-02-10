@@ -3,7 +3,6 @@ import { computed, useId } from 'vue'
 
 const gradientId = useId()
 const shadowId = useId()
-
 const props = withDefaults(
   defineProps<{
     centerText?: string | number | null
@@ -27,14 +26,14 @@ const centerTextDisplay = computed(() => {
 const centerTextSize = computed(() => {
   const length = centerTextDisplay.value?.length ?? 0
   if (length >= 3) {
-    return 72
+    return 92
   }
 
   if (length === 2) {
-    return 86
+    return 108
   }
 
-  return 100
+  return 124
 })
 </script>
 
@@ -61,7 +60,7 @@ const centerTextSize = computed(() => {
       <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(-60 256 256)" />
     </g>
 
-    <g :filter="`url(#${shadowId})`">
+    <g v-if="!centerTextDisplay" :filter="`url(#${shadowId})`">
       <circle cx="256" cy="256" r="72" fill="#0b1220" opacity="0.96" />
       <circle cx="256" cy="256" r="72" :fill="`url(#${gradientId})`" opacity="0.14" />
     </g>
@@ -69,8 +68,9 @@ const centerTextSize = computed(() => {
     <text
       v-if="centerTextDisplay"
       x="256"
-      y="288"
+      y="262"
       text-anchor="middle"
+      dominant-baseline="middle"
       font-weight="900"
       :font-size="centerTextSize"
       letter-spacing="-1"

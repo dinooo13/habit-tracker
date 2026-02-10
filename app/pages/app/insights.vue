@@ -159,7 +159,11 @@ const habitInsights = computed(() =>
       streak: entriesStore.streakForHabit(habit.id),
       rate: entriesStore.completionRateForHabit(habit, selectedWindowStart.value, today.value)
     }))
-    .sort((left, right) => right.rate - left.rate)
+    .sort((left, right) =>
+      right.rate - left.rate
+      || right.streak - left.streak
+      || left.habit.name.localeCompare(right.habit.name)
+    )
 )
 
 const filteredHabitInsights = computed(() => {

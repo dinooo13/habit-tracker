@@ -25,6 +25,11 @@ export const useCoachStore = defineStore('coach', {
     snapshot(): CoachingSuggestion[] {
       return [...this.suggestions]
     },
+    removeForEntry(entryId: string): number {
+      const before = this.suggestions.length
+      this.suggestions = this.suggestions.filter((suggestion) => suggestion.entryId !== entryId)
+      return before - this.suggestions.length
+    },
     generateForEntry(entry: HabitEntry, habit: Habit): CoachingSuggestion[] {
       this.suggestions = this.suggestions.filter((suggestion) => suggestion.entryId !== entry.id)
       const generated = generateSuggestionsForMissedEntry(entry, habit)

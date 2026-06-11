@@ -35,7 +35,7 @@ describe('demo data loader helpers', () => {
     await expect(fetchDemoPayload(fetchImpl as unknown as typeof fetch)).rejects.toThrow(/404/)
   })
 
-  it('hydrates stores and persists normalized payload', () => {
+  it('hydrates stores and persists normalized payload', async () => {
     const parsed = parseAppData(readFixture())
     const state = createEmptyAppData()
 
@@ -82,7 +82,7 @@ describe('demo data loader helpers', () => {
       save: vi.fn()
     }
 
-    hydrateDemoPayload(parsed, {
+    await hydrateDemoPayload(parsed, {
       habitsStore: habitsStore as any,
       entriesStore: entriesStore as any,
       coachStore: coachStore as any,

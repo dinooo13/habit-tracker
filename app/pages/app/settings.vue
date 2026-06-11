@@ -220,8 +220,8 @@ function extractHabitsFromImportPayload(payload: unknown): Habit[] {
     .filter((item): item is Habit => Boolean(item))
 }
 
-function persistCurrentState(): void {
-  persistence.save({
+async function persistCurrentState(): Promise<void> {
+  await persistence.save({
     schemaVersion: 1,
     habits: habitsStore.snapshot(),
     entries: entriesStore.snapshot(),
@@ -463,7 +463,7 @@ async function confirmImport(): Promise<void> {
 
       const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(importedHabits)
       habitsStore.hydrate(mergedHabits)
-      persistCurrentState()
+      await persistCurrentState()
 
       toast.add({
         title: 'Habits imported',
@@ -480,7 +480,7 @@ async function confirmImport(): Promise<void> {
       entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
       coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
 
-      persistence.save({
+      await persistence.save({
         ...parsed,
         entries: entriesStore.snapshot(),
         suggestions: coachStore.snapshot()
@@ -507,7 +507,7 @@ async function confirmImport(): Promise<void> {
   }
 }
 
-function deleteAllData(withBackup: boolean): void {
+async function deleteAllData(withBackup: boolean): Promise<void> {
   if (withBackup) {
     downloadBackup(buildCurrentPayload())
   }
@@ -518,7 +518,7 @@ function deleteAllData(withBackup: boolean): void {
   coachStore.hydrate(empty.suggestions)
   settingsStore.hydrate(empty.settings)
   syncDailyReviewTimeFromSettings()
-  persistence.save(empty)
+  await persistence.save(empty)
   notificationPermission.value = reminderEngine.currentPermission()
   deleteAllModalOpen.value = false
 

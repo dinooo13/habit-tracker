@@ -1,58 +1,51 @@
 import type { AppDataV1 } from '~/types/app-data'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+import { createEmptyAppData } from '~/utils/storage-schema'
+import {
+  HabitDatabase,
+  clearAppData,
+  loadAppData,
+  migrateLegacyLocalStorage,
+  saveAppData
+} from '~/utils/habit-database'
 
-const STORAGE_KEY = 'habit-tracker:v1:data'
-const LAST_VALID_STORAGE_KEY = 'habit-tracker:v1:last-valid'
+let database: HabitDatabase | null = null
+
+function getDatabase(): HabitDatabase {
+  if (!database) {
+    database = new HabitDatabase()
+  }
+
+  return database
+}
 
 export function usePersistence() {
-  function load(): AppDataV1 {
+  async function load(): Promise<AppDataV1> {
     if (!import.meta.client) {
       return createEmptyAppData()
     }
 
-    const value = window.localStorage.getItem(STORAGE_KEY)
-    if (!value) {
-      return createEmptyAppData()
-    }
-
-    try {
-      const parsed = parseAppData(JSON.parse(value))
-      window.localStorage.setItem(LAST_VALID_STORAGE_KEY, JSON.stringify(parsed))
-      return parsed
-    } catch {
-      const fallback = window.localStorage.getItem(LAST_VALID_STORAGE_KEY)
-      if (!fallback) {
-        return createEmptyAppData()
-      }
-
-      try {
-        return parseAppData(JSON.parse(fallback))
-      } catch {
-        return createEmptyAppData()
-      }
-    }
+    const db = getDatabase()
+    await migrateLegacyLocalStorage(db, window.localStorage)
+    return loadAppData(db)
   }
 
-  function save(payload: AppDataV1): void {
+  async function save(payload: AppDataV1): Promise<void> {
     if (!import.meta.client) {
       return
     }
 
-    const serialized = JSON.stringify(payload)
-    window.localStorage.setItem(STORAGE_KEY, serialized)
-    window.localStorage.setItem(LAST_VALID_STORAGE_KEY, serialized)
+    await saveAppData(getDatabase(), payload)
   }
 
-  function clear(): void {
+  async function clear(): Promise<void> {
     if (!import.meta.client) {
       return
     }
 
-    window.localStorage.removeItem(STORAGE_KEY)
+    await clearAppData(getDatabase())
   }
 
   return {
-    storageKey: STORAGE_KEY,
     load,
     save,
     clear

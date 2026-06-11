@@ -2,7 +2,7 @@ import { watch } from 'vue'
 import { todayDateKey } from '~/utils/date'
 import { applyPrimaryColorPalette } from '~/utils/primary-color'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   const persistence = usePersistence()
 
   const habitsStore = useHabitsStore()
@@ -10,7 +10,7 @@ export default defineNuxtPlugin(() => {
   const coachStore = useCoachStore()
   const settingsStore = useSettingsStore()
 
-  const loaded = persistence.load()
+  const loaded = await persistence.load()
   habitsStore.hydrate(loaded.habits)
   entriesStore.hydrate(loaded.entries)
   coachStore.hydrate(loaded.suggestions)
@@ -36,7 +36,9 @@ export default defineNuxtPlugin(() => {
       settings: settingsStore.snapshot()
     }),
     (nextValue) => {
-      persistence.save(nextValue)
+      persistence.save(nextValue).catch((error) => {
+        console.error('Failed to persist app data', error)
+      })
     },
     { deep: true, immediate: true }
   )

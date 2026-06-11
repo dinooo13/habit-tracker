@@ -23,7 +23,7 @@ interface DemoHydrateDependencies {
   persistence: ReturnType<typeof usePersistence>
 }
 
-export function hydrateDemoPayload(payload: AppDataV1, dependencies: DemoHydrateDependencies): void {
+export async function hydrateDemoPayload(payload: AppDataV1, dependencies: DemoHydrateDependencies): Promise<void> {
   const { habitsStore, entriesStore, coachStore, settingsStore, persistence } = dependencies
 
   habitsStore.hydrate(payload.habits)
@@ -35,7 +35,7 @@ export function hydrateDemoPayload(payload: AppDataV1, dependencies: DemoHydrate
   coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
   applyPrimaryColorPalette(settingsStore.primaryColor)
 
-  persistence.save({
+  await persistence.save({
     ...payload,
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
@@ -66,7 +66,7 @@ export function useDemoData() {
 
     try {
       const payload = await fetchDemoPayload(fetch)
-      hydrateDemoPayload(payload, {
+      await hydrateDemoPayload(payload, {
         habitsStore,
         entriesStore,
         coachStore,

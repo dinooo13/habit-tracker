@@ -355,8 +355,8 @@ export function generateDemoData(today = new Date()): AppDataV1 {
       }
 
       if (status === 'missed' && rng() < MISS_REASON_RATE) {
-        const reasons = MISS_REASONS[def.id]
-        const [code, note] = reasons[Math.floor(rng() * reasons.length)] as [MissReasonCode, string]
+        const reasons = MISS_REASONS[def.id] ?? []
+        const [code, note] = (reasons[Math.floor(rng() * reasons.length)] ?? []) as [MissReasonCode, string]
         entry.missReasonCode = code
         entry.missReasonNote = note
 
@@ -369,8 +369,9 @@ export function generateDemoData(today = new Date()): AppDataV1 {
 
         chosenLaws.forEach((law, i) => {
           const key: LawKey = `${law}/${direction}`
-          const templates = SUGGESTION_TEMPLATES[key]
+          const templates = SUGGESTION_TEMPLATES[key] ?? []
           const tmpl = templates[Math.floor(rng() * templates.length)]
+          if (!tmpl) return
           suggestions.push({
             id: `suggestion_${entryId}_${i + 1}`,
             entryId,

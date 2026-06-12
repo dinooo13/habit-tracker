@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@internationalized/date": "^3.11.0",
@@ -25,6 +26,8 @@
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.3",
+    "vitest": "^4.0.18",
+    "vue-tsc": "^3.3.4"
   }
 }

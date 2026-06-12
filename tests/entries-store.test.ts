@@ -428,6 +428,42 @@ describe('entries store — pendingReflectionEntries', () => {
   })
 })
 
+describe('entries store — entryByHabitAndDate (Map index)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('finds an entry after setStatus creates it and returns undefined after clearStatus removes it', () => {
+    const store = useEntriesStore()
+
+    // No entry yet — lookup returns undefined
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')).toBeUndefined()
+
+    // Create via setStatus — index should reflect the addition
+    store.setStatus('habit_1', '2026-02-08', 'done')
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')).not.toBeUndefined()
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')?.status).toBe('done')
+
+    // Remove via clearStatus — index should reflect the removal
+    store.clearStatus('habit_1', '2026-02-08')
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')).toBeUndefined()
+  })
+
+  it('status mutated via setStatus on an existing entry is visible through a subsequent entryByHabitAndDate call', () => {
+    const store = useEntriesStore()
+    store.hydrate([buildEntry({ status: 'missed', completedAt: null })])
+
+    // Verify initial state via index
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')?.status).toBe('missed')
+
+    // Mutate via setStatus
+    store.setStatus('habit_1', '2026-02-08', 'done')
+
+    // Map stores references — mutation must be visible through the index
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-08')?.status).toBe('done')
+  })
+})
+
 describe('entries store — reasonDistribution', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

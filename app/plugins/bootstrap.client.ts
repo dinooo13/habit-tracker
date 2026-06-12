@@ -3,7 +3,20 @@ import type { AppDataV1 } from '~/types/app-data'
 import { todayDateKey } from '~/utils/date'
 import { applyPrimaryColorPalette } from '~/utils/primary-color'
 
+function requestPersistentStorage(): void {
+  if (typeof navigator === 'undefined' || !navigator.storage?.persist) {
+    return
+  }
+
+  navigator.storage
+    .persisted()
+    .then((persisted) => (persisted ? true : navigator.storage.persist()))
+    .catch(() => false)
+}
+
 export default defineNuxtPlugin(async () => {
+  requestPersistentStorage()
+
   const persistence = usePersistence()
 
   const habitsStore = useHabitsStore()

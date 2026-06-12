@@ -16,8 +16,16 @@ export const useEntriesStore = defineStore('entries', {
     entries: []
   }),
   getters: {
-    entryByHabitAndDate: (state) => (habitId: string, date: string): HabitEntry | undefined =>
-      state.entries.find((entry) => entry.habitId === habitId && entry.date === date),
+    entryLookup: (state): Map<string, HabitEntry> => {
+      const lookup = new Map<string, HabitEntry>()
+      for (const entry of state.entries) {
+        lookup.set(entryLookupKey(entry.habitId, entry.date), entry)
+      }
+      return lookup
+    },
+    entryByHabitAndDate(): (habitId: string, date: string) => HabitEntry | undefined {
+      return (habitId, date) => this.entryLookup.get(entryLookupKey(habitId, date))
+    },
     entriesForDate: (state) => (date: string): HabitEntry[] =>
       state.entries.filter((entry) => entry.date === date),
     pendingReflectionEntries: (state): HabitEntry[] =>

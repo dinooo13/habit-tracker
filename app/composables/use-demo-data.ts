@@ -1,5 +1,6 @@
 import type { AppDataV1 } from '~/types/app-data'
 import { todayDateKey } from '~/utils/date'
+import { generateDemoData } from '~/utils/demo-data-generator'
 import { applyPrimaryColorPalette } from '~/utils/primary-color'
 import { parseAppData } from '~/utils/storage-schema'
 
@@ -65,7 +66,7 @@ export function useDemoData() {
     isLoading.value = true
 
     try {
-      const payload = await fetchDemoPayload(fetch)
+      const payload = generateDemoData()
       await hydrateDemoPayload(payload, {
         habitsStore,
         entriesStore,

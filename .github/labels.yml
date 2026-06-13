@@ -1,0 +1,86 @@
+# Label taxonomy for the Atomic Habit Tracker.
+#
+# This file documents the intended labels. They are NOT auto-created — apply them with a
+# label-sync tool if you want the repo to match, e.g.:
+#   npx github-label-sync --labels .github/labels.yml <owner>/<repo>
+#
+# See docs/WORKFLOW.md for how labels are used during triage.
+
+# --- type: what kind of work ---
+- name: "type: feature"
+  color: "1d76db"
+  description: "New capability or feature"
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+- name: "type: enhancement"
+  color: "a2eeef"
+  description: "Improvement to existing behavior"
+- name: "type: docs"
+  color: "0075ca"
+  description: "Documentation only"
+- name: "type: refactor"
+  color: "5319e7"
+  description: "Code change with no behavior change"
+- name: "type: test"
+  color: "bfdadc"
+  description: "Tests added or changed"
+- name: "type: chore"
+  color: "fef2c0"
+  description: "Tooling, deps, or maintenance"
+- name: "type: security"
+  color: "b60205"
+  description: "Security issue or hardening"
+
+# --- priority: how urgent ---
+- name: "priority: high"
+  color: "b60205"
+  description: "Address soon"
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Normal priority"
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Nice to have"
+
+# --- effort: rough size (mirrors the issue Effort field) ---
+- name: "effort: small"
+  color: "c2e0c6"
+  description: "Small change"
+- name: "effort: medium"
+  color: "fef2c0"
+  description: "Medium change"
+- name: "effort: large"
+  color: "f9d0c4"
+  description: "Large change / multiple PRs"
+
+# --- status: where it stands ---
+- name: "status: needs-triage"
+  color: "ededed"
+  description: "Awaiting triage"
+- name: "status: blocked"
+  color: "d93f0b"
+  description: "Blocked by something else"
+- name: "status: in-progress"
+  color: "0e8a16"
+  description: "Being worked on"
+
+# --- area: part of the app affected ---
+- name: "area: persistence"
+  color: "c5def5"
+  description: "Storage / Dexie / IndexedDB"
+- name: "area: coaching"
+  color: "c5def5"
+  description: "Atomic-rules coaching engine"
+- name: "area: ui"
+  color: "c5def5"
+  description: "Pages, components, styling"
+- name: "area: pwa"
+  color: "c5def5"
+  description: "PWA, service worker, reminders"
+- name: "area: auth"
+  color: "c5def5"
+  description: "Auth gate / route protection"
+- name: "area: analytics"
+  color: "c5def5"
+  description: "Insights, streaks, stats"

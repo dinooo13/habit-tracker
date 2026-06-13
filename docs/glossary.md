@@ -1,0 +1,55 @@
+# Glossary
+
+The domain vocabulary used throughout the code, mostly borrowed from James Clear's
+*Atomic Habits*. Types live in `app/types/app-data.ts`; the coaching rules in
+`app/utils/atomic-rules.ts`.
+
+## Habits
+
+- **Habit type** — every habit is either:
+  - **build** — a behavior you want to do more (e.g. "Morning run"). Coaching pushes its laws
+    in the `increase` direction.
+  - **break** — a behavior you want to do less. Coaching pushes its laws in the `decrease`
+    direction.
+- **Identity statement** — the self-concept the habit reinforces (e.g. "I am a runner").
+  Atomic Habits frames lasting change as identity-based; the statement is shown as a cue and in
+  reminders.
+- **Schedule (`scheduleWeekdays`)** — the days a habit is due, as weekday numbers `0`–`6`
+  (Sunday = 0). A habit is *due* on a date if it is active, on/after its `startDate`, and the
+  weekday is in the schedule (`isHabitDueOnDate`).
+- **Start date** — the first date (`YYYY-MM-DD`) the habit counts from.
+- **Reminder time** — optional `HH:MM` at which the reminder engine may notify.
+
+## Entries
+
+- **Entry (`HabitEntry`)** — the record of one habit on one date.
+- **Status** — `done`, `missed`, or `skipped`. On startup, `ensureMissedEntries` fills in
+  `missed` entries for past due days that have no entry yet.
+- **Date key** — dates are stored as local `YYYY-MM-DD` strings (not `Date` objects) to avoid
+  timezone drift (`app/utils/date.ts`).
+- **Streak** — consecutive completed due-days for a habit (`entries.streakForHabit`).
+- **Completion rate** — share of due days completed within a window (7d / 30d / all-time).
+
+## Reflection & coaching
+
+- **Miss-reason code** — when a habit is missed, the user records why. The eight codes:
+  `forgot`, `no_time`, `low_motivation`, `too_hard`, `bad_environment`, `no_immediate_reward`,
+  `social_pressure`, `other`. Human labels are in `MISS_REASON_LABELS`.
+- **The four laws** — the Atomic Habits laws of behavior change, each a `law` on a suggestion:
+  - **obvious** — make the cue visible (or, for break habits, invisible).
+  - **attractive** — make it appealing (or unappealing).
+  - **easy** — reduce friction (or add friction).
+  - **satisfying** — make it immediately rewarding (or add an immediate cost).
+- **Direction** — `increase` for build habits, `decrease` for break habits. Determines which
+  rule table (`BUILD_RULES` vs `BREAK_RULES`) is used.
+- **Coaching suggestion** — a concrete recommendation generated deterministically from
+  *(habit type + miss-reason code)*. Carries a `law`, `direction`, `title`, `action`, and
+  `rationale`. See [adr/0005](adr/0005-deterministic-atomic-habits-coaching-engine.md).
+
+## Data & settings
+
+- **`AppDataV1`** — the versioned envelope persisted to IndexedDB:
+  `{ schemaVersion: 1, habits, entries, suggestions, settings }`.
+- **Settings** — `notificationsEnabled`, `dailyReviewTime` (`HH:MM`), `weekStartsOn`
+  (`0` Sunday / `1` Monday), and `primaryColor` (one of `sky`, `emerald`, `violet`, `rose`,
+  `amber`).

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, parseTimeString } from '~/utils/date'
+import {
+  calendarDateToDateKey,
+  dateKeyRange,
+  dateKeyToCalendarDate,
+  formatDateKeyForLocale,
+  isHabitDueOnDate,
+  parseTimeString,
+  relativeDayLabel
+} from '~/utils/date'
 import type { Habit } from '~/types/app-data'
 
 const sampleHabit: Habit = {
@@ -48,5 +56,29 @@ describe('date utilities', () => {
 
   it('falls back to the raw date key when parsing fails', () => {
     expect(formatDateKeyForLocale('not-a-date', 'en-DE')).toBe('not-a-date')
+  })
+
+  it('labels today and yesterday relative to the reference date', () => {
+    expect(relativeDayLabel('2026-06-14', '2026-06-14', 'en-US')).toBe('Today')
+    expect(relativeDayLabel('2026-06-13', '2026-06-14', 'en-US')).toBe('Yesterday')
+  })
+
+  it('formats older days with the locale instead of a relative label', () => {
+    const label = relativeDayLabel('2026-06-08', '2026-06-14', 'en-US')
+    expect(label).toMatch(/^June 8/)
+  })
+
+  it('round-trips between date keys and calendar dates', () => {
+    const calendarDate = dateKeyToCalendarDate('2026-06-14')
+    expect(calendarDate).not.toBeNull()
+    expect(calendarDate && calendarDateToDateKey(calendarDate)).toBe('2026-06-14')
+  })
+
+  it('returns null for unparseable calendar date keys', () => {
+    expect(dateKeyToCalendarDate('not-a-date')).toBeNull()
+  })
+
+  it('zero-pads single-digit months and days when building a date key', () => {
+    expect(calendarDateToDateKey({ year: 2026, month: 3, day: 5 })).toBe('2026-03-05')
   })
 })

@@ -94,6 +94,20 @@ describe('entries store — setStatus', () => {
     expect(updated.missReasonNote).toBe('Slept in')
   })
 
+  it('corrects a past day: flips a backfilled missed entry to done in place', () => {
+    const store = useEntriesStore()
+    // Simulate a day that was auto-backfilled as missed (the time-travel correction path).
+    store.hydrate([buildEntry({ date: '2026-02-05', status: 'missed', completedAt: null })])
+
+    const corrected = store.setStatus('habit_1', '2026-02-05', 'done')
+
+    expect(corrected.id).toBe('entry_1') // same entry, mutated in place
+    expect(corrected.status).toBe('done')
+    expect(corrected.completedAt).not.toBeNull()
+    expect(store.entries).toHaveLength(1)
+    expect(store.entryByHabitAndDate('habit_1', '2026-02-05')?.status).toBe('done')
+  })
+
   it('updating an existing entry to done sets completedAt to a valid ISO string', () => {
     const store = useEntriesStore()
     store.hydrate([buildEntry({ status: 'missed', completedAt: null })])

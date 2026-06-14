@@ -1,3 +1,5 @@
+import { parseDate } from '@internationalized/date'
+import type { CalendarDate } from '@internationalized/date'
 import type { Habit } from '~/types/app-data'
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
@@ -46,6 +48,23 @@ export function formatDateKeyForLocale(
   } catch {
     return new Intl.DateTimeFormat(undefined, options).format(date)
   }
+}
+
+export function relativeDayLabel(
+  dateKey: string,
+  todayKey: string,
+  locale: string | undefined,
+  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+): string {
+  if (dateKey === todayKey) {
+    return 'Today'
+  }
+
+  if (dateKey === addDays(todayKey, -1)) {
+    return 'Yesterday'
+  }
+
+  return formatDateKeyForLocale(dateKey, locale, options)
 }
 
 export function addDays(dateKey: string, amount: number): string {
@@ -99,6 +118,18 @@ export function daysBetween(start: string, end: string): number {
   const endDate = parseDateKey(end)
 
   return Math.floor((endDate.getTime() - startDate.getTime()) / ONE_DAY_MS)
+}
+
+export function dateKeyToCalendarDate(dateKey: string): CalendarDate | null {
+  try {
+    return parseDate(dateKey)
+  } catch {
+    return null
+  }
+}
+
+export function calendarDateToDateKey(value: { year: number; month: number; day: number }): string {
+  return `${value.year}-${pad2(value.month)}-${pad2(value.day)}`
 }
 
 export function nowIso(): string {

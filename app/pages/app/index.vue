@@ -2,13 +2,27 @@
 definePageMeta({ layout: 'app' })
 
 import type { TabsItem } from '@nuxt/ui'
-import { formatDateKeyForLocale, formatTimeString, todayDateKey } from '~/utils/date'
+import {
+  addDays,
+  calendarDateToDateKey,
+  compareDateKeys,
+  dateKeyToCalendarDate,
+  formatDateKeyForLocale,
+  formatTimeString,
+  relativeDayLabel,
+  todayDateKey
+} from '~/utils/date'
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
 
-const dateKey = computed(() => todayDateKey())
+const today = todayDateKey()
+const selectedDateKey = ref(today)
+const dateKey = computed(() => selectedDateKey.value)
+const isToday = computed(() => selectedDateKey.value === today)
+const isViewingPast = computed(() => compareDateKeys(selectedDateKey.value, today) < 0)
+
 const requestHeaders = useRequestHeaders(['accept-language'])
 const dateLocale = computed(() => {
   if (import.meta.client) {
@@ -18,12 +32,69 @@ const dateLocale = computed(() => {
   return requestHeaders['accept-language']?.split(',')[0] || 'en-US'
 })
 const displayDate = computed(() =>
-  formatDateKeyForLocale(dateKey.value, dateLocale.value, {
+  formatDateKeyForLocale(selectedDateKey.value, dateLocale.value, {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   })
 )
+const relativeLabel = computed(() =>
+  relativeDayLabel(selectedDateKey.value, today, dateLocale.value)
+)
+
+// Earliest date a habit could have an entry, used to bound the calendar.
+const earliestHabitStart = computed(() => {
+  const starts = habitsStore.habits.map((habit) => habit.startDate)
+  if (!starts.length) {
+    return null
+  }
+
+  return starts.reduce((min, current) => (compareDateKeys(current, min) < 0 ? current : min))
+})
+
+const calendarValue = computed({
+  get: () => dateKeyToCalendarDate(selectedDateKey.value) ?? undefined,
+  set: (value) => {
+    if (value) {
+      selectDate(calendarDateToDateKey(value))
+    }
+  }
+})
+const calendarMaxValue = computed(() => dateKeyToCalendarDate(today) ?? undefined)
+const calendarMinValue = computed(() =>
+  earliestHabitStart.value ? dateKeyToCalendarDate(earliestHabitStart.value) ?? undefined : undefined
+)
+const canGoNext = computed(() => isViewingPast.value)
+const canGoPrev = computed(() =>
+  !earliestHabitStart.value || compareDateKeys(addDays(selectedDateKey.value, -1), earliestHabitStart.value) >= 0
+)
+
+const datePickerOpen = ref(false)
+
+function selectDate(nextDateKey: string): void {
+  // Never allow time-travelling into the future — those days can't be reviewed yet.
+  if (compareDateKeys(nextDateKey, today) > 0) {
+    return
+  }
+
+  selectedDateKey.value = nextDateKey
+}
+
+function goToPreviousDay(): void {
+  if (canGoPrev.value) {
+    selectDate(addDays(selectedDateKey.value, -1))
+  }
+}
+
+function goToNextDay(): void {
+  if (canGoNext.value) {
+    selectDate(addDays(selectedDateKey.value, 1))
+  }
+}
+
+function goToToday(): void {
+  selectDate(today)
+}
 
 const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))
 
@@ -222,9 +293,64 @@ function reopenHabit(habitId: string): void {
       <UCard>
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p class="text-sm text-muted">Today</p>
-              <h1 class="text-2xl font-semibold">{{ displayDate }}</h1>
+            <div class="space-y-1">
+              <p class="text-sm text-muted">{{ relativeLabel }}</p>
+              <div class="flex items-center gap-1">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-chevron-left"
+                  :disabled="!canGoPrev"
+                  aria-label="Previous day"
+                  @click="goToPreviousDay"
+                />
+                <UPopover v-model:open="datePickerOpen">
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    trailing-icon="i-lucide-calendar"
+                    class="px-1.5 text-2xl font-semibold"
+                    :aria-label="`Pick a date — currently ${displayDate}`"
+                  >
+                    {{ displayDate }}
+                  </UButton>
+
+                  <template #content>
+                    <UCalendar
+                      v-model="calendarValue"
+                      :max-value="calendarMaxValue"
+                      :min-value="calendarMinValue"
+                      class="p-2"
+                      @update:model-value="datePickerOpen = false"
+                    />
+                  </template>
+                </UPopover>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-chevron-right"
+                  :disabled="!canGoNext"
+                  aria-label="Next day"
+                  @click="goToNextDay"
+                />
+              </div>
+              <div v-if="isViewingPast" class="flex items-center gap-2">
+                <UBadge color="warning" variant="subtle" icon="i-lucide-history">
+                  Viewing a past day
+                </UBadge>
+                <UButton
+                  color="neutral"
+                  variant="link"
+                  size="xs"
+                  class="px-0"
+                  icon="i-lucide-rotate-ccw"
+                  @click="goToToday"
+                >
+                  Back to today
+                </UButton>
+              </div>
             </div>
             <div class="flex items-center gap-2">
               <BrandLogo
@@ -299,16 +425,16 @@ function reopenHabit(habitId: string): void {
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-list-todo" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Today's habit queue</h2>
+            <h2 class="text-lg font-semibold">{{ isToday ? "Today's habit queue" : 'Habit queue' }}</h2>
           </div>
         </template>
 
         <UEmpty
           v-if="!dueHabitModels.length"
           icon="i-lucide-calendar-check-2"
-          title="No habits due today"
-          description="Create a habit or adjust schedule weekdays."
-          :actions="[{ label: 'Create habit', to: '/app/habits/new', icon: 'i-lucide-plus' }]"
+          :title="isToday ? 'No habits due today' : 'No habits were due'"
+          :description="isToday ? 'Create a habit or adjust schedule weekdays.' : 'Nothing was scheduled on this day.'"
+          :actions="isToday ? [{ label: 'Create habit', to: '/app/habits/new', icon: 'i-lucide-plus' }] : []"
         />
 
         <UTabs

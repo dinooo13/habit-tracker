@@ -10,9 +10,9 @@ name: CI/CD
 #
 # Required hosting/secrets (see PR description): preview.habits.fmeyer.dev must
 # be configured in the hosting panel to serve from the preview FTP account's
-# ./previews/ directory; secrets HOST, USERNAME, PASSWORD (production) and
-# SFTP_PREVIEW_USER, SFTP_PREVIEW_PASSWORD (preview) must be set, plus
-# `production` and `preview` GitHub Environments.
+# ./previews/ directory; secrets SFTP_HOST, SFTP_PROD_USER, SFTP_PROD_PASSWORD
+# (production) and SFTP_PREVIEW_USER, SFTP_PREVIEW_PASSWORD (preview) must be set,
+# plus `production` and `preview` GitHub Environments.
 
 on:
   push:
@@ -144,9 +144,9 @@ jobs:
 
       - name: Deploy via FTPS
         env:
-          FTP_HOST: ${{ secrets.HOST }}
-          FTP_USER: ${{ secrets.USERNAME }}
-          FTP_PASS: ${{ secrets.PASSWORD }}
+          FTP_HOST: ${{ secrets.SFTP_HOST }}
+          FTP_USER: ${{ secrets.SFTP_PROD_USER }}
+          FTP_PASS: ${{ secrets.SFTP_PROD_PASSWORD }}
         run: |
           # ./httpdocs/ is the document root for habits.fmeyer.dev relative to the
           # production FTP account. Adjust if your account lands elsewhere.
@@ -194,7 +194,7 @@ jobs:
 
       - name: Deploy via FTPS
         env:
-          FTP_HOST: ${{ secrets.HOST }}
+          FTP_HOST: ${{ secrets.SFTP_HOST }}
           FTP_USER: ${{ secrets.SFTP_PREVIEW_USER }}
           FTP_PASS: ${{ secrets.SFTP_PREVIEW_PASSWORD }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -277,7 +277,7 @@ jobs:
 
       - name: Delete preview directory
         env:
-          FTP_HOST: ${{ secrets.HOST }}
+          FTP_HOST: ${{ secrets.SFTP_HOST }}
           FTP_USER: ${{ secrets.SFTP_PREVIEW_USER }}
           FTP_PASS: ${{ secrets.SFTP_PREVIEW_PASSWORD }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

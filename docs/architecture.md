@@ -7,7 +7,8 @@ pieces fit together; the *why* is in [adr/](adr/).
 
 Pages and layouts render reactive Pinia state. Stores are the single source of truth.
 Composables wrap cross-cutting concerns (persistence, reminders, auth, demo data). Pure
-utilities sit underneath, and Dexie/IndexedDB is the storage floor.
+utilities sit underneath, and Dexie/IndexedDB is the default storage floor — reached through a
+`PersistenceAdapter` interface so the backend can be swapped (see [ADR-0009](adr/0009-persistence-adapter-interface.md)).
 
 ```mermaid
 flowchart TD
@@ -34,7 +35,8 @@ flowchart TD
     rules["atomic-rules"]
     date["date"]
     schema["storage-schema (Zod)"]
-    db["habit-database (Dexie)"]
+    adapter["persistence-adapter (interface)"]
+    dexie["dexie-persistence-adapter (Dexie)"]
   end
 
   Storage[("IndexedDB")]
@@ -43,7 +45,10 @@ flowchart TD
   UI --> Composables
   Stores --> Utils
   Composables --> Stores
-  persistence --> schema --> db --> Storage
+  persistence --> schema
+  persistence --> adapter
+  dexie -. implements .-> adapter
+  dexie --> Storage
   coach --> rules
 ```
 
@@ -56,13 +61,17 @@ stores, reconcile derived state, then persist changes back on a debounce.
 sequenceDiagram
   participant Boot as bootstrap.client.ts
   participant P as usePersistence
-  participant DB as IndexedDB (Dexie)
+  participant A as PersistenceAdapter (Dexie)
+  participant DB as IndexedDB
   participant S as Pinia stores
 
   Boot->>P: load()
-  P->>DB: read AppDataV1 (migrate legacy localStorage on first run)
-  DB-->>P: raw data
-  P->>P: validate with Zod (fallback to empty on failure)
+  P->>A: migrate legacy localStorage on first run
+  P->>A: load()
+  A->>DB: read AppDataV1
+  DB-->>A: raw data
+  A->>A: validate with Zod (fallback to empty on failure)
+  A-->>P: AppDataV1
   P-->>Boot: AppDataV1
   Boot->>S: hydrate(habits / entries / suggestions / settings)
   Boot->>S: ensureMissedEntries(activeHabits, today)
@@ -71,7 +80,8 @@ sequenceDiagram
   S-->>Boot: state change
   Boot->>Boot: debounce 800ms (flush on pagehide / visibility hidden)
   Boot->>P: save(snapshot)
-  P->>DB: write AppDataV1
+  P->>A: save(snapshot)
+  A->>DB: write AppDataV1
 ```
 
 ## Coaching flow

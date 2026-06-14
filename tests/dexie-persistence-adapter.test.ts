@@ -1,0 +1,69 @@
+import 'fake-indexeddb/auto'
+import { readFileSync } from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { AppDataV1 } from '~/types/app-data'
+import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistence-adapter'
+import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+
+const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
+
+function readFixture(): AppDataV1 {
+  return parseAppData(JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')))
+}
+
+describe('DexiePersistenceAdapter', () => {
+  let db: HabitDatabase
+  let adapter: DexiePersistenceAdapter
+
+  beforeEach(() => {
+    db = new HabitDatabase()
+    adapter = new DexiePersistenceAdapter(db)
+  })
+
+  afterEach(async () => {
+    await db.delete()
+  })
+
+  it('returns empty app data before anything is saved', async () => {
+    expect(await adapter.hasData()).toBe(false)
+    expect(await adapter.load()).toEqual(createEmptyAppData())
+  })
+
+  it('round-trips a full payload through save and load', async () => {
+    const fixture = readFixture()
+
+    await adapter.save(fixture)
+
+    expect(await adapter.hasData()).toBe(true)
+
+    const loaded = await adapter.load()
+    expect(loaded.schemaVersion).toBe(fixture.schemaVersion)
+    expect(loaded.settings).toEqual(fixture.settings)
+    expect(loaded.habits).toHaveLength(fixture.habits.length)
+    expect(loaded.entries).toHaveLength(fixture.entries.length)
+    expect(loaded.suggestions).toHaveLength(fixture.suggestions.length)
+
+    const byId = new Map(loaded.habits.map((habit) => [habit.id, habit]))
+    for (const habit of fixture.habits) {
+      expect(byId.get(habit.id)).toEqual(habit)
+    }
+  })
+
+  it('replaces previous data on save instead of merging', async () => {
+    await adapter.save(readFixture())
+
+    const empty = createEmptyAppData()
+    await adapter.save(empty)
+
+    expect(await adapter.load()).toEqual(empty)
+  })
+
+  it('clears all stored data', async () => {
+    await adapter.save(readFixture())
+
+    await adapter.clear()
+
+    expect(await adapter.hasData()).toBe(false)
+    expect(await adapter.load()).toEqual(createEmptyAppData())
+  })
+})

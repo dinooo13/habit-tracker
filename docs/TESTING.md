@@ -22,8 +22,9 @@ Tests live in `tests/`:
 - **Utilities** — `date.test.ts`, `atomic-rules.test.ts`, `route-mapping.test.ts`,
   `dummy-auth.test.ts`.
 - **Schema & validation** — `storage-schema.test.ts`.
-- **Persistence** — `habit-database.test.ts` (Dexie round-trips via `fake-indexeddb`,
-  including the legacy-localStorage migration).
+- **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
+  `fake-indexeddb`, exercised through the `PersistenceAdapter` interface) and
+  `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration).
 - **Fixtures** — `fixture-data.test.ts`, `demo-data-loader.test.ts` validate the sample data.
 
 Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and

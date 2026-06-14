@@ -1,32 +1,33 @@
 import type { AppDataV1 } from '~/types/app-data'
+import { DexiePersistenceAdapter } from '~/utils/dexie-persistence-adapter'
+import { migrateLegacyLocalStorage } from '~/utils/legacy-migration'
+import type { PersistenceAdapter } from '~/utils/persistence-adapter'
 import { createEmptyAppData } from '~/utils/storage-schema'
-import {
-  HabitDatabase,
-  clearAppData,
-  loadAppData,
-  migrateLegacyLocalStorage,
-  saveAppData
-} from '~/utils/habit-database'
 
-let database: HabitDatabase | null = null
+let defaultAdapter: PersistenceAdapter | null = null
 
-function getDatabase(): HabitDatabase {
-  if (!database) {
-    database = new HabitDatabase()
+function getDefaultAdapter(): PersistenceAdapter {
+  if (!defaultAdapter) {
+    defaultAdapter = new DexiePersistenceAdapter()
   }
 
-  return database
+  return defaultAdapter
 }
 
-export function usePersistence() {
+/**
+ * Storage orchestration seam. Depends on the {@link PersistenceAdapter}
+ * interface, defaulting to the Dexie/IndexedDB backend; an alternate adapter
+ * (or a fake, in tests) can be injected. The `import.meta.client` guards and
+ * empty-state fallback live here, so adapters can assume a client environment.
+ */
+export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()) {
   async function load(): Promise<AppDataV1> {
     if (!import.meta.client) {
       return createEmptyAppData()
     }
 
-    const db = getDatabase()
-    await migrateLegacyLocalStorage(db, window.localStorage)
-    return loadAppData(db)
+    await migrateLegacyLocalStorage(adapter, window.localStorage)
+    return adapter.load()
   }
 
   async function save(payload: AppDataV1): Promise<void> {
@@ -34,7 +35,7 @@ export function usePersistence() {
       return
     }
 
-    await saveAppData(getDatabase(), payload)
+    await adapter.save(payload)
   }
 
   async function clear(): Promise<void> {
@@ -42,7 +43,7 @@ export function usePersistence() {
       return
     }
 
-    await clearAppData(getDatabase())
+    await adapter.clear()
   }
 
   return {

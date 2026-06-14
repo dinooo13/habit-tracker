@@ -38,14 +38,14 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
 | `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`. |
-| `app/utils/` | Pure helpers: `atomic-rules.ts`, `date.ts`, `id.ts`, `habit-database.ts`, `storage-schema.ts`, `dummy-auth.ts`, `primary-color.ts`, `route-mapping.ts`, `demo-data-generator.ts`. |
+| `app/utils/` | Pure helpers: `atomic-rules.ts`, `date.ts`, `id.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `dummy-auth.ts`, `primary-color.ts`, `route-mapping.ts`, `demo-data-generator.ts`. |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |
 
 Key files to know: `app/types/app-data.ts`, `app/stores/*`, `app/composables/use-persistence.ts`,
-`app/plugins/bootstrap.client.ts`, `app/utils/atomic-rules.ts`, `app/utils/habit-database.ts`,
-`app/middleware/auth.global.ts`.
+`app/plugins/bootstrap.client.ts`, `app/utils/atomic-rules.ts`, `app/utils/persistence-adapter.ts`,
+`app/utils/dexie-persistence-adapter.ts`, `app/middleware/auth.global.ts`.
 
 ## Data model
 

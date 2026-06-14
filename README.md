@@ -80,7 +80,7 @@ app/
 ├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo
 ├── stores/                # Pinia: habits, entries, coach, settings
 ├── composables/           # use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data
-├── utils/                 # atomic-rules, date, id, habit-database, storage-schema, ...
+├── utils/                 # atomic-rules, date, id, persistence-adapter, dexie-persistence-adapter, storage-schema, ...
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)
 └── plugins/               # bootstrap.client (load → hydrate → reconcile → persist)
@@ -92,7 +92,9 @@ and coaching flows.
 ## Data & persistence
 
 - **Local-first.** All habits, entries, coaching suggestions, and settings persist in
-  **IndexedDB** via Dexie (`app/utils/habit-database.ts`). There is no server.
+  **IndexedDB** via Dexie, reached through a swappable `PersistenceAdapter` interface
+  (`app/utils/persistence-adapter.ts`, default `app/utils/dexie-persistence-adapter.ts`).
+  There is no server.
 - **Versioned envelope.** Data is stored as an `AppDataV1` object (`schemaVersion: 1`) and
   validated with Zod on load (`app/utils/storage-schema.ts`); corrupt data falls back to an
   empty state rather than crashing.

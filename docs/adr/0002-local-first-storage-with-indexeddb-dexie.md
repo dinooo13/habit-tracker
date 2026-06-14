@@ -42,7 +42,9 @@ rather than a sync backend.
 
 ## References
 
-- `app/utils/habit-database.ts` — Dexie schema and CRUD.
-- `app/composables/use-persistence.ts` — load/save orchestration + legacy migration.
+- `app/utils/dexie-persistence-adapter.ts` — Dexie schema and CRUD (the default
+  `PersistenceAdapter`; see [ADR-0009](0009-persistence-adapter-interface.md)).
+- `app/composables/use-persistence.ts` — load/save orchestration.
+- `app/utils/legacy-migration.ts` — backend-agnostic legacy `localStorage` import.
 - `app/plugins/bootstrap.client.ts` — `navigator.storage.persist()` request.
 - Tracking: original migration issue #2 / PR #3.

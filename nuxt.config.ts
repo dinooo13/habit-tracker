@@ -6,10 +6,13 @@
 const appBaseURL = process.env.NUXT_APP_BASE_URL || '/'
 // Preview builds set NUXT_PUBLIC_NOINDEX=true so search engines skip them.
 const noindex = process.env.NUXT_PUBLIC_NOINDEX === 'true'
+// Gate dev-only tooling so it never ships in a production build (issue #1, SEC-10).
+// `nuxt build`/`generate` set NODE_ENV=production; `nuxt dev` leaves it unset/dev.
+const isDev = process.env.NODE_ENV !== 'production'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: isDev },
   ssr: false,
   modules: ['@nuxt/ui', '@pinia/nuxt', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
@@ -25,7 +28,7 @@ export default defineNuxtConfig({
       meta: [
         {
           name: 'viewport',
-          content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover'
         },
         {
           name: 'description',
@@ -82,7 +85,7 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,json,txt}']
     },
     devOptions: {
-      enabled: true,
+      enabled: isDev,
       suppressWarnings: true,
       type: 'module'
     }

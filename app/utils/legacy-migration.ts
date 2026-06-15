@@ -1,5 +1,6 @@
 import type { AppDataV1 } from '~/types/app-data'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
+import { safeJsonParse } from '~/utils/safe-json'
 import { parseAppData } from '~/utils/storage-schema'
 
 export const LEGACY_STORAGE_KEY = 'habit-tracker:v1:data'
@@ -13,7 +14,7 @@ function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppDataV1 | null 
     }
 
     try {
-      return parseAppData(JSON.parse(value))
+      return parseAppData(safeJsonParse(value))
     } catch {
       // Fall through to the next legacy key.
     }

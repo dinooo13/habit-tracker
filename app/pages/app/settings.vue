@@ -4,9 +4,11 @@ definePageMeta({ layout: 'app' })
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
+import { FIELD_LIMITS } from '~/types/app-data'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
-import { formatTimeString, nowIso, parseTimeString, todayDateKey } from '~/utils/date'
+import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/date'
 import { createId } from '~/utils/id'
+import { safeJsonParse } from '~/utils/safe-json'
 import { PRIMARY_COLOR_LABELS } from '~/utils/primary-color'
 
 const settingsStore = useSettingsStore()
@@ -156,7 +158,6 @@ function exportJson(): void {
   toast.add({ title: 'Export complete', color: 'success' })
 }
 
-const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/
 
 function normalizeImportedHabit(payload: unknown): Habit | null {
@@ -171,21 +172,47 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
   const weekdayValues = Array.isArray(candidate.scheduleWeekdays)
     ? [...new Set(candidate.scheduleWeekdays.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
     : []
-  const startDate = typeof candidate.startDate === 'string' && DATE_KEY_REGEX.test(candidate.startDate)
-    ? candidate.startDate
-    : todayDateKey()
+  const startDate =
+    typeof candidate.startDate === 'string' && isValidDateKey(candidate.startDate)
+      ? candidate.startDate
+      : todayDateKey()
   const reminderTime = typeof candidate.reminderTime === 'string' && TIME_REGEX.test(candidate.reminderTime)
     ? candidate.reminderTime
     : null
 
-  if (!name || !type || !identityStatement || !weekdayValues.length) {
+  // Reject rather than trust over-long fields so a crafted import can't exhaust
+  // storage or degrade rendering (issue #1, SEC-06).
+  if (
+    !name ||
+    !type ||
+    !identityStatement ||
+    !weekdayValues.length ||
+    name.length > FIELD_LIMITS.name ||
+    identityStatement.length > FIELD_LIMITS.identity
+  ) {
     return null
   }
 
   const now = nowIso()
+  const id =
+    typeof candidate.id === 'string' && candidate.id.trim() && candidate.id.length <= FIELD_LIMITS.id
+      ? candidate.id
+      : createId('habit')
+  const createdAt =
+    typeof candidate.createdAt === 'string' &&
+    candidate.createdAt.trim() &&
+    candidate.createdAt.length <= FIELD_LIMITS.timestamp
+      ? candidate.createdAt
+      : now
+  const updatedAt =
+    typeof candidate.updatedAt === 'string' &&
+    candidate.updatedAt.trim() &&
+    candidate.updatedAt.length <= FIELD_LIMITS.timestamp
+      ? candidate.updatedAt
+      : now
 
   return {
-    id: typeof candidate.id === 'string' && candidate.id.trim() ? candidate.id : createId('habit'),
+    id,
     name,
     type,
     identityStatement,
@@ -193,8 +220,8 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
     reminderTime,
     startDate,
     archived: typeof candidate.archived === 'boolean' ? candidate.archived : false,
-    createdAt: typeof candidate.createdAt === 'string' && candidate.createdAt.trim() ? candidate.createdAt : now,
-    updatedAt: typeof candidate.updatedAt === 'string' && candidate.updatedAt.trim() ? candidate.updatedAt : now
+    createdAt,
+    updatedAt
   }
 }
 
@@ -448,7 +475,7 @@ async function confirmImport(): Promise<void> {
 
   try {
     const text = await file.text()
-    const payload = JSON.parse(text)
+    const payload = safeJsonParse(text)
 
     if (importHabitsOnly.value) {
       const importedHabits = extractHabitsFromImportPayload(payload)

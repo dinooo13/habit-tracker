@@ -2,46 +2,53 @@ import { z } from 'zod'
 import {
   APP_DATA_SCHEMA_VERSION,
   DEFAULT_SETTINGS,
+  FIELD_LIMITS,
   MISS_REASON_CODES,
   PRIMARY_COLOR_OPTIONS,
   type AppDataV1
 } from '~/types/app-data'
+import { isValidDateKey } from '~/utils/date'
+
+// A real YYYY-MM-DD date within sane calendar bounds. Replaces a bare regex so a
+// crafted import can't smuggle in an out-of-range date that drives unbounded
+// date-range generation (issue #1, SEC-09).
+const dateKeySchema = z.string().refine(isValidDateKey, 'Invalid or out-of-range date')
 
 const HabitSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
+  id: z.string().min(1).max(FIELD_LIMITS.id),
+  name: z.string().min(1).max(FIELD_LIMITS.name),
   type: z.enum(['build', 'break']),
-  identityStatement: z.string().min(1),
+  identityStatement: z.string().min(1).max(FIELD_LIMITS.identity),
   scheduleWeekdays: z.array(z.number().int().min(0).max(6)).min(1),
   reminderTime: z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
     .nullable(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startDate: dateKeySchema,
   archived: z.boolean(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1)
+  createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp),
+  updatedAt: z.string().min(1).max(FIELD_LIMITS.timestamp)
 })
 
 const HabitEntrySchema = z.object({
-  id: z.string().min(1),
-  habitId: z.string().min(1),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  id: z.string().min(1).max(FIELD_LIMITS.id),
+  habitId: z.string().min(1).max(FIELD_LIMITS.id),
+  date: dateKeySchema,
   status: z.enum(['done', 'missed', 'skipped']),
-  completedAt: z.string().min(1).nullable(),
+  completedAt: z.string().min(1).max(FIELD_LIMITS.timestamp).nullable(),
   missReasonCode: z.enum(MISS_REASON_CODES).nullable(),
-  missReasonNote: z.string().nullable()
+  missReasonNote: z.string().max(FIELD_LIMITS.note).nullable()
 })
 
 const CoachingSuggestionSchema = z.object({
-  id: z.string().min(1),
-  entryId: z.string().min(1),
+  id: z.string().min(1).max(FIELD_LIMITS.id),
+  entryId: z.string().min(1).max(FIELD_LIMITS.id),
   law: z.enum(['obvious', 'attractive', 'easy', 'satisfying']),
   direction: z.enum(['increase', 'decrease']),
-  title: z.string().min(1),
-  action: z.string().min(1),
-  rationale: z.string().min(1),
-  createdAt: z.string().min(1)
+  title: z.string().min(1).max(FIELD_LIMITS.suggestionText),
+  action: z.string().min(1).max(FIELD_LIMITS.suggestionText),
+  rationale: z.string().min(1).max(FIELD_LIMITS.suggestionText),
+  createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp)
 })
 
 const SettingsSchema = z.object({

@@ -5,6 +5,8 @@ import {
   dateKeyToCalendarDate,
   formatDateKeyForLocale,
   isHabitDueOnDate,
+  isValidDateKey,
+  MAX_DATE_RANGE_DAYS,
   parseTimeString,
   relativeDayLabel
 } from '~/utils/date'
@@ -80,5 +82,37 @@ describe('date utilities', () => {
 
   it('zero-pads single-digit months and days when building a date key', () => {
     expect(calendarDateToDateKey({ year: 2026, month: 3, day: 5 })).toBe('2026-03-05')
+  })
+})
+
+describe('date safety bounds (SEC-09)', () => {
+  it('accepts real, in-range date keys', () => {
+    expect(isValidDateKey('2026-02-01')).toBe(true)
+    expect(isValidDateKey('2000-01-01')).toBe(true)
+    expect(isValidDateKey('2100-12-31')).toBe(true)
+  })
+
+  it('rejects malformed, impossible, and out-of-range date keys', () => {
+    expect(isValidDateKey('not-a-date')).toBe(false)
+    expect(isValidDateKey('2026-2-1')).toBe(false)
+    expect(isValidDateKey('2026-02-30')).toBe(false)
+    expect(isValidDateKey('2026-13-01')).toBe(false)
+    expect(isValidDateKey('0001-01-01')).toBe(false)
+    expect(isValidDateKey('1999-12-31')).toBe(false)
+    expect(isValidDateKey('9999-12-31')).toBe(false)
+  })
+
+  it('caps dateKeyRange so a pathological span cannot grow unbounded', () => {
+    // ~1000-year span; the cap clamps it to the most-recent MAX_DATE_RANGE_DAYS window.
+    const range = dateKeyRange('1000-01-01', '2026-06-14')
+    expect(range).toHaveLength(MAX_DATE_RANGE_DAYS)
+    expect(range[range.length - 1]).toBe('2026-06-14')
+  })
+
+  it('leaves a normal multi-year span untouched', () => {
+    const range = dateKeyRange('2020-01-01', '2026-06-14')
+    expect(range[0]).toBe('2020-01-01')
+    expect(range[range.length - 1]).toBe('2026-06-14')
+    expect(range.length).toBeLessThan(MAX_DATE_RANGE_DAYS)
   })
 })

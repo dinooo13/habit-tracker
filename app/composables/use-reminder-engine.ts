@@ -2,6 +2,9 @@ import { parseTimeString, todayDateKey } from '~/utils/date'
 
 let reminderInterval: ReturnType<typeof setInterval> | null = null
 const notifiedKeys = new Set<string>()
+// Tracks the day the keys in `notifiedKeys` belong to, so the set can be cleared
+// when the date rolls over instead of growing unbounded (issue #1, SEC-17).
+let notifiedKeysDateKey: string | null = null
 
 function safeNotify(title: string, body: string): void {
   if (!import.meta.client || typeof Notification === 'undefined') {
@@ -57,6 +60,11 @@ export function useReminderEngine() {
 
     const dateKey = todayDateKey()
     const minute = nowMinuteKey()
+
+    if (dateKey !== notifiedKeysDateKey) {
+      notifiedKeys.clear()
+      notifiedKeysDateKey = dateKey
+    }
 
     for (const habit of habitsStore.dueHabitsForDate(dateKey)) {
       const configured = parseTimeString(habit.reminderTime)

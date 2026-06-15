@@ -4,6 +4,20 @@ import type { Habit } from '~/types/app-data'
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
+const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/
+
+// Sane calendar bounds for any stored/imported date key. Keeps a crafted import
+// (e.g. startDate "0001-01-01") from driving unbounded date-range generation
+// (issue #1, SEC-09). Comfortably wider than any realistic habit history.
+export const MIN_DATE_KEY = '2000-01-01'
+export const MAX_DATE_KEY = '2100-12-31'
+
+// Defensive ceiling on dateKeyRange output. Real data is bounded to
+// [MIN_DATE_KEY, MAX_DATE_KEY] by the schema, so this never truncates a
+// legitimate range — it only stops a pathological, non-validated input from
+// freezing the tab.
+export const MAX_DATE_RANGE_DAYS = 366 * 200
+
 export function pad2(value: number): string {
   return value.toString().padStart(2, '0')
 }
@@ -81,6 +95,26 @@ export function compareDateKeys(left: string, right: string): number {
   return left < right ? -1 : 1
 }
 
+/**
+ * True only for a real `YYYY-MM-DD` calendar date within [MIN_DATE_KEY, MAX_DATE_KEY].
+ *
+ * The round-trip check rejects impossible dates (e.g. `2026-02-30`, `2026-13-01`)
+ * and—because JS maps `new Date(1, 0, 1)` to 1901—also rejects two-or-three-digit
+ * years like `0001-01-01`. The range check rejects far-future years like `9999-12-31`.
+ */
+export function isValidDateKey(dateKey: string): boolean {
+  if (!DATE_KEY_REGEX.test(dateKey)) {
+    return false
+  }
+
+  const date = parseDateKey(dateKey)
+  if (Number.isNaN(date.getTime()) || toDateKeyLocal(date) !== dateKey) {
+    return false
+  }
+
+  return compareDateKeys(dateKey, MIN_DATE_KEY) >= 0 && compareDateKeys(dateKey, MAX_DATE_KEY) <= 0
+}
+
 export function weekdayFromDateKey(dateKey: string): number {
   return parseDateKey(dateKey).getDay()
 }
@@ -102,9 +136,12 @@ export function dateKeyRange(start: string, end: string): string[] {
     return []
   }
 
-  const values: string[] = []
-  let cursor = start
+  // Defense-in-depth: bound the window to the most-recent MAX_DATE_RANGE_DAYS so a
+  // pathological (non-schema-validated) range can't freeze the tab (issue #1, SEC-09).
+  let cursor =
+    daysBetween(start, end) >= MAX_DATE_RANGE_DAYS ? addDays(end, -(MAX_DATE_RANGE_DAYS - 1)) : start
 
+  const values: string[] = []
   while (compareDateKeys(cursor, end) <= 0) {
     values.push(cursor)
     cursor = addDays(cursor, 1)

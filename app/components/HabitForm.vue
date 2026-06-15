@@ -3,7 +3,7 @@ import { Time } from '@internationalized/date'
 import type { FormSubmitEvent, RadioGroupItem } from '@nuxt/ui'
 import { z } from 'zod'
 import type { Habit, HabitType } from '~/types/app-data'
-import { formatTimeString, parseTimeString, todayDateKey } from '~/utils/date'
+import { formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/date'
 
 interface HabitFormPayload {
   name: string
@@ -34,7 +34,10 @@ const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   type: z.enum(['build', 'break']),
   identityStatement: z.string().min(5, 'Identity statement should be specific.'),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date is required.')
+  startDate: z
+    .string()
+    .min(1, 'Start date is required.')
+    .refine(isValidDateKey, 'Start date must be a real date between 2000 and 2100.')
 })
 
 type Schema = z.output<typeof schema>
@@ -141,7 +144,7 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
 
     <div class="grid gap-4 sm:grid-cols-2">
       <UFormField label="Start date" name="startDate" required>
-        <UInput v-model="state.startDate" class="w-full" type="date" />
+        <UInput v-model="state.startDate" class="w-full" type="date" :min="MIN_DATE_KEY" :max="MAX_DATE_KEY" />
       </UFormField>
 
       <UFormField label="Reminder time" help="Optional local notification time.">

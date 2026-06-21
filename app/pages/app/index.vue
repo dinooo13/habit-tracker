@@ -459,7 +459,7 @@ function reopenHabit(habitId: string): void {
                 v-for="model in reviewedHabits"
                 :key="model.habit.id"
                 variant="outline"
-                :class="typeMeta(model.habit.type).cardClass"
+                :class="['queue-card', typeMeta(model.habit.type).cardClass]"
               >
                 <div class="space-y-3">
                   <div class="flex items-start justify-between gap-3">
@@ -520,7 +520,7 @@ function reopenHabit(habitId: string): void {
                 v-for="model in openHabits"
                 :key="model.habit.id"
                 variant="outline"
-                :class="typeMeta(model.habit.type).cardClass"
+                :class="['queue-card', typeMeta(model.habit.type).cardClass]"
               >
                 <div class="space-y-3">
                   <div class="flex items-start justify-between gap-3">

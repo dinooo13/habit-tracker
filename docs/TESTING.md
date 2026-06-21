@@ -9,9 +9,13 @@
   so the Dexie persistence layer can be tested without a browser.
 - **Pinia** — store tests create a fresh instance per test with
   `setActivePinia(createPinia())` in `beforeEach`, so state never leaks between tests.
+- **[Playwright](https://playwright.dev/)** — `npm run test:e2e` drives a real browser
+  against a locally built-and-served copy of the app, covering route guards, IndexedDB
+  round-trips, and the rendered UI. See [`e2e-testing.md`](./e2e-testing.md) for the full
+  guide. E2E **complements** the unit tests; it doesn't re-test pure logic.
 
-CI runs `npm test` **and** `npm run typecheck` (test job) plus `npm run build` (build job) —
-see `.github/workflows/ci.yml`. All three must pass.
+CI runs `npm test` **and** `npm run typecheck` (test job), `npm run build` (build job), and
+the Playwright suite (e2e job) — see `.github/workflows/ci.yml`. They must pass.
 
 ## What's covered
 

@@ -34,6 +34,18 @@ The legacy `enhancement` and `security` labels still exist; prefer the namespace
 > Note: `labels.yml` documents the intended set. Labels are **not** auto-created — apply them
 > with a label-sync tool/action (e.g. `github-label-sync`) if you want the repo to match.
 
+### Automated planning routine (`status: needs-plan`)
+
+Issues labeled **`status: needs-plan`** are the input queue for the
+[`/plan-issues`](../.claude/commands/plan-issues.md) Claude routine. It runs unattended,
+loops over every open `status: needs-plan` issue, and for each one self-brainstorms the
+open design questions (choosing its own recommended option — it never prompts a human) and
+turns the issue into a build-ready specification. The plan is posted **as an issue comment**
+— no `specs/` files are written — and the issue is moved to **`status: needs-review`** for a
+human to confirm before it becomes `status: agent-ready`. The routine respects accepted ADRs
+and calls out when a change needs a **new ADR** or doc update. It is idempotent: it won't
+re-plan an issue that already has a current plan comment.
+
 ## 3. Branching
 
 - Branch off `main`. One logical change per branch.

@@ -55,15 +55,21 @@
   description: "Large change / multiple PRs"
 
 # --- status: where it stands ---
-- name: "status: needs-triage"
-  color: "ededed"
-  description: "Awaiting triage"
 - name: "status: blocked"
   color: "d93f0b"
   description: "Blocked by something else"
+- name: "status: needs-plan"
+  color: "ededed"
+  description: "Needs a specification before work starts (input for the plan-issues routine)"
 - name: "status: in-progress"
   color: "0e8a16"
   description: "Being worked on"
+- name: "status: needs-review"
+  color: "fbca04"
+  description: "Has a plan or change awaiting human review"
+- name: "status: agent-ready"
+  color: "0e8a16"
+  description: "Specified and ready for an agent to implement"
 
 # --- area: part of the app affected ---
 - name: "area: persistence"

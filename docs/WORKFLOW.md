@@ -25,7 +25,7 @@ When an issue comes in, label it. Every issue should get at least a **type** and
 | **type** | `type: feature`, `type: bug`, `type: enhancement`, `type: docs`, `type: refactor`, `type: test`, `type: chore`, `type: security` | What kind of work it is. |
 | **priority** | `priority: high`, `priority: medium`, `priority: low` | How urgent. |
 | **effort** | `effort: small`, `effort: medium`, `effort: large` | Rough size (mirrors the issue's *Effort* field). |
-| **status** | `status: needs-triage`, `status: blocked`, `status: in-progress` | Where it stands. |
+| **status** | `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-review`, `status: agent-ready` | Where it stands. |
 | **area** | `area: persistence`, `area: coaching`, `area: ui`, `area: pwa`, `area: auth`, `area: analytics` | Part of the app affected. |
 
 The legacy `enhancement` and `security` labels still exist; prefer the namespaced

@@ -4,9 +4,9 @@ name: Label sync
 # in docs/WORKFLOW.md). Runs on pushes to main that touch the label file, and can be
 # triggered manually. Uses the built-in GITHUB_TOKEN — no PAT required.
 #
-# --allow-added-labels means this only creates/updates labels from the file; it never
-# deletes labels that exist on the repo but aren't listed. Drop that flag if you want
-# the file to be the single source of truth (extra labels get removed).
+# .github/labels.yml is the single source of truth: github-label-sync creates and
+# updates the labels it lists AND deletes any repo label that is not in the file
+# (its default behaviour). Add a label to the file before relying on it.
 
 on:
   push:
@@ -37,6 +37,5 @@ jobs:
         run: |
           npx -y github-label-sync@3.0.0 \
             --access-token "$GITHUB_ACCESS_TOKEN" \
-            --allow-added-labels \
             --labels .github/labels.yml \
             "$GITHUB_REPOSITORY"

@@ -117,7 +117,7 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
       />
 
       <div v-else class="grid gap-4 md:grid-cols-2">
-        <UCard v-for="habit in pagedHabits" :key="habit.id" variant="outline" :class="typeMeta(habit.type).cardClass">
+        <UCard v-for="habit in pagedHabits" :key="habit.id" variant="outline" :class="['habit-card', typeMeta(habit.type).cardClass]">
           <template #header>
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">

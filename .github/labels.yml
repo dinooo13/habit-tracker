@@ -55,9 +55,6 @@
   description: "Large change / multiple PRs"
 
 # --- status: where it stands ---
-- name: "status: needs-triage"
-  color: "ededed"
-  description: "Awaiting triage"
 - name: "status: blocked"
   color: "d93f0b"
   description: "Blocked by something else"

@@ -1,10 +1,24 @@
 import { defineStore } from 'pinia'
-import type { Habit, HabitCreateInput, HabitUpdateInput } from '~/types/app-data'
-import { nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/date'
+import type { Habit, HabitCreateInput, HabitPause, HabitUpdateInput } from '~/types/app-data'
+import { compareDateKeys, isDateInHabitPause, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/date'
 import { createId } from '~/utils/id'
+import { useEntriesStore } from '~/stores/entries'
+import { useCoachStore } from '~/stores/coach'
 
 interface HabitsState {
   habits: Habit[]
+}
+
+/**
+ * Sanitise a `pauses` list into a stable, ordered shape: drop reversed ranges
+ * (`end < start`) and sort by start date. Form input is already validated, but
+ * normalising here keeps the persisted order deterministic.
+ */
+function normalizePauses(pauses: HabitPause[] | undefined): HabitPause[] {
+  return (pauses ?? [])
+    .filter((pause) => compareDateKeys(pause.start, pause.end) <= 0)
+    .map((pause) => ({ start: pause.start, end: pause.end }))
+    .sort((left, right) => compareDateKeys(left.start, right.start) || compareDateKeys(left.end, right.end))
 }
 
 export const useHabitsStore = defineStore('habits', {
@@ -39,6 +53,7 @@ export const useHabitsStore = defineStore('habits', {
         reminderTime: input.reminderTime,
         startDate: input.startDate,
         archived: false,
+        pauses: normalizePauses(input.pauses),
         createdAt: now,
         updatedAt: now
       }
@@ -59,9 +74,42 @@ export const useHabitsStore = defineStore('habits', {
       habit.reminderTime = input.reminderTime
       habit.startDate = input.startDate
       habit.archived = input.archived
+      habit.pauses = normalizePauses(input.pauses)
       habit.updatedAt = nowIso()
 
       return habit
+    },
+    /**
+     * Retroactively clean up after a pause is added or extended: remove any
+     * auto-generated `missed` entry that now falls inside a pause range. Only
+     * *unreflected* misses (`status: 'missed'` && `missReasonCode === null`) are
+     * removed — `done`/`skipped` and reflected misses are preserved (ADR-0010).
+     *
+     * @returns the number of entries removed.
+     */
+    pruneMissedEntriesInPauses(id: string): number {
+      const habit = this.habitById(id)
+      if (!habit || !habit.pauses.length) {
+        return 0
+      }
+
+      const entriesStore = useEntriesStore()
+      const coachStore = useCoachStore()
+
+      const toRemove = entriesStore.entries.filter(
+        (entry) =>
+          entry.habitId === habit.id &&
+          entry.status === 'missed' &&
+          entry.missReasonCode === null &&
+          isDateInHabitPause(habit, entry.date)
+      )
+
+      for (const entry of toRemove) {
+        coachStore.removeForEntry(entry.id)
+        entriesStore.removeEntry(entry.id)
+      }
+
+      return toRemove.length
     },
     archiveHabit(id: string): void {
       const habit = this.habitById(id)

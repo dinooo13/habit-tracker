@@ -9,6 +9,7 @@ import {
   dateKeyToCalendarDate,
   formatDateKeyForLocale,
   formatTimeString,
+  isDateInHabitPause,
   relativeDayLabel,
   todayDateKey
 } from '~/utils/date'
@@ -97,6 +98,13 @@ function goToToday(): void {
 }
 
 const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))
+
+// Active habits whose schedule would otherwise make them due today, but that
+// are currently inside a pause range (ADR-0010). Surfaced so a quiet queue is
+// explained rather than mysterious.
+const pausedHabitsForDate = computed(() =>
+  habitsStore.activeHabits.filter((habit) => isDateInHabitPause(habit, dateKey.value))
+)
 
 const dueHabitModels = computed(() =>
   dueHabits.value.map((habit) => ({
@@ -419,6 +427,15 @@ function reopenHabit(habitId: string): void {
         :title="`${pendingReflections.length} missed habits need reflection`"
         description="Open review to capture why it slipped and get Atomic Habits tactics."
         :actions="[{ label: 'Open review', to: '/app/review', color: 'warning', variant: 'soft' }]"
+      />
+
+      <UAlert
+        v-if="pausedHabitsForDate.length"
+        color="info"
+        variant="subtle"
+        icon="i-lucide-pause"
+        :title="`${pausedHabitsForDate.length} ${pausedHabitsForDate.length === 1 ? 'habit is' : 'habits are'} paused ${isToday ? 'today' : 'on this day'}`"
+        description="Paused habits stay out of the queue and won't be marked missed until the pause ends."
       />
 
       <UCard>

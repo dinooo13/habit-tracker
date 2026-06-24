@@ -1,4 +1,4 @@
-import type { AppDataV1 } from '~/types/app-data'
+import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter } from '~/utils/dexie-persistence-adapter'
 import { migrateLegacyLocalStorage } from '~/utils/legacy-migration'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
@@ -21,7 +21,7 @@ function getDefaultAdapter(): PersistenceAdapter {
  * empty-state fallback live here, so adapters can assume a client environment.
  */
 export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()) {
-  async function load(): Promise<AppDataV1> {
+  async function load(): Promise<AppData> {
     if (!import.meta.client) {
       return createEmptyAppData()
     }
@@ -30,7 +30,7 @@ export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()
     return adapter.load()
   }
 
-  async function save(payload: AppDataV1): Promise<void> {
+  async function save(payload: AppData): Promise<void> {
     if (!import.meta.client) {
       return
     }

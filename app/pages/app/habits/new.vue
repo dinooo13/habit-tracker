@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'app' })
 
-import type { HabitType } from '~/types/app-data'
+import type { HabitPause, HabitType } from '~/types/app-data'
 
 const habitsStore = useHabitsStore()
 const router = useRouter()
@@ -15,6 +15,7 @@ function onSubmit(payload: {
   reminderTime: string | null
   startDate: string
   archived: boolean
+  pauses: HabitPause[]
 }) {
   const habit = habitsStore.createHabit({
     name: payload.name,
@@ -22,7 +23,8 @@ function onSubmit(payload: {
     identityStatement: payload.identityStatement,
     scheduleWeekdays: payload.scheduleWeekdays,
     reminderTime: payload.reminderTime,
-    startDate: payload.startDate
+    startDate: payload.startDate,
+    pauses: payload.pauses
   })
 
   if (payload.archived) {

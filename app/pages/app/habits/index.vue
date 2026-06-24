@@ -1,8 +1,17 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'app' })
 
+import type { Habit } from '~/types/app-data'
+import { isDateInHabitPause, todayDateKey } from '~/utils/date'
+
 const habitsStore = useHabitsStore()
 const settingsStore = useSettingsStore()
+
+const today = todayDateKey()
+
+function isCurrentlyPaused(habit: Habit): boolean {
+  return isDateInHabitPause(habit, today)
+}
 
 const showArchived = ref(false)
 const page = ref(1)
@@ -143,6 +152,12 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
               </UBadge>
               <UBadge :color="habit.archived ? 'warning' : 'success'" variant="subtle">
                 {{ habit.archived ? 'Archived' : 'Active' }}
+              </UBadge>
+              <UBadge v-if="!habit.archived && isCurrentlyPaused(habit)" color="info" variant="subtle" icon="i-lucide-pause">
+                Paused
+              </UBadge>
+              <UBadge v-else-if="habit.pauses.length" color="neutral" variant="subtle" icon="i-lucide-pause">
+                {{ habit.pauses.length }} {{ habit.pauses.length === 1 ? 'pause' : 'pauses' }}
               </UBadge>
             </div>
 

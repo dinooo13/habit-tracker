@@ -1,4 +1,4 @@
-export const APP_DATA_SCHEMA_VERSION = 1 as const
+export const APP_DATA_SCHEMA_VERSION = 2 as const
 
 export type HabitType = 'build' | 'break'
 export type HabitStatus = 'done' | 'missed' | 'skipped'
@@ -30,6 +30,16 @@ export const FIELD_LIMITS = {
   timestamp: 64
 } as const
 
+/**
+ * An inclusive range of local date keys (`YYYY-MM-DD`) during which a habit is
+ * paused. Days inside a pause are never *due*, so they are excluded from the
+ * queue and never auto-marked `missed`. Both bounds are inclusive; `end >= start`.
+ */
+export interface HabitPause {
+  start: string
+  end: string
+}
+
 export interface Habit {
   id: string
   name: string
@@ -39,6 +49,7 @@ export interface Habit {
   reminderTime: string | null
   startDate: string
   archived: boolean
+  pauses: HabitPause[]
   createdAt: string
   updatedAt: string
 }
@@ -74,13 +85,21 @@ export interface AppSettings {
   primaryColor: PrimaryColor
 }
 
-export interface AppDataV1 {
+/**
+ * The current persisted envelope. The only shape change from V1 is the new
+ * `pauses` field on `Habit`; see ADR-0010 and `migrateToV2` in
+ * `app/utils/storage-schema.ts`.
+ */
+export interface AppDataV2 {
   schemaVersion: typeof APP_DATA_SCHEMA_VERSION
   habits: Habit[]
   entries: HabitEntry[]
   suggestions: CoachingSuggestion[]
   settings: AppSettings
 }
+
+/** The current envelope type. Aliased so consumers can use a version-agnostic name. */
+export type AppData = AppDataV2
 
 export interface HabitCreateInput {
   name: string
@@ -89,6 +108,7 @@ export interface HabitCreateInput {
   scheduleWeekdays: number[]
   reminderTime: string | null
   startDate: string
+  pauses?: HabitPause[]
 }
 
 export interface HabitUpdateInput extends HabitCreateInput {

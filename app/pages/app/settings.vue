@@ -533,7 +533,7 @@ async function confirmImport(): Promise<void> {
       title: 'Import failed',
       description: importHabitsOnly.value
         ? 'The file is not valid JSON with importable habits.'
-        : 'The file is not valid AppDataV1 JSON.',
+        : 'The file is not valid AppData JSON.',
       color: 'error'
     })
   }

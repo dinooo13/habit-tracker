@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import type { AppDataV1 } from '../../app/types/app-data'
+import type { AppData } from '../../app/types/app-data'
 import { DUMMY_AUTH_STORAGE_KEY } from './constants'
 
 // The Dexie schema mirrored from app/utils/dexie-persistence-adapter.ts. The
@@ -10,7 +10,7 @@ const DATABASE_NAME = 'habit-tracker'
 
 interface SeedArg {
   databaseName: string
-  data: AppDataV1
+  data: AppData
 }
 
 // Runs in the browser. Deletes any existing database and writes a fresh one
@@ -68,7 +68,7 @@ const ORIGIN_ANCHOR = '/favicon.svg'
  * the database. Navigate to an app route afterwards (e.g. `page.goto('/app')`)
  * — the bootstrap plugin will hydrate the stores from the seeded database.
  */
-export async function seedData(page: Page, data: AppDataV1): Promise<void> {
+export async function seedData(page: Page, data: AppData): Promise<void> {
   await page.goto(ORIGIN_ANCHOR)
   await page.evaluate(seedIndexedDb, { databaseName: DATABASE_NAME, data })
 }

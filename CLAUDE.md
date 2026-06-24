@@ -52,13 +52,18 @@ Key files to know: `app/types/app-data.ts`, `app/stores/*`, `app/composables/use
 Defined in `app/types/app-data.ts`:
 
 - **`Habit`** — `type: 'build' | 'break'`, `identityStatement`, `scheduleWeekdays` (0–6),
-  `reminderTime`, `startDate`, `archived`.
+  `reminderTime`, `startDate`, `archived`, `pauses` (`HabitPause[]`).
+- **`HabitPause`** — an inclusive `{ start, end }` range of `YYYY-MM-DD` keys (`end >= start`)
+  during which the habit is paused. Paused days are never *due*, so they generate no entry,
+  are excluded from missed/streak/completion math, and produce no coaching (ADR-0010).
 - **`HabitEntry`** — one habit on one `date` (`YYYY-MM-DD`) with `status: 'done' | 'missed' | 'skipped'`,
   plus `missReasonCode` / `missReasonNote` for reflection.
 - **`CoachingSuggestion`** — derived from a missed entry: `law` (one of the 4 Atomic laws),
   `direction` (`increase` for build / `decrease` for break), `title`, `action`, `rationale`.
 - **`AppSettings`** — `notificationsEnabled`, `dailyReviewTime`, `weekStartsOn`, `primaryColor`.
-- **`AppDataV1`** — the persisted envelope: `{ schemaVersion: 1, habits, entries, suggestions, settings }`.
+- **`AppDataV2`** — the persisted envelope: `{ schemaVersion: 2, habits, entries, suggestions, settings }`.
+  Loaded/imported V1 payloads (and legacy `localStorage`) migrate up via a one-way Zod-validated
+  `migrateToV2` in `parseAppData` (ADR-0010).
 
 See `docs/glossary.md` for the domain vocabulary.
 

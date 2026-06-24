@@ -95,9 +95,10 @@ and coaching flows.
   **IndexedDB** via Dexie, reached through a swappable `PersistenceAdapter` interface
   (`app/utils/persistence-adapter.ts`, default `app/utils/dexie-persistence-adapter.ts`).
   There is no server.
-- **Versioned envelope.** Data is stored as an `AppDataV1` object (`schemaVersion: 1`) and
-  validated with Zod on load (`app/utils/storage-schema.ts`); corrupt data falls back to an
-  empty state rather than crashing.
+- **Versioned envelope.** Data is stored as an `AppDataV2` object (`schemaVersion: 2`) and
+  validated with Zod on load (`app/utils/storage-schema.ts`); older `AppDataV1` payloads migrate
+  up via a one-way `migrateToV2`, and corrupt data falls back to an empty state rather than
+  crashing.
 - **Legacy migration.** A previous `localStorage` payload is migrated into IndexedDB on first
   load, then cleaned up.
 - **Single device.** Data does not sync across devices or browsers — use **JSON export/import**

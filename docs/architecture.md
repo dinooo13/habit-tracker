@@ -68,11 +68,11 @@ sequenceDiagram
   Boot->>P: load()
   P->>A: migrate legacy localStorage on first run
   P->>A: load()
-  A->>DB: read AppDataV1
+  A->>DB: read AppData (meta schemaVersion + tables)
   DB-->>A: raw data
-  A->>A: validate with Zod (fallback to empty on failure)
-  A-->>P: AppDataV1
-  P-->>Boot: AppDataV1
+  A->>A: validate with Zod + migrate V1→V2 (fallback to empty on failure)
+  A-->>P: AppDataV2
+  P-->>Boot: AppDataV2
   Boot->>S: hydrate(habits / entries / suggestions / settings)
   Boot->>S: ensureMissedEntries(activeHabits, today)
   Boot->>S: reconcileMissingSuggestions(activeHabits, entries)
@@ -81,8 +81,15 @@ sequenceDiagram
   Boot->>Boot: debounce 800ms (flush on pagehide / visibility hidden)
   Boot->>P: save(snapshot)
   P->>A: save(snapshot)
-  A->>DB: write AppDataV1
+  A->>DB: write AppDataV2 (schemaVersion: 2)
 ```
+
+The persisted envelope is **`AppDataV2`** (`{ schemaVersion: 2, habits, entries, suggestions,
+settings }`). Each `Habit` carries a `pauses: HabitPause[]` list of inclusive `YYYY-MM-DD`
+ranges; days inside a pause are never *due*. Stored V1 payloads and legacy `localStorage`
+migrate up via a one-way `migrateToV2` inside `parseAppData`
+(see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md) and
+[adr/0006](adr/0006-zod-validated-versioned-data-schema.md)).
 
 ## Coaching flow
 

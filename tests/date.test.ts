@@ -21,6 +21,7 @@ const sampleHabit: Habit = {
   reminderTime: '08:15',
   startDate: '2026-02-01',
   archived: false,
+  pauses: [],
   createdAt: '2026-02-01T00:00:00.000Z',
   updatedAt: '2026-02-01T00:00:00.000Z'
 }

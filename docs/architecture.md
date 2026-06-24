@@ -91,6 +91,22 @@ migrate up via a one-way `migrateToV2` inside `parseAppData`
 (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md) and
 [adr/0006](adr/0006-zod-validated-versioned-data-schema.md)).
 
+## Resilience & update flows
+
+Two cross-cutting, client-only flows guard the local-first model:
+
+- **Storage health (SEC-18).** The debounced `save()` in `bootstrap.client.ts` routes write
+  failures (especially `QuotaExceededError`) and a best-effort `navigator.storage.estimate()`
+  pre-check through `useStorageHealth()`. `app/layouts/app.vue` watches its reactive
+  `lastError` / `isQuotaLow` and raises a `useToast()` warning so the user can export and prune.
+- **Service-worker update prompt (SEC-14).** With `registerType: 'prompt'`, a new worker is
+  precached but held; `usePwaUpdate()` (wrapping `$pwa.needRefresh`) drives a reload banner in
+  the app layout and applies the waiting worker only on user confirmation.
+
+Both, plus auth and import/export/delete actions, emit structured events into the in-memory
+security log (`app/utils/security-log.ts`, SEC-16) — a bounded ring buffer with a console sink,
+no network and no persistence.
+
 ## Coaching flow
 
 Missing a habit and recording *why* deterministically produces suggestions — no LLM, no

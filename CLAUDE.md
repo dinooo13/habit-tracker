@@ -37,8 +37,8 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`. |
-| `app/utils/` | Pure helpers: `atomic-rules.ts`, `date.ts`, `id.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `dummy-auth.ts`, `primary-color.ts`, `route-mapping.ts`, `demo-data-generator.ts`. |
+| `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
+| `app/utils/` | Pure helpers: `atomic-rules.ts`, `date.ts`, `id.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `dummy-auth.ts`, `security-log.ts`, `storage-health.ts`, `primary-color.ts`, `route-mapping.ts`, `demo-data-generator.ts`. |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |
@@ -100,6 +100,11 @@ See `docs/glossary.md` for the domain vocabulary.
   boundary — see `SECURITY.md` and `docs/adr/0007-client-side-dummy-auth.md`.
 - **Notifications are best-effort.** The reminder engine polls every 30s and only fires when
   the app is open and permission is granted (`app/composables/use-reminder-engine.ts`).
+- **Service worker prompts on update.** `pwa.registerType` is `'prompt'` (not `autoUpdate`):
+  new workers download but activate only when the user confirms the reload banner in
+  `app/layouts/app.vue` (`app/composables/use-pwa-update.ts`). See ADR-0008.
+- **Dummy-auth sessions expire.** An absolute 7-day expiry stamp lives in its own
+  `localStorage` key outside the `AppDataV1` envelope (`app/utils/dummy-auth.ts`); see ADR-0010.
 - **Nuxt UI documentation contract.** When using Nuxt UI components, defer to
   <https://ui.nuxt.com/llms.txt> and its linked `raw/docs/...` pages for exact props/slots/events.
   Those raw docs are the source of truth when there is ambiguity.

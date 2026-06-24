@@ -13,7 +13,7 @@ subscriptions, server-side scheduling). That conflicts with the local-first, no-
 ## Decision
 
 Ship a **Progressive Web App** via `@vite-pwa/nuxt` (manifest, icons, offline caching,
-`registerType: 'autoUpdate'`) and implement reminders entirely client-side as a
+`registerType: 'prompt'`) and implement reminders entirely client-side as a
 **best-effort polling engine** (`app/composables/use-reminder-engine.ts`). Started from the
 bootstrap plugin, it ticks every 30 seconds (and on window focus / tab becoming visible),
 and when notifications are enabled and permission is granted it fires a browser `Notification`
@@ -27,11 +27,24 @@ the configured time. A `notifiedKeys` set deduplicates within a tick window.
 - **Trade-offs:** reminders are **best-effort only** — they require the app to be open and
   notification permission granted, and will not fire reliably in the background or when the tab
   is closed. Reminder timing is minute-granular and tied to the 30s tick.
-- Known follow-ups captured in `SECURITY.md`/issue #1: `autoUpdate` applies service-worker
-  updates silently (SEC-14), and `notifiedKeys` grows unbounded over long sessions (SEC-17).
+- Known follow-up captured in `SECURITY.md`/issue #1: `notifiedKeys` grows unbounded over long
+  sessions (SEC-17).
+
+## Update: prompt before applying service-worker updates (SEC-14, #18)
+
+The original `registerType: 'autoUpdate'` activated a newly downloaded service worker silently,
+swapping the running app version with no user consent (SEC-14). Resolved in #18 by switching to
+**`registerType: 'prompt'`**: the new worker is fetched but held in the `waiting` state, and
+`@vite-pwa/nuxt`'s reactive `$pwa.needRefresh` drives a non-blocking **reload banner** in
+`app/layouts/app.vue`. The waiting worker is activated (and the page reloaded) only when the
+user clicks **Reload**; the banner is dismissible. A thin `usePwaUpdate()` composable wraps
+`$pwa` and degrades to a no-op when the injection is unavailable (SSR/tests). The update
+lifecycle is logged via the SEC-16 security log (`pwa.update.available` / `pwa.update.applied`).
 
 ## References
 
-- `nuxt.config.ts` — PWA manifest, workbox, `registerType`.
+- `nuxt.config.ts` — PWA manifest, workbox, `registerType: 'prompt'`.
+- `app/composables/use-pwa-update.ts` — `needRefresh` / `reload()` wrapper over `$pwa`.
+- `app/layouts/app.vue` — reload banner.
 - `app/composables/use-reminder-engine.ts` — tick loop, notification logic, dedup.
 - `app/plugins/bootstrap.client.ts` — starts the engine.

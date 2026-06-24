@@ -43,8 +43,27 @@ priority hardening items — tracked in [issue #1](https://github.com/dinooo13/h
 - **Add security headers** (CSP, `X-Frame-Options`, `X-Content-Type-Options`, etc.) via the
   hosting platform or Nitro middleware (SEC-11).
 - **Add max-length constraints** to all Zod string fields to bound import size (SEC-06).
-- Consider encrypting data at rest, prompting for service-worker updates instead of silent
-  `autoUpdate`, and clearing data on logout for shared devices (SEC-05, SEC-13, SEC-14).
+- Consider encrypting data at rest and clearing data on logout for shared devices (SEC-05,
+  SEC-13).
+
+## Addressed hardening
+
+Findings from the review that have since been mitigated within the local-first model:
+
+- **Session timeout (SEC-03).** The dummy-auth session now has an absolute 7-day expiry stamp;
+  expired/malformed sessions read as logged-out and clear their stale keys. See
+  [ADR-0010](docs/adr/0010-absolute-session-timeout-for-dummy-auth.md). *(This is hygiene, not
+  access control — the gate is still bypassable by design.)*
+- **Service-worker update consent (SEC-14).** `registerType` is now `'prompt'`: new workers
+  download but only activate after the user confirms via a reload banner. See
+  [ADR-0008](docs/adr/0008-pwa-best-effort-reminders.md).
+- **Security event logging (SEC-16).** A lightweight, in-memory client-side event log
+  (`app/utils/security-log.ts`) records auth, import/export, deletion, validation-failure, and
+  storage events to a bounded ring buffer + console. No network, no persistence.
+- **Storage-quota / write-failure notice (SEC-18).** Persistence write failures (especially
+  `QuotaExceededError`) and a best-effort `navigator.storage.estimate()` pre-check now surface
+  a user-facing warning toast instead of only `console.error`
+  (`app/composables/use-storage-health.ts`).
 
 ## Reporting a vulnerability
 

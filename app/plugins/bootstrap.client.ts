@@ -18,6 +18,10 @@ export default defineNuxtPlugin(async () => {
   requestPersistentStorage()
 
   const persistence = usePersistence()
+  const storageHealth = useStorageHealth()
+
+  // Best-effort quota pre-check at startup (SEC-18). Non-fatal when unavailable.
+  void storageHealth.checkQuota()
 
   const habitsStore = useHabitsStore()
   const entriesStore = useEntriesStore()
@@ -54,9 +58,18 @@ export default defineNuxtPlugin(async () => {
     }
     const payload = pendingPayload
     pendingPayload = null
-    persistence.save(payload).catch((error) => {
-      console.error('Failed to persist app data', error)
-    })
+    persistence
+      .save(payload)
+      .then(() => {
+        // Re-check quota after a successful large write (SEC-18).
+        void storageHealth.checkQuota()
+      })
+      .catch((error) => {
+        // Surface write failures (esp. QuotaExceededError) to the user via the
+        // storage-health composable; the layout watches it to raise a toast.
+        console.error('Failed to persist app data', error)
+        storageHealth.reportWriteFailure(error)
+      })
   }
 
   watch(

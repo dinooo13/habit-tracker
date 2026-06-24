@@ -46,7 +46,10 @@ export default defineNuxtConfig({
     classSuffix: ''
   },
   pwa: {
-    registerType: 'autoUpdate',
+    // SEC-14: download new service workers but wait for explicit user consent
+    // (a reload banner in app/layouts/app.vue) before activating them, instead
+    // of applying updates silently. See ADR-0008.
+    registerType: 'prompt',
     // Scope the service worker and manifest to the deploy base so PR previews
     // served from '/pr-<n>/' get their own, correctly-scoped install.
     scope: appBaseURL,

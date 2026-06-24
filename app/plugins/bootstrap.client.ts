@@ -1,5 +1,5 @@
 import { watch } from 'vue'
-import type { AppDataV1 } from '~/types/app-data'
+import type { AppData } from '~/types/app-data'
 import { todayDateKey } from '~/utils/date'
 import { applyPrimaryColorPalette } from '~/utils/primary-color'
 
@@ -41,7 +41,7 @@ export default defineNuxtPlugin(async () => {
     }
   )
 
-  let pendingPayload: AppDataV1 | null = null
+  let pendingPayload: AppData | null = null
   let saveTimer: ReturnType<typeof setTimeout> | null = null
 
   function flushPendingSave(): void {

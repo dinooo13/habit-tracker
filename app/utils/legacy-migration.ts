@@ -1,4 +1,4 @@
-import type { AppDataV1 } from '~/types/app-data'
+import type { AppData } from '~/types/app-data'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
 import { safeJsonParse } from '~/utils/safe-json'
 import { parseAppData } from '~/utils/storage-schema'
@@ -6,7 +6,10 @@ import { parseAppData } from '~/utils/storage-schema'
 export const LEGACY_STORAGE_KEY = 'habit-tracker:v1:data'
 export const LEGACY_LAST_VALID_STORAGE_KEY = 'habit-tracker:v1:last-valid'
 
-function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppDataV1 | null {
+// The legacy localStorage payload is a pre-Dexie V1 envelope. `parseAppData`
+// validates it as V1 and migrates it up to the current V2 shape (ADR-0010), so
+// the value saved into the active backend is already V2.
+function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppData | null {
   for (const key of [LEGACY_STORAGE_KEY, LEGACY_LAST_VALID_STORAGE_KEY]) {
     const value = storage.getItem(key)
     if (!value) {

@@ -1,4 +1,4 @@
-import type { AppDataV1 } from '~/types/app-data'
+import type { AppData } from '~/types/app-data'
 import { todayDateKey } from '~/utils/date'
 import { generateDemoData } from '~/utils/demo-data-generator'
 import { applyPrimaryColorPalette } from '~/utils/primary-color'
@@ -6,7 +6,7 @@ import { parseAppData } from '~/utils/storage-schema'
 
 const DEMO_FIXTURE_URL = '/fixtures/habit-tracker-demo.json'
 
-export async function fetchDemoPayload(fetchImpl: typeof fetch, fixtureUrl = DEMO_FIXTURE_URL): Promise<AppDataV1> {
+export async function fetchDemoPayload(fetchImpl: typeof fetch, fixtureUrl = DEMO_FIXTURE_URL): Promise<AppData> {
   const response = await fetchImpl(fixtureUrl, { cache: 'no-store' })
 
   if (!response.ok) {
@@ -24,7 +24,7 @@ interface DemoHydrateDependencies {
   persistence: ReturnType<typeof usePersistence>
 }
 
-export async function hydrateDemoPayload(payload: AppDataV1, dependencies: DemoHydrateDependencies): Promise<void> {
+export async function hydrateDemoPayload(payload: AppData, dependencies: DemoHydrateDependencies): Promise<void> {
   const { habitsStore, entriesStore, coachStore, settingsStore, persistence } = dependencies
 
   habitsStore.hydrate(payload.habits)

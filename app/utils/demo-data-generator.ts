@@ -1,4 +1,4 @@
-import type { AppDataV1, AtomicLaw, CoachingSuggestion, Habit, HabitEntry, LawDirection, MissReasonCode } from '~/types/app-data'
+import type { AppData, AtomicLaw, CoachingSuggestion, Habit, HabitEntry, LawDirection, MissReasonCode } from '~/types/app-data'
 
 // ── date helpers ──────────────────────────────────────────────────────────────
 
@@ -286,9 +286,28 @@ const PHASE_2_START = 126
  * Generates a realistic six-month demo dataset anchored to `today`.
  * The same date always produces the same dataset (deterministic RNG).
  */
-export function generateDemoData(today = new Date()): AppDataV1 {
+export function generateDemoData(today = new Date()): AppData {
   const endDate = shiftDays(today, -1) // yesterday — last "completed" day
   const periodStart = shiftMonths(endDate, -6)
+
+  // Seed one example "travel week" pause on the reading habit ~3 months ago so
+  // the demo shows the flexible-schedule feature: no missed entries are created
+  // for those days (ADR-0010).
+  const pauseStart = shiftMonths(endDate, -3)
+  const READING_PAUSE = {
+    habitId: 'habit_reading',
+    start: dateToKey(pauseStart),
+    end: dateToKey(shiftDays(pauseStart, 6))
+  }
+  const pausesByHabit: Record<string, Array<{ start: string; end: string }>> = {
+    [READING_PAUSE.habitId]: [{ start: READING_PAUSE.start, end: READING_PAUSE.end }]
+  }
+
+  function isInDemoPause(habitId: string, dateKey: string): boolean {
+    return (pausesByHabit[habitId] ?? []).some(
+      (pause) => dateKey >= pause.start && dateKey <= pause.end
+    )
+  }
 
   // Seed = numeric date so data is stable within a calendar day
   const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
@@ -308,6 +327,7 @@ export function generateDemoData(today = new Date()): AppDataV1 {
       reminderTime: def.reminderTime,
       startDate: dateToKey(habitStart),
       archived: false,
+      pauses: pausesByHabit[def.id] ?? [],
       createdAt: dateToIso(shiftDays(habitStart, -2), timeStr),
       updatedAt: dateToIso(endDate, timeStr),
     }
@@ -327,6 +347,8 @@ export function generateDemoData(today = new Date()): AppDataV1 {
       const habitStart = shiftDays(periodStart, def.startOffsetDays)
       if (cursor < habitStart) continue
       if (!def.scheduleWeekdays.includes(weekday)) continue
+      // Paused days are not due, so no entry is generated for them (ADR-0010).
+      if (isInDemoPause(def.id, dateKey)) continue
 
       const successRate = def.successRates[phase]
       const roll = rng()
@@ -392,7 +414,7 @@ export function generateDemoData(today = new Date()): AppDataV1 {
   }
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     habits,
     entries,
     suggestions,

@@ -5,7 +5,7 @@ import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
 import { FIELD_LIMITS } from '~/types/app-data'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+import { createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/storage-schema'
 import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/date'
 import { createId } from '~/utils/id'
 import { safeJsonParse } from '~/utils/safe-json'
@@ -133,7 +133,7 @@ async function requestPermission(): Promise<void> {
 
 function buildCurrentPayload() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2 as const,
     habits: habitsStore.snapshot(),
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
@@ -220,6 +220,7 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
     reminderTime,
     startDate,
     archived: typeof candidate.archived === 'boolean' ? candidate.archived : false,
+    pauses: normalizeHabitPauses(candidate.pauses),
     createdAt,
     updatedAt
   }
@@ -249,7 +250,7 @@ function extractHabitsFromImportPayload(payload: unknown): Habit[] {
 
 async function persistCurrentState(): Promise<void> {
   await persistence.save({
-    schemaVersion: 1,
+    schemaVersion: 2,
     habits: habitsStore.snapshot(),
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
@@ -317,6 +318,7 @@ Required fields for each habit:
 - reminderTime: "HH:mm" 24-hour string or null
 - startDate: "YYYY-MM-DD" (default to ${today} if I do not specify)
 - archived: boolean (default false)
+- pauses: array of { "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" } ranges when the habit is paused (default [])
 
 Constraints:
 - Only return habits that are specific and realistic.
@@ -338,7 +340,8 @@ Output format:
       "scheduleWeekdays": [1,2,3],
       "reminderTime": "HH:mm or null",
       "startDate": "YYYY-MM-DD",
-      "archived": false
+      "archived": false,
+      "pauses": [{ "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" }]
     }
   ]
 }`.trim()
@@ -355,7 +358,8 @@ function buildCurrentHabitsPrompt(): string {
         scheduleWeekdays: habit.scheduleWeekdays,
         reminderTime: habit.reminderTime,
         startDate: habit.startDate,
-        archived: habit.archived
+        archived: habit.archived,
+        pauses: habit.pauses
       }))
     },
     null,
@@ -385,7 +389,8 @@ Output format:
       "scheduleWeekdays": [1,2,3],
       "reminderTime": "HH:mm or null",
       "startDate": "YYYY-MM-DD",
-      "archived": false
+      "archived": false,
+      "pauses": [{ "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" }]
     }
   ]
 }

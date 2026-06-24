@@ -2,8 +2,8 @@
 import { Time } from '@internationalized/date'
 import type { FormSubmitEvent, RadioGroupItem } from '@nuxt/ui'
 import { z } from 'zod'
-import type { Habit, HabitType } from '~/types/app-data'
-import { formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/date'
+import type { Habit, HabitPause, HabitType } from '~/types/app-data'
+import { compareDateKeys, formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/date'
 
 interface HabitFormPayload {
   name: string
@@ -13,6 +13,7 @@ interface HabitFormPayload {
   reminderTime: string | null
   startDate: string
   archived: boolean
+  pauses: HabitPause[]
 }
 
 const props = withDefaults(
@@ -75,6 +76,21 @@ const reminderTime = shallowRef<Time | null>(
   initialTime ? new Time(initialTime.hour, initialTime.minute, 0) : null
 )
 
+// Pause ranges: each row is an editable `{ start, end }` of local date keys.
+// Days inside any pause are never due (ADR-0010). Rows are validated on submit.
+const pauses = ref<HabitPause[]>(
+  (props.initial?.pauses ?? []).map((pause) => ({ start: pause.start, end: pause.end }))
+)
+
+function addPause(): void {
+  const today = todayDateKey()
+  pauses.value.push({ start: today, end: today })
+}
+
+function removePause(index: number): void {
+  pauses.value.splice(index, 1)
+}
+
 const typeOptions: RadioGroupItem[] = [
   {
     value: 'build',
@@ -105,12 +121,45 @@ function timeToString(value: Time | null): string | null {
   return formatTimeString(value.hour, value.minute)
 }
 
+function buildPauses(): HabitPause[] | null {
+  const cleaned: HabitPause[] = []
+
+  for (const pause of pauses.value) {
+    const start = pause.start
+    const end = pause.end
+
+    if (!isValidDateKey(start) || !isValidDateKey(end)) {
+      return null
+    }
+
+    if (compareDateKeys(end, start) < 0) {
+      return null
+    }
+
+    cleaned.push({ start, end })
+  }
+
+  return cleaned.sort(
+    (left, right) => compareDateKeys(left.start, right.start) || compareDateKeys(left.end, right.end)
+  )
+}
+
 function onSubmit(event: FormSubmitEvent<Schema>) {
   const weekdays = buildScheduleWeekdays()
   if (!weekdays.length) {
     toast.add({
       title: 'Select at least one day',
       description: 'A habit needs at least one planned weekday.',
+      color: 'warning'
+    })
+    return
+  }
+
+  const cleanedPauses = buildPauses()
+  if (!cleanedPauses) {
+    toast.add({
+      title: 'Check your pause dates',
+      description: 'Each pause needs a valid start and an end on or after the start.',
       color: 'warning'
     })
     return
@@ -123,7 +172,8 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
     startDate: event.data.startDate,
     archived: state.archived,
     scheduleWeekdays: weekdays,
-    reminderTime: timeToString(reminderTime.value)
+    reminderTime: timeToString(reminderTime.value),
+    pauses: cleanedPauses
   })
 }
 </script>
@@ -162,6 +212,38 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
           variant="card"
           color="neutral"
         />
+      </div>
+    </UFormField>
+
+    <UFormField label="Pauses" help="Pause this habit for a date range (e.g. travel). Paused days are never due and won't be marked missed.">
+      <div class="space-y-3">
+        <div v-if="!pauses.length" class="text-sm text-muted">
+          No pauses. Add a range to take a planned break without breaking your streak.
+        </div>
+
+        <div
+          v-for="(pause, index) in pauses"
+          :key="index"
+          class="grid items-end gap-2 sm:grid-cols-[1fr_1fr_auto]"
+        >
+          <UFormField :label="index === 0 ? 'From' : undefined">
+            <UInput v-model="pause.start" class="w-full" type="date" :min="MIN_DATE_KEY" :max="MAX_DATE_KEY" />
+          </UFormField>
+          <UFormField :label="index === 0 ? 'To' : undefined">
+            <UInput v-model="pause.end" class="w-full" type="date" :min="pause.start || MIN_DATE_KEY" :max="MAX_DATE_KEY" />
+          </UFormField>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-trash-2"
+            :aria-label="`Remove pause ${index + 1}`"
+            @click="removePause(index)"
+          />
+        </div>
+
+        <UButton color="neutral" variant="outline" icon="i-lucide-plus" size="sm" @click="addPause">
+          Add pause
+        </UButton>
       </div>
     </UFormField>
 

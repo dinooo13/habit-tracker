@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { AppDataV1, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
+import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
 
@@ -22,6 +22,11 @@ export class HabitDatabase extends Dexie {
   constructor() {
     super(DATABASE_NAME)
 
+    // The Dexie *store* version is unrelated to the AppData *schema* version: the
+    // V1→V2 app-data migration only adds a nested `pauses` array on each habit,
+    // which is not an index, so no `version(2).stores()` bump is needed. The
+    // app-data schema version lives in the `meta` table and migrations run in
+    // `parseAppData` (ADR-0010).
     this.version(1).stores({
       habits: 'id, startDate',
       entries: 'id, habitId, date, status',
@@ -31,9 +36,9 @@ export class HabitDatabase extends Dexie {
   }
 }
 
-function toPlainPayload(payload: AppDataV1): AppDataV1 {
+function toPlainPayload(payload: AppData): AppData {
   // Strips Vue reactivity proxies so IndexedDB structured cloning gets plain objects.
-  return JSON.parse(JSON.stringify(payload)) as AppDataV1
+  return JSON.parse(JSON.stringify(payload)) as AppData
 }
 
 /**
@@ -50,7 +55,7 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
     this.db = db
   }
 
-  async save(payload: AppDataV1): Promise<void> {
+  async save(payload: AppData): Promise<void> {
     const plain = toPlainPayload(payload)
     const { db } = this
 
@@ -72,7 +77,7 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
     return Boolean(await this.db.meta.get(SCHEMA_VERSION_META_KEY))
   }
 
-  async load(): Promise<AppDataV1> {
+  async load(): Promise<AppData> {
     const { db } = this
     const [habits, entries, suggestions, schemaVersionRecord, settingsRecord] = await db.transaction(
       'r',

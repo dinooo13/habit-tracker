@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'app' })
 
-import type { HabitType } from '~/types/app-data'
+import type { HabitPause, HabitType } from '~/types/app-data'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,6 +19,7 @@ function onSubmit(payload: {
   reminderTime: string | null
   startDate: string
   archived: boolean
+  pauses: HabitPause[]
 }) {
   const updated = habitsStore.updateHabit(habitId.value, {
     name: payload.name,
@@ -27,7 +28,8 @@ function onSubmit(payload: {
     scheduleWeekdays: payload.scheduleWeekdays,
     reminderTime: payload.reminderTime,
     startDate: payload.startDate,
-    archived: payload.archived
+    archived: payload.archived,
+    pauses: payload.pauses
   })
 
   if (!updated) {
@@ -38,6 +40,9 @@ function onSubmit(payload: {
     })
     return
   }
+
+  // Drop auto-generated, unreflected misses that now fall inside a pause (ADR-0010).
+  habitsStore.pruneMissedEntriesInPauses(updated.id)
 
   toast.add({
     title: 'Habit updated',

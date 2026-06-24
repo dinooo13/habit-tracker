@@ -119,6 +119,16 @@ export function weekdayFromDateKey(dateKey: string): number {
   return parseDateKey(dateKey).getDay()
 }
 
+/**
+ * True when `dateKey` falls inside any of the habit's pause ranges (inclusive
+ * on both ends). Paused days are never due (see {@link isHabitDueOnDate}).
+ */
+export function isDateInHabitPause(habit: Habit, dateKey: string): boolean {
+  return (habit.pauses ?? []).some(
+    (pause) => compareDateKeys(dateKey, pause.start) >= 0 && compareDateKeys(dateKey, pause.end) <= 0
+  )
+}
+
 export function isHabitDueOnDate(habit: Habit, dateKey: string): boolean {
   if (habit.archived) {
     return false
@@ -128,7 +138,13 @@ export function isHabitDueOnDate(habit: Habit, dateKey: string): boolean {
     return false
   }
 
-  return habit.scheduleWeekdays.includes(weekdayFromDateKey(dateKey))
+  if (!habit.scheduleWeekdays.includes(weekdayFromDateKey(dateKey))) {
+    return false
+  }
+
+  // A day inside a pause range is not due, so it never generates a queue item
+  // or an auto-`missed` entry (ADR-0010).
+  return !isDateInHabitPause(habit, dateKey)
 }
 
 export function dateKeyRange(start: string, end: string): string[] {

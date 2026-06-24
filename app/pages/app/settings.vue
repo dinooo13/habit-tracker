@@ -20,6 +20,8 @@ const reminderEngine = useReminderEngine()
 const persistence = usePersistence()
 const toast = useToast()
 const demoData = useDemoData()
+const storageHealth = useStorageHealth()
+const { logSecurityEvent } = useSecurityLog()
 
 const notificationEnabled = computed({
   get: () => settingsStore.notificationsEnabled,
@@ -155,6 +157,7 @@ function exportJson(): void {
   const payload = buildCurrentPayload()
   downloadBackup(payload)
 
+  logSecurityEvent('data.export', 'info', `${payload.habits.length} habits exported`)
   toast.add({ title: 'Export complete', color: 'success' })
 }
 
@@ -496,7 +499,9 @@ async function confirmImport(): Promise<void> {
       const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(importedHabits)
       habitsStore.hydrate(mergedHabits)
       await persistCurrentState()
+      void storageHealth.checkQuota()
 
+      logSecurityEvent('data.import', 'info', `habits-only: ${addedCount} added, ${updatedCount} updated`)
       toast.add({
         title: 'Habits imported',
         description: `${addedCount} ${pluralize(addedCount, 'habit')} added, ${updatedCount} ${pluralize(updatedCount, 'habit')} updated. History was ignored.`,
@@ -517,9 +522,11 @@ async function confirmImport(): Promise<void> {
         entries: entriesStore.snapshot(),
         suggestions: coachStore.snapshot()
       })
+      void storageHealth.checkQuota()
 
       syncDailyReviewTimeFromSettings()
 
+      logSecurityEvent('data.import', 'info', `full backup: ${parsed.habits.length} habits restored`)
       toast.add({
         title: 'Import complete',
         description: 'Backup data has been restored.',
@@ -529,6 +536,7 @@ async function confirmImport(): Promise<void> {
 
     importModalOpen.value = false
   } catch {
+    logSecurityEvent('data.validation_failed', 'warn', 'Import rejected: invalid file')
     toast.add({
       title: 'Import failed',
       description: importHabitsOnly.value
@@ -551,9 +559,11 @@ async function deleteAllData(withBackup: boolean): Promise<void> {
   settingsStore.hydrate(empty.settings)
   syncDailyReviewTimeFromSettings()
   await persistence.save(empty)
+  void storageHealth.checkQuota()
   notificationPermission.value = reminderEngine.currentPermission()
   deleteAllModalOpen.value = false
 
+  logSecurityEvent('data.delete', 'warn', withBackup ? 'all data deleted (backup downloaded)' : 'all data deleted')
   toast.add({
     title: withBackup ? 'Backup downloaded and data deleted' : 'All data deleted',
     color: 'warning'

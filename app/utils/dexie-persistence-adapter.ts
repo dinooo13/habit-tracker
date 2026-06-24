@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+import { recordSecurityEvent } from '~/utils/security-log'
 
 export const DATABASE_NAME = 'habit-tracker'
 
@@ -104,7 +105,14 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         suggestions,
         settings: settingsRecord?.value
       })
-    } catch {
+    } catch (error) {
+      // Stored data failed Zod validation — fall back to empty state and log the
+      // failure (SEC-16) so the silent reset is observable.
+      recordSecurityEvent(
+        'data.validation_failed',
+        'error',
+        error instanceof Error ? error.message : 'Stored AppData failed validation'
+      )
       return createEmptyAppData()
     }
   }

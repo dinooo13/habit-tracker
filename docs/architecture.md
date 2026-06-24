@@ -29,6 +29,7 @@ flowchart TD
     reminders["use-reminder-engine"]
     auth["use-dummy-auth"]
     demo["use-demo-data"]
+    backup["use-backup-nudge"]
   end
 
   subgraph Utils["Utilities (app/utils)"]

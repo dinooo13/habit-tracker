@@ -83,7 +83,17 @@ export interface AppSettings {
   dailyReviewTime: string | null
   weekStartsOn: 0 | 1
   primaryColor: PrimaryColor
+  // ISO timestamp of the most recent successful export, or null if never exported.
+  // Anchors the "unexported data" backup nudge (issue #8).
+  lastExportedAt: string | null
+  // Date key (YYYY-MM-DD) the backup nudge is snoozed until after a dismissal, or null.
+  backupNudgeSnoozedUntil: string | null
 }
+
+// Backup-nudge thresholds (issue #8). Show the dashboard nudge once data has gone
+// unexported for at least this many weeks; snooze it this many days on dismissal.
+export const BACKUP_NUDGE_THRESHOLD_WEEKS = 2
+export const BACKUP_NUDGE_SNOOZE_DAYS = 7
 
 /**
  * The current persisted envelope. The only shape change from V1 is the new
@@ -119,5 +129,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   dailyReviewTime: '20:00',
   weekStartsOn: 1,
-  primaryColor: 'emerald'
+  primaryColor: 'emerald',
+  lastExportedAt: null,
+  backupNudgeSnoozedUntil: null
 }

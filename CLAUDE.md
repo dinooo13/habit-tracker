@@ -60,7 +60,9 @@ Defined in `app/types/app-data.ts`:
   plus `missReasonCode` / `missReasonNote` for reflection.
 - **`CoachingSuggestion`** — derived from a missed entry: `law` (one of the 4 Atomic laws),
   `direction` (`increase` for build / `decrease` for break), `title`, `action`, `rationale`.
-- **`AppSettings`** — `notificationsEnabled`, `dailyReviewTime`, `weekStartsOn`, `primaryColor`.
+- **`AppSettings`** — `notificationsEnabled`, `dailyReviewTime`, `weekStartsOn`, `primaryColor`,
+  plus optional `lastExportedAt` / `backupNudgeSnoozedUntil` (both nullable, defaulted) that
+  drive the dashboard backup nudge.
 - **`AppDataV2`** — the persisted envelope: `{ schemaVersion: 2, habits, entries, suggestions, settings }`.
   Loaded/imported V1 payloads (and legacy `localStorage`) migrate up via a one-way Zod-validated
   `migrateToV2` in `parseAppData` (ADR-0010).

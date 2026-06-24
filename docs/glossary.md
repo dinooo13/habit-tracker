@@ -60,4 +60,10 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
 - **Settings** — `notificationsEnabled`, `dailyReviewTime` (`HH:MM`), `weekStartsOn`
   (`0` Sunday / `1` Monday), and `primaryColor` (one of `sky`, `emerald`, `violet`, `rose`,
-  `amber`).
+  `amber`). Two optional, nullable fields back the **Backup nudge**: `lastExportedAt` (ISO
+  timestamp of the last successful export) and `backupNudgeSnoozedUntil` (date key the nudge
+  is snoozed to after a dismissal).
+- **Backup nudge** — a dismissible Today-dashboard banner that warns when local data has gone
+  unexported for too long (`≥ 2` weeks). It tracks export recency via `lastExportedAt`, links
+  to the existing export flow, and snoozes for 7 days on dismissal. Logic lives in
+  `app/composables/use-backup-nudge.ts`.

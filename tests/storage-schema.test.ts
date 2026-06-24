@@ -43,6 +43,32 @@ describe('storage schema', () => {
     expect(parsed.settings.primaryColor).toBe('emerald')
   })
 
+  it('defaults backup-nudge fields to null for pre-issue-#8 payloads (#8)', () => {
+    const legacyPayload = createEmptyAppData() as any
+    delete legacyPayload.settings.lastExportedAt
+    delete legacyPayload.settings.backupNudgeSnoozedUntil
+
+    const parsed = parseAppData(legacyPayload)
+    expect(parsed.settings.lastExportedAt).toBeNull()
+    expect(parsed.settings.backupNudgeSnoozedUntil).toBeNull()
+  })
+
+  it('round-trips set backup-nudge fields (#8)', () => {
+    const payload = createEmptyAppData()
+    payload.settings.lastExportedAt = '2026-06-01T10:00:00.000Z'
+    payload.settings.backupNudgeSnoozedUntil = '2026-06-08'
+
+    const parsed = parseAppData(payload)
+    expect(parsed.settings.lastExportedAt).toBe('2026-06-01T10:00:00.000Z')
+    expect(parsed.settings.backupNudgeSnoozedUntil).toBe('2026-06-08')
+  })
+
+  it('rejects an out-of-range backupNudgeSnoozedUntil date key (#8)', () => {
+    const payload = createEmptyAppData()
+    ;(payload.settings as any).backupNudgeSnoozedUntil = '9999-12-31'
+    expect(() => parseAppData(payload)).toThrow()
+  })
+
   it('rejects malformed habit fields', () => {
     const payload = createEmptyAppData()
     payload.habits.push({

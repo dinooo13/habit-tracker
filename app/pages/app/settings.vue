@@ -22,6 +22,7 @@ const toast = useToast()
 const demoData = useDemoData()
 const storageHealth = useStorageHealth()
 const { logSecurityEvent } = useSecurityLog()
+const backupNudge = useBackupNudge()
 
 const notificationEnabled = computed({
   get: () => settingsStore.notificationsEnabled,
@@ -158,6 +159,10 @@ function exportJson(): void {
   downloadBackup(payload)
 
   logSecurityEvent('data.export', 'info', `${payload.habits.length} habits exported`)
+
+  // Record the export so the dashboard backup nudge (issue #8) resets.
+  backupNudge.markExported()
+
   toast.add({ title: 'Export complete', color: 'success' })
 }
 
@@ -557,8 +562,13 @@ async function deleteAllData(withBackup: boolean): Promise<void> {
   entriesStore.hydrate(empty.entries)
   coachStore.hydrate(empty.suggestions)
   settingsStore.hydrate(empty.settings)
+  // "Download backup and delete all" counts as an export — record it (issue #8) so a
+  // later re-import doesn't immediately re-nudge.
+  if (withBackup) {
+    backupNudge.markExported()
+  }
   syncDailyReviewTimeFromSettings()
-  await persistence.save(empty)
+  await persistence.save({ ...empty, settings: settingsStore.snapshot() })
   void storageHealth.checkQuota()
   notificationPermission.value = reminderEngine.currentPermission()
   deleteAllModalOpen.value = false

@@ -36,3 +36,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0007](0007-client-side-dummy-auth.md) | Client-side dummy auth | Accepted |
 | [0008](0008-pwa-best-effort-reminders.md) | PWA best-effort reminders | Accepted |
 | [0009](0009-persistence-adapter-interface.md) | Persistence adapter interface | Accepted |
+| [0010](0010-appdatav2-flexible-schedules-pause-ranges.md) | AppDataV2 — flexible schedules & pause ranges | Accepted |

@@ -13,6 +13,7 @@ function validHabit(overrides: Partial<Habit> = {}): Habit {
     reminderTime: '08:00',
     startDate: '2026-02-01',
     archived: false,
+    pauses: [],
     createdAt: '2026-02-01T00:00:00.000Z',
     updatedAt: '2026-02-01T00:00:00.000Z',
     ...overrides
@@ -53,6 +54,7 @@ describe('storage schema', () => {
       reminderTime: '99:99',
       startDate: '2026-02-01',
       archived: false,
+      pauses: [],
       createdAt: '2026-02-01T00:00:00.000Z',
       updatedAt: '2026-02-01T00:00:00.000Z'
     })

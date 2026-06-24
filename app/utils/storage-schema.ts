@@ -149,9 +149,16 @@ export function parseAppData(payload: unknown): AppDataV2 {
     return AppDataV2Schema.parse(payload)
   }
 
-  // Treat anything that isn't an explicit V2 as V1-shaped input. A payload with
-  // a missing/legacy version is normalised to `schemaVersion: 1` before the V1
-  // schema (which pins the literal) runs.
+  // Migrate only V1 input: an explicit `schemaVersion: 1`, or a legacy payload
+  // with a missing/non-numeric version (normalised to 1 below). Any *other*
+  // explicit version (e.g. a future or bogus 99) is rejected so callers fall
+  // back to empty state rather than silently mis-migrating.
+  const isMigratableV1 = version === 1 || version === undefined
+
+  if (!isMigratableV1) {
+    throw new Error(`Unsupported schemaVersion: ${String(version)}`)
+  }
+
   const candidate =
     payload && typeof payload === 'object'
       ? { ...(payload as object), schemaVersion: 1 }

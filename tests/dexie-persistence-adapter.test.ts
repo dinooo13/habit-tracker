@@ -1,13 +1,13 @@
 import 'fake-indexeddb/auto'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { AppDataV1 } from '~/types/app-data'
+import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 
-function readFixture(): AppDataV1 {
+function readFixture(): AppData {
   return parseAppData(JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')))
 }
 

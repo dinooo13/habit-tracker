@@ -12,6 +12,7 @@ function buildHabit(type: 'build' | 'break'): Habit {
     reminderTime: '07:30',
     startDate: '2026-02-01',
     archived: false,
+    pauses: [],
     createdAt: '2026-02-01T00:00:00.000Z',
     updatedAt: '2026-02-01T00:00:00.000Z'
   }

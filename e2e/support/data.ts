@@ -1,4 +1,4 @@
-import type { AppDataV1, AppSettings, CoachingSuggestion, Habit, HabitEntry } from '../../app/types/app-data'
+import type { AppData, AppSettings, CoachingSuggestion, Habit, HabitEntry } from '../../app/types/app-data'
 
 // Deterministic, today-relative test data builders. Fixed-date fixtures
 // (tests/fixtures/*.json) drift relative to "today" and make streak / insights
@@ -54,6 +54,7 @@ export function makeHabit(overrides: Partial<Habit> = {}): Habit {
     reminderTime: overrides.reminderTime ?? '08:00',
     startDate: start,
     archived: overrides.archived ?? false,
+    pauses: overrides.pauses ?? [],
     createdAt: overrides.createdAt ?? ISO,
     updatedAt: overrides.updatedAt ?? ISO
   }
@@ -86,9 +87,9 @@ export function makeSuggestion(
   }
 }
 
-export function makeAppData(overrides: Partial<AppDataV1> = {}): AppDataV1 {
+export function makeAppData(overrides: Partial<AppData> = {}): AppData {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     habits: overrides.habits ?? [],
     entries: overrides.entries ?? [],
     suggestions: overrides.suggestions ?? [],
@@ -100,7 +101,7 @@ export function makeAppData(overrides: Partial<AppDataV1> = {}): AppDataV1 {
  * Builds a habit with a run of `done` entries on the days leading up to (and
  * including) `today`, producing a deterministic streak of `length` days.
  */
-export function buildStreakData(length: number, habitOverrides: Partial<Habit> = {}): AppDataV1 {
+export function buildStreakData(length: number, habitOverrides: Partial<Habit> = {}): AppData {
   const habit = makeHabit({
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
     startDate: addDaysKey(todayKey(), -(length + 5)),

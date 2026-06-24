@@ -15,8 +15,12 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   Atomic Habits frames lasting change as identity-based; the statement is shown as a cue and in
   reminders.
 - **Schedule (`scheduleWeekdays`)** — the days a habit is due, as weekday numbers `0`–`6`
-  (Sunday = 0). A habit is *due* on a date if it is active, on/after its `startDate`, and the
-  weekday is in the schedule (`isHabitDueOnDate`).
+  (Sunday = 0). A habit is *due* on a date if it is active, on/after its `startDate`, the
+  weekday is in the schedule, **and** the date is not inside a pause (`isHabitDueOnDate`).
+- **Pause (`HabitPause`)** — an inclusive `{ start, end }` range of `YYYY-MM-DD` keys
+  (`end >= start`) during which a habit is paused. Paused days are *never due*, so they
+  generate no entry and are excluded from missed / streak / completion math and coaching
+  (`isDateInHabitPause`; see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
 - **Start date** — the first date (`YYYY-MM-DD`) the habit counts from.
 - **Reminder time** — optional `HH:MM` at which the reminder engine may notify.
 
@@ -24,7 +28,8 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
 
 - **Entry (`HabitEntry`)** — the record of one habit on one date.
 - **Status** — `done`, `missed`, or `skipped`. On startup, `ensureMissedEntries` fills in
-  `missed` entries for past due days that have no entry yet.
+  `missed` entries for past due days that have no entry yet. Paused days are not due, so no
+  entry is generated for them.
 - **Date key** — dates are stored as local `YYYY-MM-DD` strings (not `Date` objects) to avoid
   timezone drift (`app/utils/date.ts`).
 - **Streak** — consecutive completed due-days for a habit (`entries.streakForHabit`).
@@ -48,8 +53,11 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
 
 ## Data & settings
 
-- **`AppDataV1`** — the versioned envelope persisted to IndexedDB:
-  `{ schemaVersion: 1, habits, entries, suggestions, settings }`.
+- **`AppDataV2`** — the versioned envelope persisted to IndexedDB:
+  `{ schemaVersion: 2, habits, entries, suggestions, settings }`. V1 payloads (and legacy
+  `localStorage`) migrate up to V2 via a one-way `migrateToV2` in `parseAppData`, which
+  defaults `pauses: []` on every habit
+  (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
 - **Settings** — `notificationsEnabled`, `dailyReviewTime` (`HH:MM`), `weekStartsOn`
   (`0` Sunday / `1` Monday), and `primaryColor` (one of `sky`, `emerald`, `violet`, `rose`,
   `amber`).

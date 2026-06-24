@@ -294,13 +294,8 @@ export function generateDemoData(today = new Date()): AppData {
   // the demo shows the flexible-schedule feature: no missed entries are created
   // for those days (ADR-0010).
   const pauseStart = shiftMonths(endDate, -3)
-  const READING_PAUSE = {
-    habitId: 'habit_reading',
-    start: dateToKey(pauseStart),
-    end: dateToKey(shiftDays(pauseStart, 6))
-  }
   const pausesByHabit: Record<string, Array<{ start: string; end: string }>> = {
-    [READING_PAUSE.habitId]: [{ start: READING_PAUSE.start, end: READING_PAUSE.end }]
+    habit_reading: [{ start: dateToKey(pauseStart), end: dateToKey(shiftDays(pauseStart, 6)) }]
   }
 
   function isInDemoPause(habitId: string, dateKey: string): boolean {

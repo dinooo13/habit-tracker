@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from '@playwright/test'
-import type { AppDataV1 } from '../../app/types/app-data'
+import type { AppData } from '../../app/types/app-data'
 import { authenticate, seedData } from './seed'
 
 interface Fixtures {
@@ -10,7 +10,7 @@ interface Fixtures {
    * the stores. The page must already be on an app-origin URL — call
    * `authedPage.goto(...)` first.
    */
-  seed: (data: AppDataV1) => Promise<void>
+  seed: (data: AppData) => Promise<void>
 }
 
 export const test = base.extend<Fixtures>({
@@ -20,7 +20,7 @@ export const test = base.extend<Fixtures>({
   },
 
   seed: async ({ page }, use) => {
-    await use((data: AppDataV1) => seedData(page, data))
+    await use((data: AppData) => seedData(page, data))
   }
 })
 

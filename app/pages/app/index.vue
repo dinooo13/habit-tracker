@@ -17,6 +17,7 @@ import {
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
+const backupNudge = useBackupNudge()
 
 const today = todayDateKey()
 const selectedDateKey = ref(today)
@@ -427,6 +428,18 @@ function reopenHabit(habitId: string): void {
         :title="`${pendingReflections.length} missed habits need reflection`"
         description="Open review to capture why it slipped and get Atomic Habits tactics."
         :actions="[{ label: 'Open review', to: '/app/review', color: 'warning', variant: 'soft' }]"
+      />
+
+      <UAlert
+        v-if="backupNudge.shouldShow.value"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-database-backup"
+        :title="backupNudge.message.value"
+        description="This device is the only copy — export a backup so you don't lose it if it's lost or wiped."
+        :actions="[{ label: 'Export now', to: '/app/settings#backup-restore', color: 'warning', variant: 'soft' }]"
+        close
+        @update:open="backupNudge.dismiss()"
       />
 
       <UAlert

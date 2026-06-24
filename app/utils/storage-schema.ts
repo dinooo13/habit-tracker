@@ -81,7 +81,12 @@ const SettingsSchema = z.object({
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
     .nullable(),
   weekStartsOn: z.union([z.literal(0), z.literal(1)]),
-  primaryColor: z.enum(PRIMARY_COLOR_OPTIONS).default(DEFAULT_SETTINGS.primaryColor)
+  primaryColor: z.enum(PRIMARY_COLOR_OPTIONS).default(DEFAULT_SETTINGS.primaryColor),
+  // Optional + defaulted so pre-issue-#8 payloads (which omit these) stay valid and
+  // back-compatible without a schemaVersion bump. lastExportedAt is an ISO timestamp;
+  // backupNudgeSnoozedUntil is a YYYY-MM-DD date key.
+  lastExportedAt: z.string().max(FIELD_LIMITS.timestamp).nullable().default(null),
+  backupNudgeSnoozedUntil: dateKeySchema.nullable().default(null)
 })
 
 // The non-habit tables are identical across V1 and V2.

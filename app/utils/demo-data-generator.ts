@@ -418,6 +418,8 @@ export function generateDemoData(today = new Date()): AppData {
       dailyReviewTime: '20:00',
       weekStartsOn: 1,
       primaryColor: 'emerald',
+      lastExportedAt: null,
+      backupNudgeSnoozedUntil: null,
     },
   }
 }

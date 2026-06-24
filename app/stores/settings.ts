@@ -13,11 +13,16 @@ export const useSettingsStore = defineStore('settings', {
     notificationsEnabled: (state) => state.settings.notificationsEnabled,
     dailyReviewTime: (state) => state.settings.dailyReviewTime,
     weekStartsOn: (state) => state.settings.weekStartsOn,
-    primaryColor: (state) => state.settings.primaryColor
+    primaryColor: (state) => state.settings.primaryColor,
+    lastExportedAt: (state) => state.settings.lastExportedAt,
+    backupNudgeSnoozedUntil: (state) => state.settings.backupNudgeSnoozedUntil
   },
   actions: {
     hydrate(settings: AppSettings): void {
-      this.settings = { ...settings }
+      this.settings = {
+        ...DEFAULT_SETTINGS,
+        ...settings
+      }
     },
     snapshot(): AppSettings {
       return { ...this.settings }
@@ -33,6 +38,12 @@ export const useSettingsStore = defineStore('settings', {
     },
     setPrimaryColor(value: PrimaryColor): void {
       this.settings.primaryColor = value
+    },
+    setLastExportedAt(value: string | null): void {
+      this.settings.lastExportedAt = value
+    },
+    setBackupNudgeSnoozedUntil(value: string | null): void {
+      this.settings.backupNudgeSnoozedUntil = value
     }
   }
 })

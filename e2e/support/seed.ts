@@ -1,6 +1,10 @@
 import type { Page } from '@playwright/test'
 import type { AppData } from '../../app/types/app-data'
-import { DUMMY_AUTH_STORAGE_KEY } from './constants'
+import {
+  DUMMY_AUTH_EXPIRY_STORAGE_KEY,
+  DUMMY_AUTH_STORAGE_KEY,
+  DUMMY_AUTH_TTL_MS
+} from './constants'
 
 // The Dexie schema mirrored from app/utils/dexie-persistence-adapter.ts. The
 // seed recreates the IndexedDB database with these exact stores/indexes so the
@@ -102,12 +106,15 @@ export function readPersistedStore<T = Record<string, unknown>>(
   )
 }
 
-/** Sets the dummy-auth flag for the page's origin before the app boots. */
+/** Sets the dummy-auth flag (with a future expiry stamp) for the page's origin
+ * before the app boots. SEC-03 treats a session without a valid future expiry as
+ * logged-out, so both keys must be seeded. */
 export async function authenticate(page: Page): Promise<void> {
   await page.addInitScript(
-    ([key]) => {
-      window.localStorage.setItem(key, '1')
+    ([key, expiryKey, ttlMs]) => {
+      window.localStorage.setItem(key as string, '1')
+      window.localStorage.setItem(expiryKey as string, String(Date.now() + (ttlMs as number)))
     },
-    [DUMMY_AUTH_STORAGE_KEY]
+    [DUMMY_AUTH_STORAGE_KEY, DUMMY_AUTH_EXPIRY_STORAGE_KEY, DUMMY_AUTH_TTL_MS]
   )
 }

@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto'
 import { readFileSync } from 'node:fs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+import { clearSecurityLog, recentSecurityEvents } from '~/utils/security-log'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 
@@ -65,5 +66,25 @@ describe('DexiePersistenceAdapter', () => {
 
     expect(await adapter.hasData()).toBe(false)
     expect(await adapter.load()).toEqual(createEmptyAppData())
+  })
+
+  it('falls back to empty state and logs when stored data fails validation (SEC-16)', async () => {
+    clearSecurityLog()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    // Seed a schema-version record so load() attempts to parse, plus a habit
+    // record that violates the Zod schema (missing required fields).
+    await db.meta.put({ key: 'schemaVersion', value: 1 })
+    await db.habits.put({ id: 'broken' } as never)
+
+    const result = await adapter.load()
+
+    expect(result).toEqual(createEmptyAppData())
+
+    const events = recentSecurityEvents()
+    expect(events.some((event) => event.type === 'data.validation_failed' && event.level === 'error')).toBe(true)
+
+    clearSecurityLog()
+    vi.restoreAllMocks()
   })
 })

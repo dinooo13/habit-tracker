@@ -19,7 +19,7 @@ test.describe('Settings: backup & restore', () => {
     for await (const chunk of stream) chunks.push(chunk as Buffer)
     const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'))
 
-    expect(payload.schemaVersion).toBe(1)
+    expect(payload.schemaVersion).toBe(2)
     expect(payload.habits.map((h: { name: string }) => h.name)).toContain('Hydrate')
   })
 

@@ -27,14 +27,15 @@ one branch → one PR. You run unattended: never ask the user anything.
 
 - Read the issue (title, body, labels, **all comments**) and locate the approved plan
   comment (first line `<!-- routine:plan-issues -->`). **No plan → stop and report
-  "unplanned — skipped"**; you only build planned work.
+  "unplanned — skipped"**; you only build planned work. Exception: a **docs-audit PR**
+  (body marker `<!-- routine:docs-audit -->`, no linked issue) is resumed with the
+  blocking review/QA findings as its plan — keep its diff Markdown-only.
 - **Resume** if an open PR references `Closes #N` (or you were invoked with a PR
   number): capture branch, PR number, and the `<!-- routine:dev-progress -->` progress
   section in the **PR body**. **Start** otherwise.
 
 ## 2. Start (fresh issue)
 
-- Set issue labels: remove `status: agent-ready`, add `status: in-progress`.
 - Branch **off the latest `origin/main` only** — `git fetch origin main` then create
   `claude/{N}-{slug}` from `origin/main`. Never branch from another feature branch and
   never carry unrelated commits (this has caused scope-creep findings before).
@@ -63,6 +64,11 @@ one branch → one PR. You run unattended: never ask the user anything.
   - [ ] {…}
   - [ ] {test-plan tasks}
   ```
+
+- **Only after the draft PR exists**, set the issue labels: remove
+  `status: agent-ready`, add `status: in-progress`. (This order matters: if the run
+  dies before the PR exists, the issue is still `agent-ready` and the next run retries
+  it; relabeling first would strand it outside every queue.)
 
 ## 3. Resume (existing PR)
 
@@ -98,13 +104,15 @@ output in the PR body's Test plan section.
 ## 6. Finish
 
 - Commit and push all work.
-- **All gates green:** mark the PR **ready for review**, then flip **both** labels —
-  the **PR** from `status: in-progress` to `status: needs-review` (this is the
-  reviewer's queue) **and** leave the **issue** at `status: in-progress` (it stays there
-  until the PR merges and `Closes #N` closes it).
-- **Blocked:** leave the PR draft and labeled `status: in-progress`, record the blocker
-  under "Current step" in the PR body, and set the issue to `status: blocked` if it
-  cannot proceed without a human. Never mark a red build ready.
+- **All gates green:** mark the PR **ready for review** and set the **PR** label from
+  `status: in-progress` to `status: needs-review` (the reviewer's queue). The **issue**
+  label is not touched — it stays `status: in-progress` until the PR merges and
+  `Closes #N` closes it.
+- **Blocked (cannot proceed without a human):** record the blocker under "Current
+  step" in the PR body, leave the PR draft, and set **both** the PR and the issue to
+  `status: blocked` (remove `status: in-progress` from the PR — otherwise every
+  nightly run re-picks it just to rediscover the same blocker). A human resumes it by
+  putting the PR back to `status: in-progress`. Never mark a red build ready.
 - Do **not** merge, ever.
 
 ## Report back

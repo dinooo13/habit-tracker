@@ -25,7 +25,7 @@ When an issue comes in, label it. Every issue should get at least a **type** and
 | **type** | `type: feature`, `type: bug`, `type: enhancement`, `type: docs`, `type: refactor`, `type: test`, `type: chore`, `type: security` | What kind of work it is. |
 | **priority** | `priority: high`, `priority: medium`, `priority: low` | How urgent. |
 | **effort** | `effort: small`, `effort: medium`, `effort: large` | Rough size (mirrors the issue's *Effort* field). |
-| **status** | `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review` (PRs) | Where it stands. `needs-plan-review` = plan awaits human approval (issues only); `needs-review` = code awaits review (PRs only). |
+| **status** | `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review`, `status: needs-qa`, `status: approved` (PRs) | Where it stands. Issues: `needs-plan-review` = plan awaits human approval. PRs: `needs-review` → `needs-qa` → `approved` (ready for human merge). |
 | **area** | `area: persistence`, `area: coaching`, `area: ui`, `area: pwa`, `area: auth`, `area: analytics` | Part of the app affected. |
 
 The legacy `enhancement` and `security` labels still exist; prefer the namespaced
@@ -70,7 +70,8 @@ deployment, and documentation upkeep are automated by six repo-committed agents
 `docs-auditor`) driven by thin cloud routines. New issues without a `status:` label are
 triaged automatically (labels + dedupe) into the planner queue. Status labels form the state machine: they live on the **issue** until a PR
 exists (`needs-plan` → `needs-plan-review` → `agent-ready` → `in-progress`), then the
-dev ↔ review loop is driven by the **PR** label (`in-progress` ⇄ `needs-review`). Two
+build → review → QA loop is driven by the **PR** label (`in-progress` → `needs-review`
+→ `needs-qa` → `approved`, bouncing back to `in-progress` on findings). Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
 PR. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 

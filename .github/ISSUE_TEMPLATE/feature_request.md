@@ -2,7 +2,7 @@
 name: Feature or improvement
 about: Propose a new capability or an improvement to existing behavior
 title: ""
-labels: ["type: feature", "status: needs-triage"]
+labels: ["type: feature"]
 assignees: []
 ---
 

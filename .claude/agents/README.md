@@ -17,9 +17,11 @@ source of stuck items.
 ISSUE:  (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
                    └─▶ duplicate (no status) / blocked          (stays in-progress; blocked ⇢ status: blocked)
 
-PR:     in-progress (draft) ──implementer: gates green, ready──▶ needs-review ──reviewer: approve──▶ (stays; human merges)
-                    ▲                                                │
-                    └────────────── reviewer: changes requested ─────┘
+PR:     in-progress (draft) ──implementer: gates green──▶ needs-review ──reviewer: approve──▶ needs-qa ──qa: pass──▶ approved ──▶ human merges
+                    ▲                                          │                                 │
+                    └────── reviewer / qa: changes requested ──┴─────────────────────────────────┘
+        (implementer blocked ⇢ PR **and** issue → status: blocked — exits every queue
+         until a human puts the PR back to in-progress)
 ```
 
 Queues:
@@ -30,23 +32,28 @@ Queues:
   issues labeled `status: agent-ready` without an open PR (start)
 - **reviewer routine** → open PRs labeled `status: needs-review` without a
   `<!-- routine:code-review sha={head} -->` comment for the current head SHA
-- **qa routine** → open PRs labeled `status: needs-review` without a
-  `<!-- routine:qa sha={head} -->` comment for the current head SHA (skips PRs with no
-  preview deployment, e.g. docs-only)
+- **qa routine** → open PRs labeled `status: needs-qa` (set by the reviewer on
+  approve). PRs with no preview deployment (e.g. docs-only) are marked
+  `status: approved` directly — QA not applicable.
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
 
-Review and QA are independent second opinions on the same `status: needs-review` queue:
-the reviewer reads the diff, the qa-tester drives the deployed preview
-(`https://preview.habits.fmeyer.dev/pr-{P}/`). Either one can bounce the PR back to
-`status: in-progress`; the implementer treats blocking findings from **both** comment
-types as its work queue. A PR is merge-ready when the code review approves and QA
-passes.
+Review and QA are **sequenced**, each the sole consumer of its own label: the reviewer
+reads the diff (`needs-review`), then the qa-tester drives the deployed preview
+(`needs-qa`, `https://preview.habits.fmeyer.dev/pr-{P}/`). Either bounces the PR back
+to `status: in-progress`, where the implementer treats the blocking findings from both
+comment types as its work queue; a fixed SHA re-enters at `needs-review`.
+**`status: approved` is the merge-ready signal** — review and QA have both passed, and
+the PR has left every agent queue. One label, one writer at a time: no race, and no
+nightly no-op runs on PRs that are just waiting for a human.
 
 Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue),
+`<!-- routine:triage -->` (triage comment, only on duplicates/blocked),
 `<!-- routine:dev-progress -->` (progress section **in the PR body** — comment editing
 is unavailable in the routine toolset, PR bodies are editable via
-`update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA).
+`update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
+`<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit -->`
+(docs-audit PR body).
 
 ## Routine prompts
 
@@ -99,15 +106,15 @@ agent files, not the routine.
 > sent back to in-progress, skipped (already reviewed at head). Never review, fix, push,
 > or merge yourself.
 
-### QA routine (e.g. nightly, alongside the reviewer)
+### QA routine (e.g. nightly, after the reviewer)
 
 > You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> PR labeled `status: needs-review` (`search_pull_requests`:
-> `repo:dinooo13/habit-tracker is:pr is:open label:"status: needs-review"`). For each,
+> PR labeled `status: needs-qa` (`search_pull_requests`:
+> `repo:dinooo13/habit-tracker is:pr is:open label:"status: needs-qa"`). For each,
 > spawn one fresh `qa-tester` agent (subagent_type: "qa-tester") — "QA PR #{P}" — one
 > agent per PR, never reused. Collect only verdict, blocking count, comment link.
-> Finish with a summary: passed, issues found (sent back to in-progress), skipped
-> (already tested at head / no preview deployed). Never test, fix, push, or merge
+> Finish with a summary: approved (passed / QA not applicable), issues found (sent back
+> to in-progress), still waiting on a preview deploy. Never test, fix, push, or merge
 > yourself.
 
 Note: the routine's cloud environment must allow the domain
@@ -124,5 +131,5 @@ will fail with `403 host_not_allowed`.
 ## Humans in the loop
 
 Two gates are deliberately human: promoting a plan (`status: needs-plan-review` →
-`status: agent-ready` on the issue) and merging an approved PR. Everything else runs
-unattended.
+`status: agent-ready` on the issue) and merging a PR labeled `status: approved` — the
+signal that both code review and QA have passed. Everything else runs unattended.

@@ -58,9 +58,10 @@ fix would *make a decision* rather than record one. Collect these in the PR body
    every fix must cite the code that proves it (e.g. "CLAUDE.md said X, but
    `app/types/app-data.ts:12` defines Y").
 3. **Nothing found?** Report "docs are in sync" and stop — do not open an empty PR.
-4. Run the gates: `npm run test`, `npm run typecheck`, `npm run build` (docs-only
-   changes should pass trivially; a failure means you touched something you shouldn't
-   have — revert it).
+4. Prove the diff is Markdown-only: `git diff --name-only origin/main` must list only
+   `*.md` files — anything else means you touched something you shouldn't have; revert
+   it. Do **not** run the npm gates: a Markdown-only diff cannot affect them, and CI
+   runs them on the PR anyway.
 5. Commit, push, and open a PR labeled `type: docs` + `status: needs-review` (ready,
    not draft — docs fixes skip the draft stage), body:
 
@@ -76,8 +77,8 @@ fix would *make a decision* rather than record one. Collect these in the PR body
    - {doc}:{line} — {contradiction/uncertainty, with pointers} (or "None")
 
    ## Test plan
-   - [x] `npm run test` / `npm run typecheck` / `npm run build` green
-   - [x] Diff is Markdown-only
+   - [x] Diff is Markdown-only (`git diff --name-only origin/main`)
+   - [x] Every fix cites the code that proves it
    ```
 
    The reviewer agent picks it up from the `status: needs-review` queue like any other

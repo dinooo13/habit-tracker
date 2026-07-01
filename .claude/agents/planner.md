@@ -103,8 +103,9 @@ What is explicitly deferred.
 - Post the comment (`add_issue_comment`); it **must** start with
   `<!-- routine:plan-issues -->`.
 - Update issue labels (`issue_write`): remove `status: needs-plan`, add
-  `status: needs-plan-review` (a human promotes it to `status: agent-ready`). Add the
-  proposed `effort:`/`area:` labels when confident.
+  `status: needs-plan-review` (a human promotes it to `status: agent-ready`). If
+  planning proved triage's `effort:`/`area:` labels wrong, **replace** them — never
+  leave two labels from the same group; if they're right, leave them alone.
 
 ## Report back
 

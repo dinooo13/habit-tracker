@@ -2,7 +2,7 @@
 name: Bug report
 about: Report something that isn't working as expected
 title: ""
-labels: ["type: bug", "status: needs-triage"]
+labels: ["type: bug"]
 assignees: []
 ---
 

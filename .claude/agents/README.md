@@ -1,7 +1,8 @@
 # Agent pipeline
 
-Four repo-committed agents (`planner`, `implementer`, `reviewer`, `docs-auditor`) drive
-the issue → plan → PR → review factory described in [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
+Five repo-committed agents (`planner`, `implementer`, `reviewer`, `qa-tester`,
+`docs-auditor`) drive the issue → plan → PR → review factory described in
+[`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 Each agent handles **one** work item with fresh context; the cloud **routines**
 (claude.ai/code/routines) are thin orchestrators that only build the queue, spawn one
 agent per item, and summarize. All per-item logic lives here, versioned and reviewable.
@@ -28,8 +29,18 @@ Queues:
   issues labeled `status: agent-ready` without an open PR (start)
 - **reviewer routine** → open PRs labeled `status: needs-review` without a
   `<!-- routine:code-review sha={head} -->` comment for the current head SHA
+- **qa routine** → open PRs labeled `status: needs-review` without a
+  `<!-- routine:qa sha={head} -->` comment for the current head SHA (skips PRs with no
+  preview deployment, e.g. docs-only)
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
+
+Review and QA are independent second opinions on the same `status: needs-review` queue:
+the reviewer reads the diff, the qa-tester drives the deployed preview
+(`https://preview.habits.fmeyer.dev/pr-{P}/`). Either one can bounce the PR back to
+`status: in-progress`; the implementer treats blocking findings from **both** comment
+types as its work queue. A PR is merge-ready when the code review approves and QA
+passes.
 
 Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue),
 `<!-- routine:dev-progress -->` (progress section **in the PR body** — comment editing
@@ -73,6 +84,21 @@ agent files, not the routine.
 > blocking count, comment link. Finish with a summary: approved (awaiting human merge),
 > sent back to in-progress, skipped (already reviewed at head). Never review, fix, push,
 > or merge yourself.
+
+### QA routine (e.g. nightly, alongside the reviewer)
+
+> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
+> PR labeled `status: needs-review` (`search_pull_requests`:
+> `repo:dinooo13/habit-tracker is:pr is:open label:"status: needs-review"`). For each,
+> spawn one fresh `qa-tester` agent (subagent_type: "qa-tester") — "QA PR #{P}" — one
+> agent per PR, never reused. Collect only verdict, blocking count, comment link.
+> Finish with a summary: passed, issues found (sent back to in-progress), skipped
+> (already tested at head / no preview deployed). Never test, fix, push, or merge
+> yourself.
+
+Note: the routine's cloud environment must allow the domain
+`preview.habits.fmeyer.dev` in its network access settings, or every preview fetch
+will fail with `403 host_not_allowed`.
 
 ### Docs-audit routine (e.g. weekly)
 

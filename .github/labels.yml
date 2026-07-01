@@ -54,6 +54,11 @@
   color: "f9d0c4"
   description: "Large change / multiple PRs"
 
+# --- misc ---
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "Duplicate of an existing issue (linked in a comment)"
+
 # --- status: where it stands ---
 - name: "status: blocked"
   color: "d93f0b"

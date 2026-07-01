@@ -1,6 +1,6 @@
 # Agent pipeline
 
-Five repo-committed agents (`planner`, `implementer`, `reviewer`, `qa-tester`,
+Six repo-committed agents (`triage`, `planner`, `implementer`, `reviewer`, `qa-tester`,
 `docs-auditor`) drive the issue → plan → PR → review factory described in
 [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 Each agent handles **one** work item with fresh context; the cloud **routines**
@@ -14,8 +14,8 @@ ping-pong is driven by the **PR** label alone. This split-brain was previously t
 source of stuck items.
 
 ```
-ISSUE:  needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
-                                                                                     (stays in-progress; blocked ⇢ status: blocked)
+ISSUE:  (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
+                   └─▶ duplicate (no status) / blocked          (stays in-progress; blocked ⇢ status: blocked)
 
 PR:     in-progress (draft) ──implementer: gates green, ready──▶ needs-review ──reviewer: approve──▶ (stays; human merges)
                     ▲                                                │
@@ -24,6 +24,7 @@ PR:     in-progress (draft) ──implementer: gates green, ready──▶ needs
 
 Queues:
 
+- **triage routine** → open issues with **no** `status:` label and no `duplicate` label
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
@@ -51,6 +52,19 @@ is unavailable in the routine toolset, PR bodies are editable via
 
 Paste these as the routine prompts; keep them thin — anything per-item belongs in the
 agent files, not the routine.
+
+### Triage routine (e.g. nightly, before planner)
+
+> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
+> issue that has no `status:` label and no `duplicate` label (`search_issues`:
+> `repo:dinooo13/habit-tracker is:issue is:open -label:"status: needs-plan"
+> -label:"status: needs-plan-review" -label:"status: agent-ready"
+> -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked"
+> -label:duplicate`). If none, report "nothing to triage" and stop. For each, spawn one
+> fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
+> issue, never reused. Collect only each verdict. Finish with a summary: queued for
+> planning, duplicates, blocked (what's missing), skipped. Never label, plan, or change
+> anything yourself.
 
 ### Planner routine (e.g. nightly)
 

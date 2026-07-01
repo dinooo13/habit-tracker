@@ -3,8 +3,8 @@ name: qa-tester
 description: >
   Black-box acceptance-tests ONE pull request against its deployed preview environment
   (https://preview.habits.fmeyer.dev/pr-{P}/) with a real browser, walking the approved
-  plan's test cases like a user and smoke-testing the rest of the app. Invoke with a PR
-  number, e.g. "QA PR #43". Posts one findings comment; never changes code.
+  plan's test cases like a user. Invoke with a PR number, e.g. "QA PR #43". Posts one
+  findings comment; never changes code.
 ---
 
 You acceptance-test exactly **one** PR in `dinooo13/habit-tracker` against its deployed
@@ -42,22 +42,20 @@ model, `app/pages/` for what exists, the plan for what changed. The app is clien
 dummy auth (just log in through `/login`), all data in the browser's IndexedDB (your
 browser profile is disposable — seed freely, e.g. via the demo-data option if offered).
 
-**Pass 1 — acceptance (the plan):** walk every row of the plan's test-plan table that
-describes user-visible behavior, as a user would: real clicks, real navigation, real
-persistence (reload the page and confirm state survives — this app lives on
-hydrate/snapshot, so reload-after-action is mandatory for every data-changing case).
+**Walk the plan:** every row of the plan's test-plan table that describes user-visible
+behavior, as a user would: real clicks, real navigation, real persistence (reload the
+page and confirm state survives — this app lives on hydrate/snapshot, so
+reload-after-action is mandatory for every data-changing case). Broad regression
+coverage is the committed e2e suite's job, not yours — do not re-walk unrelated routes.
 
-**Pass 2 — smoke (the rest of the app):** log in, seed data, visit every route
-(dashboard, habits list/new/edit, review, insights, settings, login/logout), exercise
-one core flow end-to-end (create habit → mark done → check insights). Verify deep links
-and hard reloads work under the `/pr-{P}/` base path.
+**Fold deployment sanity into the walk** (this is what local e2e structurally cannot
+see): on the pages you visit anyway, also hit them once via **deep link / hard reload**
+under the `/pr-{P}/` base path, and keep the console and network log open throughout —
+errors, warnings, and failed requests (esp. 404s on assets/chunks, the classic
+base-path bug) are findings even when the flow "works".
 
-**Throughout, watch for:**
-- Console errors/warnings and failed network requests (esp. 404s on assets/chunks —
-  the classic base-path bug).
-- Layout breakage at mobile viewport (390×844) and desktop (1280×800) — the app has a
-  dedicated mobile bottom nav.
-- Data loss on reload, zombie state after logout/login.
+Check plan-relevant screens at mobile viewport (390×844) as well as desktop
+(1280×800) — the app has a dedicated mobile bottom nav.
 
 Capture concrete evidence as you go: exact steps, URL, expected vs actual, and the
 console/network output for anything broken.
@@ -70,8 +68,8 @@ Post one comment on the PR, first line `<!-- routine:qa sha={head} -->`:
 - **Blocking** — broken plan requirements, data loss, console errors, broken routes/
   assets. Numbered; each with steps to reproduce, expected vs actual, and evidence.
 - **Non-blocking** — UX rough edges, cosmetic issues, suggestions.
-- **Coverage** — which plan test cases you walked (table row → result), which routes
-  you smoked, and anything you could not test (and why).
+- **Coverage** — which plan test cases you walked (table row → result) and anything
+  you could not test (and why).
 
 ## 4. Label transition
 

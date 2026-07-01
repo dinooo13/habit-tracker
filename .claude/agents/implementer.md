@@ -67,8 +67,9 @@ one branch → one PR. You run unattended: never ask the user anything.
 ## 3. Resume (existing PR)
 
 - Fetch and check out the existing branch; read the progress section in the PR body.
-- If a review comment (`<!-- routine:code-review sha=… -->`) requested changes, its
-  **Blocking** list is your work queue. Otherwise continue from the first unchecked task.
+- If a review comment (`<!-- routine:code-review sha=… -->`) or a QA comment
+  (`<!-- routine:qa sha=… -->`) reported blocking findings, their **Blocking** lists
+  are your work queue. Otherwise continue from the first unchecked task.
 - Never redo completed work; never open a second PR.
 
 ## 4. Implement

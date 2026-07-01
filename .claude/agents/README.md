@@ -1,7 +1,7 @@
 # Agent pipeline
 
-Three repo-committed agents (`planner`, `implementer`, `reviewer`) drive the
-issue → plan → PR → review factory described in [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
+Four repo-committed agents (`planner`, `implementer`, `reviewer`, `docs-auditor`) drive
+the issue → plan → PR → review factory described in [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 Each agent handles **one** work item with fresh context; the cloud **routines**
 (claude.ai/code/routines) are thin orchestrators that only build the queue, spawn one
 agent per item, and summarize. All per-item logic lives here, versioned and reviewable.
@@ -28,6 +28,8 @@ Queues:
   issues labeled `status: agent-ready` without an open PR (start)
 - **reviewer routine** → open PRs labeled `status: needs-review` without a
   `<!-- routine:code-review sha={head} -->` comment for the current head SHA
+- **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
+  docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
 
 Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue),
 `<!-- routine:dev-progress -->` (progress section **in the PR body** — comment editing
@@ -71,6 +73,13 @@ agent files, not the routine.
 > blocking count, comment link. Finish with a summary: approved (awaiting human merge),
 > sent back to in-progress, skipped (already reviewed at head). Never review, fix, push,
 > or merge yourself.
+
+### Docs-audit routine (e.g. weekly)
+
+> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Spawn one fresh
+> `docs-auditor` agent (subagent_type: "docs-auditor") with isolation: "worktree" and
+> the prompt "Audit the docs". Relay its report: PR link (or "docs in sync"), fix
+> count, and any items needing human attention. Do not audit or fix anything yourself.
 
 ## Humans in the loop
 

@@ -64,9 +64,9 @@ A change is done when all of the following hold (this is also the CI gate —
 
 ## 6. Automation pipeline
 
-Planning, implementation, and first-pass review are automated by three repo-committed
-agents (`.claude/agents/`: `planner`, `implementer`, `reviewer`) driven by thin cloud
-routines. Status labels form the state machine: they live on the **issue** until a PR
+Planning, implementation, first-pass review, and documentation upkeep are automated by
+four repo-committed agents (`.claude/agents/`: `planner`, `implementer`, `reviewer`,
+`docs-auditor`) driven by thin cloud routines. Status labels form the state machine: they live on the **issue** until a PR
 exists (`needs-plan` → `needs-plan-review` → `agent-ready` → `in-progress`), then the
 dev ↔ review loop is driven by the **PR** label (`in-progress` ⇄ `needs-review`). Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved

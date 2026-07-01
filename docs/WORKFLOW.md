@@ -62,7 +62,17 @@ A change is done when all of the following hold (this is also the CI gate —
 - Documentation is updated when relevant — including a new **ADR** when the change is
   structural.
 
-## 6. When to write an ADR
+## 6. Automation pipeline
+
+Planning, implementation, and first-pass review are automated by three repo-committed
+agents (`.claude/agents/`: `planner`, `implementer`, `reviewer`) driven by thin cloud
+routines. Status labels form the state machine: they live on the **issue** until a PR
+exists (`needs-plan` → `needs-review` → `agent-ready` → `in-progress`), then the
+dev ↔ review loop is driven by the **PR** label (`in-progress` ⇄ `needs-review`). Two
+gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
+PR. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
+
+## 7. When to write an ADR
 
 Add an [Architecture Decision Record](adr/) for any decision that changes something
 structural: the **data schema**, the **persistence** layer, the **auth** model, a **core

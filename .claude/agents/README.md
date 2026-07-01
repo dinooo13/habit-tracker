@@ -13,7 +13,7 @@ ping-pong is driven by the **PR** label alone. This split-brain was previously t
 source of stuck items.
 
 ```
-ISSUE:  needs-plan ──planner──▶ needs-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
+ISSUE:  needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
                                                                                      (stays in-progress; blocked ⇢ status: blocked)
 
 PR:     in-progress (draft) ──implementer: gates green, ready──▶ needs-review ──reviewer: approve──▶ (stays; human merges)
@@ -74,6 +74,6 @@ agent files, not the routine.
 
 ## Humans in the loop
 
-Two gates are deliberately human: promoting a plan (`status: needs-review` →
+Two gates are deliberately human: promoting a plan (`status: needs-plan-review` →
 `status: agent-ready` on the issue) and merging an approved PR. Everything else runs
 unattended.

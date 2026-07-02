@@ -115,6 +115,7 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 6. [Zod-validated, versioned data schema](docs/adr/0006-zod-validated-versioned-data-schema.md)
 7. [Client-side dummy auth](docs/adr/0007-client-side-dummy-auth.md)
 8. [PWA best-effort reminders](docs/adr/0008-pwa-best-effort-reminders.md)
+9. [Persistence adapter interface](docs/adr/0009-persistence-adapter-interface.md)
 
 ## Contributing & workflow
 

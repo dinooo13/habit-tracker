@@ -52,7 +52,7 @@ Findings from the review that have since been mitigated within the local-first m
 
 - **Session timeout (SEC-03).** The dummy-auth session now has an absolute 7-day expiry stamp;
   expired/malformed sessions read as logged-out and clear their stale keys. See
-  [ADR-0010](docs/adr/0010-absolute-session-timeout-for-dummy-auth.md). *(This is hygiene, not
+  [ADR-0011](docs/adr/0011-absolute-session-timeout-for-dummy-auth.md). *(This is hygiene, not
   access control — the gate is still bypassable by design.)*
 - **Service-worker update consent (SEC-14).** `registerType` is now `'prompt'`: new workers
   download but only activate after the user confirms via a reload banner. See

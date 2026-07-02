@@ -67,7 +67,8 @@ export default defineNuxtPlugin(async () => {
       .catch((error) => {
         // Surface write failures (esp. QuotaExceededError) to the user via the
         // storage-health composable; the layout watches it to raise a toast.
-        console.error('Failed to persist app data', error)
+        // reportWriteFailure logs to the security-event console sink, so no
+        // separate console.error is needed here.
         storageHealth.reportWriteFailure(error)
       })
   }

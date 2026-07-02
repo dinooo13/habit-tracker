@@ -6,7 +6,7 @@
 // session. It exists so that security-relevant actions (auth, import/export,
 // deletion, validation failures, storage problems) have a single, structured
 // emission point that can be inspected in devtools or wired to richer sinks
-// later. See issue #1 (SEC-16) and ADR-0010.
+// later. See issue #1 (SEC-16); SEC-16 has no dedicated ADR of its own.
 
 export type SecurityEventLevel = 'info' | 'warn' | 'error'
 

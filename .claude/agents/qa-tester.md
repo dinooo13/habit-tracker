@@ -25,7 +25,12 @@ service-worker paths, and plan requirements that never got a spec are your terri
   its **Test plan** table and feature sections are your acceptance criteria. No plan →
   test against the PR body's Summary/Changes and say so.
 - **Idempotency:** a comment `<!-- routine:qa sha={head} -->` for the current head SHA
-  means this commit is already QA-tested — stop and report "already tested".
+  means this commit is already QA-tested — do not test again. But before stopping,
+  **self-heal the label** if it disagrees with that comment's recorded verdict (a
+  prior run may have died between comment and label flip): verdict `Pass` + PR still
+  `status: needs-qa` → set `status: approved`; blocking verdict + still
+  `status: needs-qa` → set `status: in-progress`. Then stop and report "already
+  tested (label reconciled)".
 - **Preview check:** the preview must exist and be current for the head SHA.
   - **QA not applicable:** if the PR changed no site files (e.g. docs-only — CI's
     `deploy-preview` job is skipped for those), there is nothing to test: set the PR

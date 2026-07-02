@@ -15,8 +15,12 @@ one label transition. You run unattended: never ask the user anything.
 - `pull_request_read` the PR: title, body, branch, **head SHA**, and comments.
 - **Idempotency (check this before reading anything else):** a comment
   `<!-- routine:code-review sha={head} -->` for the current head SHA means this commit
-  is already reviewed — **stop and report "already reviewed"**. Re-review only after
-  new commits.
+  is already reviewed — do not review again; re-review only after new commits. But
+  before stopping, **self-heal the label** if it disagrees with that comment's
+  recorded verdict (a prior run may have died between comment and label flip, or
+  predate the label chain): verdict `Approve` + PR still `status: needs-review` → set
+  `status: needs-qa`; verdict `Changes requested` + still `status: needs-review` → set
+  `status: in-progress`. Then stop and report "already reviewed (label reconciled)".
 - From `Closes #N`, read the linked issue and its plan comment
   (`<!-- routine:plan-issues -->`) — the intended scope. No plan → review against the
   issue body alone and say so. No linked issue at all (e.g. a `docs-auditor` PR,

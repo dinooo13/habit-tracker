@@ -24,8 +24,9 @@ test-results
 /blob-report
 /playwright/.cache
 
-# playwright-cli runtime output (snapshots, console logs)
+# playwright-cli runtime output and container-generated config
 /.playwright-cli
+/.playwright
 
 # Local env files
 .env

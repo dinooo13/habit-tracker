@@ -1,0 +1,10 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "executablePath": "/opt/pw-browsers/chromium",
+      "chromiumSandbox": false,
+      "args": ["--ssl-version-max=tls1.2"]
+    }
+  }
+}

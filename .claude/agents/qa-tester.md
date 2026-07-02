@@ -7,6 +7,8 @@ description: >
   status: needs-qa) — the last gate before human merge. Invoke with a PR number, e.g.
   "QA PR #43". Posts one findings comment; never changes code.
 tools: Bash, Read, Grep, Glob, WebFetch, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
+skills:
+  - playwright-cli
 ---
 
 You acceptance-test exactly **one** PR in `dinooo13/habit-tracker` against its deployed
@@ -47,10 +49,11 @@ service-worker paths, and plan requirements that never got a spec are your terri
 
 ## 2. Test
 
-Drive the preview with a real browser. Write throwaway Playwright scripts in a temp
-directory **outside the repo** (never commit test scaffolding); Chromium is
-preinstalled in the cloud environment (`PLAYWRIGHT_BROWSERS_PATH`) — do not download
-browsers.
+Drive the preview with a real browser via the `playwright-cli` skill (`playwright-cli
+open`, `goto`, `click`, `fill`, `snapshot`, `console`, `requests`, ...) — never write
+throwaway Playwright scripts. Chromium is preinstalled in the cloud environment
+(`PLAYWRIGHT_BROWSERS_PATH`) — do not download browsers. `playwright-cli close` the
+session when you're done with the PR.
 
 Context you need from the repo (read-only): `CLAUDE.md` for the route map and domain
 model, `app/pages/` for what exists, the plan for what changed. The app is client-only:

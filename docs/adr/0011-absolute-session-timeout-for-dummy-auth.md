@@ -1,4 +1,4 @@
-# 10. Absolute session timeout for dummy auth
+# 11. Absolute session timeout for dummy auth
 
 - **Status:** Accepted
 - **Date:** 2026-06-24

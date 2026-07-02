@@ -104,7 +104,7 @@ See `docs/glossary.md` for the domain vocabulary.
   new workers download but activate only when the user confirms the reload banner in
   `app/layouts/app.vue` (`app/composables/use-pwa-update.ts`). See ADR-0008.
 - **Dummy-auth sessions expire.** An absolute 7-day expiry stamp lives in its own
-  `localStorage` key outside the `AppDataV1` envelope (`app/utils/dummy-auth.ts`); see ADR-0010.
+  `localStorage` key outside the `AppDataV2` envelope (`app/utils/dummy-auth.ts`); see ADR-0011.
 - **Nuxt UI documentation contract.** When using Nuxt UI components, defer to
   <https://ui.nuxt.com/llms.txt> and its linked `raw/docs/...` pages for exact props/slots/events.
   Those raw docs are the source of truth when there is ambiguity.

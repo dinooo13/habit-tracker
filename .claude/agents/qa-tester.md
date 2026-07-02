@@ -51,9 +51,8 @@ service-worker paths, and plan requirements that never got a spec are your terri
 
 Drive the preview with a real browser via the `playwright-cli` skill (`playwright-cli
 open`, `goto`, `click`, `fill`, `snapshot`, `console`, `requests`, ...) — never write
-throwaway Playwright scripts. Chromium is preinstalled in the cloud environment
-(`PLAYWRIGHT_BROWSERS_PATH`) — do not download browsers. `playwright-cli close` the
-session when you're done with the PR.
+throwaway Playwright scripts. `playwright-cli close` the session when you're done with
+the PR.
 
 Context you need from the repo (read-only): `CLAUDE.md` for the route map and domain
 model, `app/pages/` for what exists, the plan for what changed. The app is client-only:

@@ -14,7 +14,7 @@
   round-trips, and the rendered UI. See [`e2e-testing.md`](./e2e-testing.md) for the full
   guide. E2E **complements** the unit tests; it doesn't re-test pure logic.
 
-CI runs `npm test` **and** `npm run typecheck` (test job), `npm run build` (build job), and
+CI runs `npm test` **and** `npm run typecheck` (test job), `npm run generate` (build job), and
 the Playwright suite (e2e job) — see `.github/workflows/ci.yml`. They must pass.
 
 ## What's covered

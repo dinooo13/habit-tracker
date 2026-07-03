@@ -57,7 +57,7 @@ Then open the printed local URL. On the login screen you can start fresh or load
 npm run dev          # Dev server with HMR
 npm run build        # Production build
 npm run preview      # Serve the production build locally
-npm run generate     # Static generation (not used with ssr:false, kept for parity)
+npm run generate     # Static SPA generation — CI uses this to produce the deployable output
 npm run test         # Run the Vitest suite once
 npm run test:watch   # Vitest in watch mode
 npm run typecheck    # nuxt typecheck (vue-tsc)

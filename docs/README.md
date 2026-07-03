@@ -10,6 +10,7 @@ Project documentation for the Atomic Habit Tracker.
 | [glossary.md](glossary.md) | Domain vocabulary (Atomic Habits terms used throughout the code). |
 | [WORKFLOW.md](WORKFLOW.md) | How requirements flow from GitHub issues to branches and PRs, the label taxonomy, and the definition of done. |
 | [TESTING.md](TESTING.md) | Testing stack, coverage, and conventions. |
+| [e2e-testing.md](e2e-testing.md) | End-to-end (Playwright) suite: commands, layout, and coverage. |
 | [adr/](adr/) | Architecture Decision Records — the *why* behind the significant choices. |
 
 ## See also

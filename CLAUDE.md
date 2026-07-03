@@ -23,9 +23,9 @@ diagrams and `docs/adr/` for the recorded design decisions.
 | `npm run preview` | Serve the built output locally. |
 
 CI (`.github/workflows/ci.yml`, Node 22) runs **`npm test` + `npm run typecheck`** (test
-job) and **`npm run build`** (build job) on every push to `main` and every PR. Treat all
-three as the definition of done — run `npm run test` and `npm run typecheck` before
-considering work complete.
+job) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
+treat `npm run test`, `npm run typecheck`, and `npm run build` as the definition of done —
+run `npm run test` and `npm run typecheck` before considering work complete.
 
 ## Architecture map
 

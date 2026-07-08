@@ -17,7 +17,7 @@ indexes, and relatively aggressive eviction.
 ## Decision
 
 Persist all application data in **IndexedDB**, accessed through **[Dexie](https://dexie.org/)**.
-The schema (`app/utils/habit-database.ts`) defines tables for `habits`, `entries` (indexed by
+The schema (`app/utils/dexie-persistence-adapter.ts`) defines tables for `habits`, `entries` (indexed by
 `habitId`, `date`, `status`), and `suggestions` (indexed by `entryId`, `createdAt`), plus a
 `meta` table holding the settings object and schema version. Load/save/clear are implemented
 as pure functions over the database so they are unit-testable with `fake-indexeddb`.

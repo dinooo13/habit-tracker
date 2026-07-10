@@ -1,7 +1,7 @@
 # Agent pipeline
 
-Six repo-committed agents (`triage`, `planner`, `implementer`, `reviewer`, `qa-tester`,
-`docs-auditor`) drive the issue → plan → PR → review factory described in
+Seven repo-committed agents (`triage`, `planner`, `implementer`, `rebaser`, `reviewer`,
+`qa-tester`, `docs-auditor`) drive the issue → plan → PR → review factory described in
 [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
 Each agent handles **one** work item with fresh context; the cloud **routines**
 (claude.ai/code/routines) are thin orchestrators that only build the queue, spawn one
@@ -22,6 +22,12 @@ PR:     in-progress (draft) ──implementer: gates green──▶ needs-review
                     └────── reviewer / qa: changes requested ──┴─────────────────────────────────┘
         (implementer blocked ⇢ PR **and** issue → status: blocked — exits every queue
          until a human puts the PR back to in-progress)
+
+PR (stale vs main):
+        needs-review ──rebaser: clean rebase──▶ needs-review (new head; reviewer re-runs per SHA marker)
+        needs-qa     ──rebaser: clean rebase──▶ needs-qa     (preview redeploys; qa re-runs per SHA marker)
+        approved     ──rebaser: clean rebase──▶ needs-qa
+        any of the three ──rebaser: conflict / red gates──▶ in-progress (marker comment = implementer queue)
 ```
 
 Queues:
@@ -30,6 +36,10 @@ Queues:
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
+- **rebaser routine** → open PRs labeled `status: needs-review`, `status: needs-qa`, or
+  `status: approved` that are behind `origin/main` (the need check runs in the agent:
+  current branches, docs-only drift, drafts, and fork PRs are skips, not work;
+  `status: in-progress` and `status: blocked` are excluded — the implementer owns those)
 - **reviewer routine** → open PRs labeled `status: needs-review` without a
   `<!-- routine:code-review sha={head} -->` comment for the current head SHA
 - **qa routine** → open PRs labeled `status: needs-qa` (set by the reviewer on
@@ -53,7 +63,14 @@ Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue
 is unavailable in the routine toolset, PR bodies are editable via
 `update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
 `<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit -->`
-(docs-audit PR body).
+(docs-audit PR body), `<!-- routine:rebase -->` (rebaser bounce / demotion comment on
+the PR — no per-SHA variant: rebaser idempotency is structural, a rebased branch is no
+longer behind).
+
+A rebaser force-push intentionally invalidates the per-SHA review/QA markers: the code
+sits on a new base, so re-review/re-QA at the new head is correct, not waste — and the
+routine ordering (rebaser after the implementer, before reviewer/qa) makes that re-run
+happen the same cycle.
 
 ## Routine prompts
 
@@ -95,7 +112,24 @@ agent files, not the routine.
 > summary: started, resumed, ready for review, skipped (no plan), blocked (where). Never
 > implement anything yourself, never push to main, never merge.
 
-### Reviewer routine (e.g. nightly, after implementer)
+### Rebaser routine (e.g. nightly, after the implementer, before the reviewer)
+
+> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
+> PR labeled `status: needs-review`, `status: needs-qa`, or `status: approved`
+> (`search_pull_requests`). If none, report "nothing to rebase" and stop. For each,
+> spawn one fresh `rebaser` agent (subagent_type: "rebaser") with isolation:
+> "worktree" — "Rebase PR #{P}" — one agent per PR, never reused; agents may run in
+> parallel (branches are independent). Collect only each outcome. Finish with a
+> summary: rebased (label kept / demoted to needs-qa), bounced to in-progress
+> (conflict or red gates), skipped (current / docs-only drift / draft). Never resolve
+> conflicts, review, merge, or push to main yourself.
+
+The routine passes every candidate; the *agent* performs the cheap behind/need check in
+git — keeping the routine thin per the rule above. Run it once per cycle, after the
+implementer routine and any human merges — not per merge — so a merge burst costs each
+stale PR a single rebase.
+
+### Reviewer routine (e.g. nightly, after the rebaser)
 
 > You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
 > PR labeled `status: needs-review` (`search_pull_requests`:

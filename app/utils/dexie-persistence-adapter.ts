@@ -37,11 +37,6 @@ export class HabitDatabase extends Dexie {
   }
 }
 
-function toPlainPayload(payload: AppData): AppData {
-  // Strips Vue reactivity proxies so IndexedDB structured cloning gets plain objects.
-  return JSON.parse(JSON.stringify(payload)) as AppData
-}
-
 /**
  * IndexedDB-backed {@link PersistenceAdapter}, accessed through Dexie.
  *
@@ -57,18 +52,20 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
   }
 
   async save(payload: AppData): Promise<void> {
-    const plain = toPlainPayload(payload)
+    // `payload` is already plain, proxy-free, structured-clonable `AppData`
+    // (guaranteed by the store `snapshot()` contract — ADR-0004), so it is
+    // written straight into IndexedDB with no serialization pass here.
     const { db } = this
 
     await db.transaction('rw', db.habits, db.entries, db.suggestions, db.meta, async () => {
       await Promise.all([db.habits.clear(), db.entries.clear(), db.suggestions.clear()])
       await Promise.all([
-        db.habits.bulkPut(plain.habits),
-        db.entries.bulkPut(plain.entries),
-        db.suggestions.bulkPut(plain.suggestions),
+        db.habits.bulkPut(payload.habits),
+        db.entries.bulkPut(payload.entries),
+        db.suggestions.bulkPut(payload.suggestions),
         db.meta.bulkPut([
-          { key: SCHEMA_VERSION_META_KEY, value: plain.schemaVersion },
-          { key: SETTINGS_META_KEY, value: plain.settings },
+          { key: SCHEMA_VERSION_META_KEY, value: payload.schemaVersion },
+          { key: SETTINGS_META_KEY, value: payload.settings },
         ]),
       ])
     })

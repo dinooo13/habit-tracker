@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import type { CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
 import { generateSuggestionsForMissedEntry } from '~/utils/atomic-rules'
 
@@ -22,8 +23,13 @@ export const useCoachStore = defineStore('coach', {
     hydrate(suggestions: CoachingSuggestion[]): void {
       this.suggestions = [...suggestions]
     },
+    /**
+     * Point-in-time, proxy-free deep clone of the persisted suggestions for the
+     * persistence layer (ADR-0004). `structuredClone(toRaw(...))` strips Vue
+     * reactivity so adapters receive structured-clonable plain data.
+     */
     snapshot(): CoachingSuggestion[] {
-      return [...this.suggestions]
+      return structuredClone(toRaw(this.suggestions))
     },
     removeForEntry(entryId: string): number {
       const before = this.suggestions.length

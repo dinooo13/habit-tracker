@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import type { Habit, HabitCreateInput, HabitPause, HabitUpdateInput } from '~/types/app-data'
 import { compareDateKeys, isDateInHabitPause, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/date'
 import { createId } from '~/utils/id'
@@ -39,8 +40,14 @@ export const useHabitsStore = defineStore('habits', {
     hydrate(habits: Habit[]): void {
       this.habits = [...habits]
     },
+    /**
+     * Point-in-time, proxy-free deep clone of the persisted habits for the
+     * persistence layer (ADR-0004). `structuredClone(toRaw(...))` strips Vue
+     * reactivity and detaches nested `scheduleWeekdays` / `pauses` arrays, so
+     * adapters receive structured-clonable plain data and never re-sanitise.
+     */
     snapshot(): Habit[] {
-      return [...this.habits]
+      return structuredClone(toRaw(this.habits))
     },
     createHabit(input: HabitCreateInput): Habit {
       const now = nowIso()

@@ -73,16 +73,22 @@ export default defineNuxtPlugin(async () => {
       })
   }
 
+  // Deep-watch the *live* reactive store state so Vue's traversal collects
+  // dependencies on nested, in-place mutations (e.g. `habit.name = ...`). The
+  // plain, proxy-free `AppData` payload is built from the stores' `snapshot()`
+  // results inside the callback — serialization is a store concern, reactive
+  // tracking a bootstrap concern (ADR-0004). Watching the detached snapshots
+  // instead would break dependency collection.
   watch(
-    () => ({
-      schemaVersion: loaded.schemaVersion,
-      habits: habitsStore.snapshot(),
-      entries: entriesStore.snapshot(),
-      suggestions: coachStore.snapshot(),
-      settings: settingsStore.snapshot(),
-    }),
-    (nextValue) => {
-      pendingPayload = nextValue
+    () => [habitsStore.habits, entriesStore.entries, coachStore.suggestions, settingsStore.settings],
+    () => {
+      pendingPayload = {
+        schemaVersion: loaded.schemaVersion,
+        habits: habitsStore.snapshot(),
+        entries: entriesStore.snapshot(),
+        suggestions: coachStore.snapshot(),
+        settings: settingsStore.snapshot(),
+      }
       if (saveTimer) {
         clearTimeout(saveTimer)
       }

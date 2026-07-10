@@ -77,13 +77,24 @@ sequenceDiagram
   Boot->>S: hydrate(habits / entries / suggestions / settings)
   Boot->>S: ensureMissedEntries(activeHabits, today)
   Boot->>S: reconcileMissingSuggestions(activeHabits, entries)
-  Note over Boot,S: deep watch combined snapshot()
-  S-->>Boot: state change
+  Note over Boot,S: deep watch live reactive state
+  S-->>Boot: nested state change
+  Boot->>S: snapshot() → plain, proxy-free AppData
   Boot->>Boot: debounce 800ms (flush on pagehide / visibility hidden)
-  Boot->>P: save(snapshot)
-  P->>A: save(snapshot)
+  Boot->>P: save(plain payload)
+  P->>A: save(plain payload)
   A->>DB: write AppDataV2 (schemaVersion: 2)
 ```
+
+The deep `watch` source is the **live reactive store state** (`habitsStore.habits`,
+`entriesStore.entries`, `coachStore.suggestions`, `settingsStore.settings`), so Vue's
+traversal collects dependencies on in-place field mutations (e.g. `habit.name = ...`).
+Only once a change fires does the callback build the plain `AppData` payload from each
+store's `snapshot()`. Per [adr/0004](adr/0004-pinia-stores-with-snapshot-persistence.md),
+`snapshot()` returns a `structuredClone(toRaw(...))` deep clone — plain, proxy-free, and
+structured-clonable — so the [adapter](adr/0009-persistence-adapter-interface.md) writes it
+straight to its backend without stripping Vue proxies. Reactive tracking is a bootstrap
+concern; serialization is a store concern.
 
 The persisted envelope is **`AppDataV2`** (`{ schemaVersion: 2, habits, entries, suggestions,
 settings }`). Each `Habit` carries a `pauses: HabitPause[]` list of inclusive `YYYY-MM-DD`

@@ -51,6 +51,7 @@ one branch → one PR. You run unattended: never ask the user anything.
   …
 
   ## Test plan
+  - [ ] `npm run lint`
   - [ ] `npm run test`
   - [ ] `npm run typecheck`
   - [ ] `npm run build`
@@ -95,7 +96,7 @@ one branch → one PR. You run unattended: never ask the user anything.
 
 ## 5. Verify (definition of done)
 
-Run in order and make green: `npm run test`, `npm run typecheck`, `npm run build`.
+Run in order and make green: `npm run lint`, `npm run test`, `npm run typecheck`, `npm run build`.
 Run `npm run test:e2e` when you touched UI/flows — but if Playwright browsers cannot be
 provisioned in this sandbox, **do not fight it**: note it in the PR body; CI's `e2e` job
 covers it. Fix failures properly; never weaken tests to pass. Record the final gate

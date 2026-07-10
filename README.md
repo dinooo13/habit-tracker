@@ -60,6 +60,8 @@ npm run preview      # Serve the production build locally
 npm run generate     # Static SPA generation — CI uses this to produce the deployable output
 npm run test         # Run the Vitest suite once
 npm run test:watch   # Vitest in watch mode
+npm run lint         # Lint all code with ESLint (read-only check)
+npm run lint:fix     # Apply safe ESLint/Stylistic autofixes
 npm run typecheck    # nuxt typecheck (vue-tsc)
 ```
 

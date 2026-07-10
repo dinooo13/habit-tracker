@@ -14,8 +14,20 @@
   round-trips, and the rendered UI. See [`e2e-testing.md`](./e2e-testing.md) for the full
   guide. E2E **complements** the unit tests; it doesn't re-test pure logic.
 
-CI runs `npm test` **and** `npm run typecheck` (test job), `npm run generate` (build job), and
-the Playwright suite (e2e job) — see `.github/workflows/ci.yml`. They must pass.
+CI runs `npm run lint`, `npm test`, **and** `npm run typecheck` (test job — lint first),
+`npm run generate` (build job), and the Playwright suite (e2e job) — see
+`.github/workflows/ci.yml`. They must pass.
+
+## Static quality gate (ESLint)
+
+`npm run lint` runs ESLint across `app/`, `tests/`, `e2e/`, and the root lintable configs.
+Linting and formatting are owned by the `@nuxt/eslint` flat config with ESLint Stylistic
+enabled (no Prettier); see [`adr/0013`](adr/0013-nuxt-eslint-flat-config.md). It is the
+first CI gate and part of the local definition of done. `npm run lint` only checks and fails
+on any violation; `npm run lint:fix` mutates files to apply safe autofixes. Generated/vendor
+output (`.nuxt/`, `.output/`, `node_modules/`, `playwright-report/`, `test-results/`) is not
+linted. Test and e2e files relax `@typescript-eslint/no-explicit-any` and `no-dynamic-delete`
+via a narrow override in `eslint.config.mjs` for deliberate mock/fixture constructs.
 
 ## What's covered
 
@@ -52,5 +64,7 @@ Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and
 ```bash
 npm run test         # one pass (CI mode)
 npm run test:watch   # watch mode while developing
+npm run lint         # ESLint check (also part of "done")
+npm run lint:fix     # apply safe ESLint/Stylistic autofixes
 npm run typecheck    # type-level checks (also part of "done")
 ```

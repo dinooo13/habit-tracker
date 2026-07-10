@@ -62,6 +62,31 @@ test.describe('Persistence', () => {
     await expect(dash.card('Daily greens')).toContainText('Done')
   })
 
+  test('an in-place nested habit edit survives flush and reload', async ({ authedPage: page, seed }) => {
+    // Regression guard for ADR-0004 plain snapshots: editing a habit name is an
+    // in-place mutation of a nested store record (`habit.name = ...`). The
+    // bootstrap deep-watch must still detect it now that it observes live
+    // reactive state rather than the detached plain snapshots.
+    const habit = makeHabit({ name: 'Old name', identityStatement: 'I am a tidy person.' })
+    await seed(makeAppData({ habits: [habit] }))
+    await page.goto('/app/habits')
+
+    await page.locator('.habit-card').filter({ hasText: 'Old name' }).getByRole('link', { name: 'Edit' }).click()
+    const form = new HabitFormPage(page)
+    await form.setName('New name')
+    await form.submit()
+    await expect(page.locator('.habit-card').filter({ hasText: 'New name' })).toBeVisible()
+
+    await flushSave(page)
+    await expect
+      .poll(async () => (await readPersistedStore<{ name: string }>(page, 'habits')).some(h => h.name === 'New name'))
+      .toBe(true)
+
+    await page.reload()
+    await expect(page.locator('.habit-card').filter({ hasText: 'New name' })).toBeVisible()
+    await expect(page.locator('.habit-card').filter({ hasText: 'Old name' })).toHaveCount(0)
+  })
+
   test('the auth flag survives a reload', async ({ page }) => {
     // Log in via the UI (no init-script helper) so the persisted localStorage
     // flag is what keeps the session after a reload.

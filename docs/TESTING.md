@@ -36,6 +36,10 @@ Tests live in `tests/`:
 - **Stores** — `habits-store.test.ts`, `entries-store.test.ts` (status transitions,
   `ensureMissedEntries`, streaks, completion rates), `coach-store.test.ts`,
   `settings-store.test.ts`.
+- **Store snapshot contract** — `store-snapshots.test.ts` asserts the ADR-0004
+  "plain, proxy-free" guarantee across all four persisted stores: `snapshot()` returns
+  a structured-clonable deep clone, roots/records/nested arrays are not Vue proxies, and
+  snapshots stay detached from live store state in both mutation directions.
 - **Utilities** — `date.test.ts`, `atomic-rules.test.ts`, `route-mapping.test.ts`,
   `dummy-auth.test.ts`, `id.test.ts`, `safe-json.test.ts`, `security-log.test.ts`,
   `storage-health.test.ts`.

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import type { Habit, HabitEntry, HabitStatus, MissReasonCode } from '~/types/app-data'
 import { addDays, compareDateKeys, dateKeyRange, isHabitDueOnDate, nowIso } from '~/utils/date'
 import { createId } from '~/utils/id'
@@ -41,8 +42,13 @@ export const useEntriesStore = defineStore('entries', {
     hydrate(entries: HabitEntry[]): void {
       this.entries = [...entries]
     },
+    /**
+     * Point-in-time, proxy-free deep clone of the persisted entries for the
+     * persistence layer (ADR-0004). `structuredClone(toRaw(...))` strips Vue
+     * reactivity so adapters receive structured-clonable plain data.
+     */
     snapshot(): HabitEntry[] {
-      return [...this.entries]
+      return structuredClone(toRaw(this.entries))
     },
     setStatus(habitId: string, date: string, status: HabitStatus): HabitEntry {
       const existing = this.entryByHabitAndDate(habitId, date)

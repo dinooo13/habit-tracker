@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
 import { DEFAULT_SETTINGS, type AppSettings, type PrimaryColor } from '~/types/app-data'
 
 interface SettingsState {
@@ -24,8 +25,14 @@ export const useSettingsStore = defineStore('settings', {
         ...settings,
       }
     },
+    /**
+     * Point-in-time, proxy-free deep clone of the persisted settings for the
+     * persistence layer (ADR-0004). Today's `AppSettings` fields are primitives,
+     * but the uniform `structuredClone(toRaw(...))` contract keeps every store's
+     * snapshot proxy-free and future-proofs any nested setting.
+     */
     snapshot(): AppSettings {
-      return { ...this.settings }
+      return structuredClone(toRaw(this.settings))
     },
     setNotificationsEnabled(value: boolean): void {
       this.settings.notificationsEnabled = value

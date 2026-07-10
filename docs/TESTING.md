@@ -34,13 +34,17 @@ via a narrow override in `eslint.config.mjs` for deliberate mock/fixture constru
 Tests live in `tests/`:
 
 - **Stores** — `habits-store.test.ts`, `entries-store.test.ts` (status transitions,
-  `ensureMissedEntries`, streaks, completion rates), `coach-store.test.ts`.
+  `ensureMissedEntries`, streaks, completion rates), `coach-store.test.ts`,
+  `settings-store.test.ts`.
 - **Utilities** — `date.test.ts`, `atomic-rules.test.ts`, `route-mapping.test.ts`,
-  `dummy-auth.test.ts`, `id.test.ts`, `safe-json.test.ts`.
+  `dummy-auth.test.ts`, `id.test.ts`, `safe-json.test.ts`, `security-log.test.ts`,
+  `storage-health.test.ts`.
 - **Schema & validation** — `storage-schema.test.ts`.
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
   `fake-indexeddb`, exercised through the `PersistenceAdapter` interface) and
   `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration).
+- **Features** — `pause-mode.test.ts` (pause ranges: due/streak/coaching exclusion) and
+  `backup-nudge.test.ts` (`computeBackupNudge` thresholds and snooze).
 - **Fixtures** — `fixture-data.test.ts`, `demo-data-loader.test.ts` validate the sample data.
 
 Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and

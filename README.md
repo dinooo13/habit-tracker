@@ -119,6 +119,8 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 7. [Client-side dummy auth](docs/adr/0007-client-side-dummy-auth.md)
 8. [PWA best-effort reminders](docs/adr/0008-pwa-best-effort-reminders.md)
 9. [Persistence adapter interface](docs/adr/0009-persistence-adapter-interface.md)
+10. [AppDataV2 — flexible schedules & pause ranges](docs/adr/0010-appdatav2-flexible-schedules-pause-ranges.md)
+11. [Absolute session timeout for dummy auth](docs/adr/0011-absolute-session-timeout-for-dummy-auth.md)
 
 ## Contributing & workflow
 

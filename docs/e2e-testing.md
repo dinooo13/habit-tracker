@@ -61,6 +61,7 @@ e2e/
 | `smoke.spec.ts` | App shell + seeded hydration. |
 | `dashboard.spec.ts` | Queue done/missed/skipped, reopen, counts, date navigation. |
 | `habits.spec.ts` | Habit CRUD (build/break, validation, edit, archive). |
+| `pause.spec.ts` | Pause ranges: a paused habit is badged and kept out of the queue; pause editor round-trips a range through create. |
 | `reflection.spec.ts` | Miss → reflection → coaching suggestions. |
 | `settings.spec.ts` | Export/import (full + habits-only), invalid file, delete, demo data. |
 | `insights.spec.ts` | Insights sections; theme/accent color apply + persist. |

@@ -52,8 +52,11 @@ DRIFT=$(git diff --name-only $(git merge-base HEAD origin/main) origin/main)
 - Neither holds (no conflict expected and docs-only drift) → skip, report "docs-only
   drift, no need": the PR's CI results and QA preview are not meaningfully stale, and
   rebasing would only burn a full CI pipeline plus a preview redeploy. If the conflict
-  hint is ambiguous, confirm with a trial `git rebase origin/main`: clean → `git rebase
-  --abort` and skip; conflicted → you are already in step 3's conflict path.
+  hint is ambiguous, confirm with a trial `git rebase origin/main`: clean → the rebase
+  has already completed (there is no in-progress rebase to `--abort`), so undo it with
+  `git reset --hard ORIG_HEAD` and skip without pushing; conflicted → the rebase is
+  stopped mid-flight and you are already in step 3's conflict path (`git rebase
+  --abort`, then bounce).
 
 ## 3. Rebase
 

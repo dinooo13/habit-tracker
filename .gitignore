@@ -32,3 +32,6 @@ test-results
 .env
 .env.*
 !.env.example
+
+# Agent worktree isolation scratch (transient)
+.claude/worktrees/

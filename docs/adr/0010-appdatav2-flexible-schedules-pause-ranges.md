@@ -35,7 +35,7 @@ Introduce a per-habit list of inclusive pause ranges and bump the persisted enve
 - **Due-date rule (single chokepoint).** A habit is due on `dateKey` iff
   `!archived` **and** `dateKey >= startDate` **and** `scheduleWeekdays` includes the
   weekday **and** `dateKey` is *not* inside any pause. This lives entirely inside
-  `isHabitDueOnDate` (`app/utils/date.ts`), so it propagates automatically to every
+  `isHabitDueOnDate` (`app/utils/domain/date.ts`), so it propagates automatically to every
   getter, `ensureMissedEntries`, `completionRateForHabit`, the insights page, and the
   reminder engine without any call-site changes.
 
@@ -78,8 +78,8 @@ Introduce a per-habit list of inclusive pause ranges and bump the persisted enve
 ## References
 
 - `app/types/app-data.ts` — `HabitPause`, `Habit.pauses`, `AppDataV2`, `APP_DATA_SCHEMA_VERSION`.
-- `app/utils/storage-schema.ts` — `HabitPauseSchema`, `AppDataV2Schema`, `migrateToV2`, `parseAppData`, `normalizeHabitPauses`.
-- `app/utils/date.ts` — `isDateInHabitPause`, the pause check in `isHabitDueOnDate`.
+- `app/utils/persistence/storage-schema.ts` — `HabitPauseSchema`, `AppDataV2Schema`, `migrateToV2`, `parseAppData`, `normalizeHabitPauses`.
+- `app/utils/domain/date.ts` — `isDateInHabitPause`, the pause check in `isHabitDueOnDate`.
 - `app/stores/habits.ts` — `pruneMissedEntriesInPauses`, pause normalization in create/update.
 - `app/components/HabitForm.vue` — the pause editor.
 - `tests/pause-mode.test.ts` — migration, due-date, prune, completion-rate, coaching behavior.

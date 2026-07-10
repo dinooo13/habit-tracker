@@ -39,7 +39,7 @@ security boundary.
 
 ## References
 
-- `app/utils/dummy-auth.ts` — `DUMMY_AUTH_TTL_MS`, `DUMMY_AUTH_EXPIRY_STORAGE_KEY`,
+- `app/utils/auth/dummy-auth.ts` — `DUMMY_AUTH_TTL_MS`, `DUMMY_AUTH_EXPIRY_STORAGE_KEY`,
   `readDummyAuth` / `writeDummyAuth` expiry handling.
 - `app/composables/use-dummy-auth.ts` — writes the stamp on login, emits `session.expired`.
 - `app/middleware/auth.global.ts` — route guard (unchanged logic).

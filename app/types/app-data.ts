@@ -30,6 +30,26 @@ export const FIELD_LIMITS = {
   timestamp: 64,
 } as const
 
+// Hard ceiling on the size of an imported JSON file, checked against `File.size`
+// before the file is ever read into memory. Bounds the string allocation and JSON
+// parse cost so a crafted or accidental huge file can't freeze the tab before
+// validation runs (issue #35). Files exactly at the limit remain eligible.
+export const MAX_IMPORT_FILE_BYTES = 64 * 1024 * 1024
+
+// Maximum element counts for the persisted/imported collections and their nested
+// arrays. Enforced by the Zod schema, a cheap raw-count preflight, and the lenient
+// habits-only import path so an over-large payload is rejected as a unit before any
+// expensive per-element work (issue #35). Caps apply to raw array length, before
+// deduplication, invalid-item filtering, or migration. Values are generous so no
+// legitimate personal history is rejected. Length <= cap continues; > cap is rejected.
+export const COLLECTION_LIMITS = {
+  habits: 500,
+  entries: 200_000,
+  suggestions: 400_000,
+  scheduleWeekdays: 7,
+  pausesPerHabit: 100
+} as const
+
 /**
  * An inclusive range of local date keys (`YYYY-MM-DD`) during which a habit is
  * paused. Days inside a pause are never *due*, so they are excluded from the

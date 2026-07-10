@@ -12,6 +12,8 @@
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run --project unit",
+    "test:nuxt": "vitest run --project nuxt",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -31,10 +33,13 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.0.3",
     "@playwright/test": "^1.61.0",
     "@types/node": "^22.19.21",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.6.0",
     "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^20.10.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
     "vue-tsc": "^3.3.4"

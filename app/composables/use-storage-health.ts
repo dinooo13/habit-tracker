@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { describeWriteFailure, isQuotaExceededError, isQuotaLowFromEstimate } from '~/utils/storage-health'
+import { describeWriteFailure, isQuotaExceededError, isQuotaLowFromEstimate } from '~/utils/observability/storage-health'
 
 const STORAGE_HEALTH_LAST_ERROR_KEY = 'storage-health:last-error'
 const STORAGE_HEALTH_QUOTA_LOW_KEY = 'storage-health:is-quota-low'
@@ -19,7 +19,7 @@ export interface StorageHealth {
  * the last write failure and whether the storage quota is running low. All
  * browser-only APIs (`navigator.storage.estimate`) are guarded and degrade to
  * no-ops when unavailable, so this is safe to call anywhere and never throws.
- * The decision logic lives in `~/utils/storage-health` so it can be unit-tested.
+ * The decision logic lives in `~/utils/observability/storage-health` so it can be unit-tested.
  */
 export function useStorageHealth(): StorageHealth {
   const lastError = useState<string | null>(STORAGE_HEALTH_LAST_ERROR_KEY, () => null)

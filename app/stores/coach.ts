@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import type { CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
-import { generateSuggestionsForMissedEntry } from '~/utils/atomic-rules'
+import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 
 interface CoachState {
   suggestions: CoachingSuggestion[]

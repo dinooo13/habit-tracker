@@ -4,7 +4,7 @@ import InsightsPage from '~/pages/app/insights.vue'
 import { useHabitsStore } from '~/stores/habits'
 import { useEntriesStore } from '~/stores/entries'
 import { useCoachStore } from '~/stores/coach'
-import { todayDateKey, weekdayFromDateKey } from '~/utils/date'
+import { todayDateKey, weekdayFromDateKey } from '~/utils/domain/date'
 import type { Habit, HabitEntry } from '~/types/app-data'
 
 // Midday UTC keeps the derived local date key stable in any CI timezone.

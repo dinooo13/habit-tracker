@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Habit } from '~/types/app-data'
-import { isDateInHabitPause, todayDateKey } from '~/utils/date'
+import { isDateInHabitPause, todayDateKey } from '~/utils/domain/date'
 
 definePageMeta({ layout: 'app' })
 

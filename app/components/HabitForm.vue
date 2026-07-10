@@ -3,7 +3,7 @@ import { Time } from '@internationalized/date'
 import type { FormSubmitEvent, RadioGroupItem } from '@nuxt/ui'
 import { z } from 'zod'
 import type { Habit, HabitPause, HabitType } from '~/types/app-data'
-import { compareDateKeys, formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/date'
+import { compareDateKeys, formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/domain/date'
 
 interface HabitFormPayload {
   name: string

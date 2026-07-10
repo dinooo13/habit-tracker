@@ -5,14 +5,14 @@ import type { Habit, HabitEntry } from '~/types/app-data'
 import { useHabitsStore } from '~/stores/habits'
 import { useEntriesStore } from '~/stores/entries'
 import { useCoachStore } from '~/stores/coach'
-import { isDateInHabitPause, isHabitDueOnDate } from '~/utils/date'
+import { isDateInHabitPause, isHabitDueOnDate } from '~/utils/domain/date'
 import {
   AppDataV2Schema,
   createEmptyAppData,
   migrateToV2,
   normalizeHabitPauses,
   parseAppData,
-} from '~/utils/storage-schema'
+} from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 

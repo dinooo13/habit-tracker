@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MISS_REASON_CODES, type MissReasonCode } from '~/types/app-data'
-import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
+import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
 
 const props = defineProps<{
   open: boolean

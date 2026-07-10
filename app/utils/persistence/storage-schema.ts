@@ -9,7 +9,7 @@ import {
   type AppDataV2,
   type Habit,
 } from '~/types/app-data'
-import { compareDateKeys, isValidDateKey } from '~/utils/date'
+import { compareDateKeys, isValidDateKey } from '~/utils/domain/date'
 
 // A real YYYY-MM-DD date within sane calendar bounds. Replaces a bare regex so a
 // crafted import can't smuggle in an out-of-range date that drives unbounded

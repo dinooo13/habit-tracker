@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Habit, HabitPause } from '~/types/app-data'
 import { COLLECTION_LIMITS, FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
-import { addDays } from '~/utils/date'
+import { addDays } from '~/utils/domain/date'
 import {
   assertRawHabitLimits,
   createEmptyAppData,
   normalizeHabitPauses,
   parseAppData,
-} from '~/utils/storage-schema'
+} from '~/utils/persistence/storage-schema'
 
 // Build N valid, distinct single-day pause ranges within the allowed calendar
 // bounds, so a "just under the cap" payload passes full validation.

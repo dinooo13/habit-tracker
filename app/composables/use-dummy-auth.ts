@@ -1,4 +1,4 @@
-import { DUMMY_AUTH_STORAGE_KEY, readDummyAuth, writeDummyAuth } from '~/utils/dummy-auth'
+import { DUMMY_AUTH_STORAGE_KEY, readDummyAuth, writeDummyAuth } from '~/utils/auth/dummy-auth'
 
 const DUMMY_AUTH_STATE_KEY = 'dummy-auth:is-logged-in'
 const DUMMY_AUTH_INIT_KEY = 'dummy-auth:is-initialized'

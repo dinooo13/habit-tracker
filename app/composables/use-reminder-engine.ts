@@ -1,4 +1,4 @@
-import { parseTimeString, todayDateKey } from '~/utils/date'
+import { parseTimeString, todayDateKey } from '~/utils/domain/date'
 
 let reminderInterval: ReturnType<typeof setInterval> | null = null
 const notifiedKeys = new Set<string>()

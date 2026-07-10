@@ -4,7 +4,7 @@ import {
   type SecurityEvent,
   type SecurityEventLevel,
   type SecurityEventType,
-} from '~/utils/security-log'
+} from '~/utils/observability/security-log'
 
 /**
  * SEC-16: thin composable wrapper around the security-log scaffold so callers

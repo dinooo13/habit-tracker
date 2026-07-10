@@ -2,14 +2,14 @@ import 'fake-indexeddb/auto'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { AppData } from '~/types/app-data'
-import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistence-adapter'
+import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/persistence/dexie-persistence-adapter'
 import {
   LEGACY_LAST_VALID_STORAGE_KEY,
   LEGACY_STORAGE_KEY,
   migrateLegacyLocalStorage,
-} from '~/utils/legacy-migration'
-import type { PersistenceAdapter } from '~/utils/persistence-adapter'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+} from '~/utils/persistence/legacy-migration'
+import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 

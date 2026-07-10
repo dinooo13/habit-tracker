@@ -6,7 +6,7 @@ import {
   DUMMY_AUTH_TTL_MS,
 } from './constants'
 
-// The Dexie schema mirrored from app/utils/dexie-persistence-adapter.ts. The
+// The Dexie schema mirrored from app/utils/persistence/dexie-persistence-adapter.ts. The
 // seed recreates the IndexedDB database with these exact stores/indexes so the
 // app's bootstrap (load → hydrate) reads it back through Dexie without an
 // upgrade. Keep in sync if the Dexie schema ever changes.

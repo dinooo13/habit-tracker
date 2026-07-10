@@ -1,7 +1,7 @@
 import type { AppData } from '~/types/app-data'
-import type { PersistenceAdapter } from '~/utils/persistence-adapter'
-import { safeJsonParse } from '~/utils/safe-json'
-import { parseAppData } from '~/utils/storage-schema'
+import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import { safeJsonParse } from '~/utils/persistence/safe-json'
+import { parseAppData } from '~/utils/persistence/storage-schema'
 
 export const LEGACY_STORAGE_KEY = 'habit-tracker:v1:data'
 export const LEGACY_LAST_VALID_STORAGE_KEY = 'habit-tracker:v1:last-valid'

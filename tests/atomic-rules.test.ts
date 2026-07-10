@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateSuggestionsForMissedEntry } from '~/utils/atomic-rules'
+import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 import type { Habit, HabitEntry } from '~/types/app-data'
 
 function buildHabit(type: 'build' | 'break'): Habit {

@@ -9,7 +9,7 @@ import {
   MAX_DATE_RANGE_DAYS,
   parseTimeString,
   relativeDayLabel,
-} from '~/utils/date'
+} from '~/utils/domain/date'
 import type { Habit } from '~/types/app-data'
 
 const sampleHabit: Habit = {

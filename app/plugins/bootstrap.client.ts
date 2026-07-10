@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import type { AppData } from '~/types/app-data'
-import { todayDateKey } from '~/utils/date'
-import { applyPrimaryColorPalette } from '~/utils/primary-color'
+import { todayDateKey } from '~/utils/domain/date'
+import { applyPrimaryColorPalette } from '~/utils/ui/primary-color'
 
 function requestPersistentStorage(): void {
   if (typeof navigator === 'undefined' || !navigator.storage?.persist) {

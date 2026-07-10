@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import type { Habit, HabitEntry, HabitStatus, MissReasonCode } from '~/types/app-data'
-import { addDays, compareDateKeys, dateKeyRange, isHabitDueOnDate, nowIso } from '~/utils/date'
-import { createId } from '~/utils/id'
+import { addDays, compareDateKeys, dateKeyRange, isHabitDueOnDate, nowIso } from '~/utils/domain/date'
+import { createId } from '~/utils/domain/id'
 
 interface EntriesState {
   entries: HabitEntry[]

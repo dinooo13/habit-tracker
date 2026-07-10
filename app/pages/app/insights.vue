@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/date'
-import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
+import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/domain/date'
+import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
 
 definePageMeta({ layout: 'app' })
 

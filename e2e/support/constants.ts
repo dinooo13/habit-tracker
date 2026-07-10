@@ -1,4 +1,4 @@
-// Mirrors app/utils/dummy-auth.ts. Kept as a standalone constant so the e2e
+// Mirrors app/utils/auth/dummy-auth.ts. Kept as a standalone constant so the e2e
 // suite stays decoupled from Nuxt auto-imports / runtime modules.
 export const DUMMY_AUTH_STORAGE_KEY = 'habit-tracker:v1:dummy-auth'
 // SEC-03: the dummy-auth session now carries an absolute expiry stamp; a session

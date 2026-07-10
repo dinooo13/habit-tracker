@@ -1,8 +1,8 @@
 import type { AppData } from '~/types/app-data'
-import { todayDateKey } from '~/utils/date'
-import { generateDemoData } from '~/utils/demo-data-generator'
-import { applyPrimaryColorPalette } from '~/utils/primary-color'
-import { parseAppData } from '~/utils/storage-schema'
+import { todayDateKey } from '~/utils/domain/date'
+import { generateDemoData } from '~/utils/domain/demo-data-generator'
+import { applyPrimaryColorPalette } from '~/utils/ui/primary-color'
+import { parseAppData } from '~/utils/persistence/storage-schema'
 
 const DEMO_FIXTURE_URL = '/fixtures/habit-tracker-demo.json'
 

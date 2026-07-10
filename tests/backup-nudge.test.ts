@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { computeBackupNudge } from '~/composables/use-backup-nudge'
 import type { Habit, HabitEntry } from '~/types/app-data'
-import { addDays, toDateKeyLocal } from '~/utils/date'
+import { addDays, toDateKeyLocal } from '~/utils/domain/date'
 
 const TODAY = '2026-06-24'
 

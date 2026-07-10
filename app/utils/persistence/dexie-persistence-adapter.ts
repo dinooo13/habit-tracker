@@ -1,8 +1,8 @@
 import Dexie, { type Table } from 'dexie'
 import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
-import type { PersistenceAdapter } from '~/utils/persistence-adapter'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
-import { recordSecurityEvent } from '~/utils/security-log'
+import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
+import { recordSecurityEvent } from '~/utils/observability/security-log'
 
 export const DATABASE_NAME = 'habit-tracker'
 

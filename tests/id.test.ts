@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createId } from '~/utils/id'
+import { createId } from '~/utils/domain/id'
 
 describe('createId', () => {
   it('prefixes the generated id', () => {

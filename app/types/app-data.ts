@@ -118,7 +118,7 @@ export const BACKUP_NUDGE_SNOOZE_DAYS = 7
 /**
  * The current persisted envelope. The only shape change from V1 is the new
  * `pauses` field on `Habit`; see ADR-0010 and `migrateToV2` in
- * `app/utils/storage-schema.ts`.
+ * `app/utils/persistence/storage-schema.ts`.
  */
 export interface AppDataV2 {
   schemaVersion: typeof APP_DATA_SCHEMA_VERSION

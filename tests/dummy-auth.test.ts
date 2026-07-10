@@ -7,7 +7,7 @@ import {
   readDummyAuth,
   resolveRedirectTarget,
   writeDummyAuth,
-} from '~/utils/dummy-auth'
+} from '~/utils/auth/dummy-auth'
 
 function createStorage(initial: Record<string, string> = {}) {
   const data = { ...initial }

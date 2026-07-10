@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { fetchDemoPayload, hydrateDemoPayload } from '~/composables/use-demo-data'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
+import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 

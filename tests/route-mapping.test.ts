@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isProtectedAppPath, mapLegacyPath } from '~/utils/route-mapping'
+import { isProtectedAppPath, mapLegacyPath } from '~/utils/auth/route-mapping'
 
 describe('legacy route mapping', () => {
   it('maps static legacy routes to /app/*', () => {

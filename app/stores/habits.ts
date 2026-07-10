@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import type { Habit, HabitCreateInput, HabitPause, HabitUpdateInput } from '~/types/app-data'
-import { compareDateKeys, isDateInHabitPause, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/date'
-import { createId } from '~/utils/id'
+import { compareDateKeys, isDateInHabitPause, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/domain/date'
+import { createId } from '~/utils/domain/id'
 import { useEntriesStore } from '~/stores/entries'
 import { useCoachStore } from '~/stores/coach'
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CoachingSuggestion, MissReasonCode } from '~/types/app-data'
-import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
-import { addDays, compareDateKeys, todayDateKey } from '~/utils/date'
+import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
+import { addDays, compareDateKeys, todayDateKey } from '~/utils/domain/date'
 
 definePageMeta({ layout: 'app' })
 

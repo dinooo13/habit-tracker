@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppData } from '~/types/app-data'
-import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistence-adapter'
-import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
-import { clearSecurityLog, recentSecurityEvents } from '~/utils/security-log'
+import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/persistence/dexie-persistence-adapter'
+import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
+import { clearSecurityLog, recentSecurityEvents } from '~/utils/observability/security-log'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 

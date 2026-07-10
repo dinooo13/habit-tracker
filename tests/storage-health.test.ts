@@ -4,7 +4,7 @@ import {
   describeWriteFailure,
   isQuotaExceededError,
   isQuotaLowFromEstimate,
-} from '~/utils/storage-health'
+} from '~/utils/observability/storage-health'
 
 describe('storage health helpers (SEC-18)', () => {
   describe('isQuotaExceededError', () => {

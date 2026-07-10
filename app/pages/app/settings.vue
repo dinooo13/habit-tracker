@@ -3,11 +3,11 @@ import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
 import { FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
-import { assertRawHabitLimits, createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/storage-schema'
-import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/date'
-import { createId } from '~/utils/id'
-import { safeJsonParse } from '~/utils/safe-json'
-import { PRIMARY_COLOR_LABELS } from '~/utils/primary-color'
+import { assertRawHabitLimits, createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/persistence/storage-schema'
+import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/domain/date'
+import { createId } from '~/utils/domain/id'
+import { safeJsonParse } from '~/utils/persistence/safe-json'
+import { PRIMARY_COLOR_LABELS } from '~/utils/ui/primary-color'
 
 definePageMeta({ layout: 'app' })
 

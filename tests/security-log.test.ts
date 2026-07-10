@@ -4,7 +4,7 @@ import {
   clearSecurityLog,
   recentSecurityEvents,
   recordSecurityEvent,
-} from '~/utils/security-log'
+} from '~/utils/observability/security-log'
 
 describe('security log (SEC-16)', () => {
   beforeEach(() => {

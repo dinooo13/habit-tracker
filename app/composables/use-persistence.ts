@@ -1,8 +1,8 @@
 import type { AppData } from '~/types/app-data'
-import { DexiePersistenceAdapter } from '~/utils/dexie-persistence-adapter'
-import { migrateLegacyLocalStorage } from '~/utils/legacy-migration'
-import type { PersistenceAdapter } from '~/utils/persistence-adapter'
-import { createEmptyAppData } from '~/utils/storage-schema'
+import { DexiePersistenceAdapter } from '~/utils/persistence/dexie-persistence-adapter'
+import { migrateLegacyLocalStorage } from '~/utils/persistence/legacy-migration'
+import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import { createEmptyAppData } from '~/utils/persistence/storage-schema'
 
 let defaultAdapter: PersistenceAdapter | null = null
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { resolveRedirectTarget } from '~/utils/dummy-auth'
+import { resolveRedirectTarget } from '~/utils/auth/dummy-auth'
 
 const route = useRoute()
 const router = useRouter()

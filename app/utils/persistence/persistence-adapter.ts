@@ -9,7 +9,7 @@ import type { AppData } from '~/types/app-data'
  * without touching the composable's internals.
  *
  * Implementations own serialization to/from their backend but share the
- * `AppData` + Zod contract (`~/utils/storage-schema`): `load()` always
+ * `AppData` + Zod contract (`~/utils/persistence/storage-schema`): `load()` always
  * returns validated data, falling back to empty state when nothing is stored
  * or the stored payload is corrupt.
  *

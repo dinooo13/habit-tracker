@@ -1,7 +1,7 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Habit, HabitEntry } from '~/types/app-data'
 import { BACKUP_NUDGE_SNOOZE_DAYS, BACKUP_NUDGE_THRESHOLD_WEEKS } from '~/types/app-data'
-import { addDays, compareDateKeys, daysBetween, nowIso, todayDateKey, toDateKeyLocal } from '~/utils/date'
+import { addDays, compareDateKeys, daysBetween, nowIso, todayDateKey, toDateKeyLocal } from '~/utils/domain/date'
 
 interface BackupNudgeInputs {
   habits: Habit[]

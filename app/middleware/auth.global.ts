@@ -1,5 +1,5 @@
-import { isProtectedAppPath, mapLegacyPath } from '~/utils/route-mapping'
-import { resolveRedirectTarget } from '~/utils/dummy-auth'
+import { isProtectedAppPath, mapLegacyPath } from '~/utils/auth/route-mapping'
+import { resolveRedirectTarget } from '~/utils/auth/dummy-auth'
 
 export default defineNuxtRouteMiddleware((to) => {
   const legacyTarget = mapLegacyPath(to.path)

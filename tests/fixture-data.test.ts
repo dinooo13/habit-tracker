@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { parseAppData } from '~/utils/storage-schema'
+import { parseAppData } from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
 

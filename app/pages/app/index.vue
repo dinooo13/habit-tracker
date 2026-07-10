@@ -10,7 +10,7 @@ import {
   isDateInHabitPause,
   relativeDayLabel,
   todayDateKey,
-} from '~/utils/date'
+} from '~/utils/domain/date'
 
 definePageMeta({ layout: 'app' })
 

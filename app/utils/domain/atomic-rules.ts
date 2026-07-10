@@ -6,8 +6,8 @@ import type {
   LawDirection,
   MissReasonCode,
 } from '~/types/app-data'
-import { createId } from '~/utils/id'
-import { nowIso } from '~/utils/date'
+import { createId } from '~/utils/domain/id'
+import { nowIso } from '~/utils/domain/date'
 
 interface AtomicTemplate {
   law: AtomicLaw

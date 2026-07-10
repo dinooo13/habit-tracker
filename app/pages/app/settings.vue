@@ -2,8 +2,8 @@
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
-import { FIELD_LIMITS } from '~/types/app-data'
-import { createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/storage-schema'
+import { FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
+import { assertRawHabitLimits, createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/storage-schema'
 import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/date'
 import { createId } from '~/utils/id'
 import { safeJsonParse } from '~/utils/safe-json'
@@ -252,6 +252,12 @@ function extractHabitsFromImportPayload(payload: unknown): Habit[] {
     return []
   }
 
+  // Enforce the same raw habit / nested-array caps as the strict path before any
+  // mapping, deduplication, or filtering, so the lenient fallback can't become a
+  // bypass for an oversized payload (issue #35). Throws on overflow, which
+  // confirmImport() surfaces through its normal import-error catch.
+  assertRawHabitLimits(rawHabits)
+
   return rawHabits
     .map(item => normalizeImportedHabit(item))
     .filter((item): item is Habit => Boolean(item))
@@ -486,6 +492,19 @@ async function confirmImport(): Promise<void> {
       title: 'No file selected',
       description: 'Choose a JSON file before importing.',
       color: 'warning',
+    })
+    return
+  }
+
+  // Reject an over-large file before reading it into memory, so a crafted or
+  // accidental huge JSON file can't freeze the tab or exhaust storage before
+  // validation runs (issue #35). The modal and current data stay untouched.
+  if (file.size > MAX_IMPORT_FILE_BYTES) {
+    logSecurityEvent('data.validation_failed', 'warn', 'Import rejected: file exceeds 64 MiB limit')
+    toast.add({
+      title: 'Import failed',
+      description: 'The selected file is too large. Choose a JSON file no larger than 64 MiB.',
+      color: 'error',
     })
     return
   }

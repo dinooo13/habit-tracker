@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   APP_DATA_SCHEMA_VERSION,
+  COLLECTION_LIMITS,
   DEFAULT_SETTINGS,
   FIELD_LIMITS,
   MISS_REASON_CODES,
@@ -36,7 +37,7 @@ const HabitV1Schema = z.object({
   name: z.string().min(1).max(FIELD_LIMITS.name),
   type: z.enum(['build', 'break']),
   identityStatement: z.string().min(1).max(FIELD_LIMITS.identity),
-  scheduleWeekdays: z.array(z.number().int().min(0).max(6)).min(1),
+  scheduleWeekdays: z.array(z.number().int().min(0).max(6)).min(1).max(COLLECTION_LIMITS.scheduleWeekdays),
   reminderTime: z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
@@ -50,7 +51,7 @@ const HabitV1Schema = z.object({
 // ── V2 schemas (current shape) ───────────────────────────────────────────────
 
 const HabitSchema = HabitV1Schema.extend({
-  pauses: z.array(HabitPauseSchema),
+  pauses: z.array(HabitPauseSchema).max(COLLECTION_LIMITS.pausesPerHabit),
 })
 
 const HabitEntrySchema = z.object({
@@ -92,17 +93,17 @@ const SettingsSchema = z.object({
 // The non-habit tables are identical across V1 and V2.
 const AppDataV1Schema = z.object({
   schemaVersion: z.literal(1),
-  habits: z.array(HabitV1Schema),
-  entries: z.array(HabitEntrySchema),
-  suggestions: z.array(CoachingSuggestionSchema),
+  habits: z.array(HabitV1Schema).max(COLLECTION_LIMITS.habits),
+  entries: z.array(HabitEntrySchema).max(COLLECTION_LIMITS.entries),
+  suggestions: z.array(CoachingSuggestionSchema).max(COLLECTION_LIMITS.suggestions),
   settings: SettingsSchema,
 })
 
 export const AppDataV2Schema = z.object({
   schemaVersion: z.literal(APP_DATA_SCHEMA_VERSION),
-  habits: z.array(HabitSchema),
-  entries: z.array(HabitEntrySchema),
-  suggestions: z.array(CoachingSuggestionSchema),
+  habits: z.array(HabitSchema).max(COLLECTION_LIMITS.habits),
+  entries: z.array(HabitEntrySchema).max(COLLECTION_LIMITS.entries),
+  suggestions: z.array(CoachingSuggestionSchema).max(COLLECTION_LIMITS.suggestions),
   settings: SettingsSchema,
 })
 
@@ -134,6 +135,76 @@ export function createEmptyAppData(): AppDataV2 {
 }
 
 /**
+ * Cheap raw-count guard for a single habit-like value's nested arrays. Rejects an
+ * over-limit `scheduleWeekdays` or `pauses` array by *raw* length — before any
+ * deduplication, filtering, or migration — so an over-large payload is thrown out
+ * as a unit rather than silently trimmed (issue #35). Non-array members are left
+ * for the existing element-level validation/normalization to handle.
+ */
+export function assertRawHabitNestedLimits(rawHabit: unknown): void {
+  if (!rawHabit || typeof rawHabit !== 'object') {
+    return
+  }
+
+  const candidate = rawHabit as { scheduleWeekdays?: unknown, pauses?: unknown }
+
+  if (
+    Array.isArray(candidate.scheduleWeekdays)
+    && candidate.scheduleWeekdays.length > COLLECTION_LIMITS.scheduleWeekdays
+  ) {
+    throw new Error('Import rejected: a habit exceeds the scheduleWeekdays limit')
+  }
+
+  if (Array.isArray(candidate.pauses) && candidate.pauses.length > COLLECTION_LIMITS.pausesPerHabit) {
+    throw new Error('Import rejected: a habit exceeds the pauses limit')
+  }
+}
+
+/**
+ * Cheap raw-count guard for a list of habit-like values. Rejects when the raw list
+ * exceeds the habit cap, then checks each raw habit's nested arrays. Shared by the
+ * strict preflight and the lenient habits-only import path so neither can become a
+ * bypass. Uses *raw* lengths, so 501 duplicate-ID habits are rejected rather than
+ * deduplicated to one (issue #35).
+ */
+export function assertRawHabitLimits(rawHabits: unknown[]): void {
+  if (rawHabits.length > COLLECTION_LIMITS.habits) {
+    throw new Error('Import rejected: habit count exceeds the limit')
+  }
+
+  for (const rawHabit of rawHabits) {
+    assertRawHabitNestedLimits(rawHabit)
+  }
+}
+
+/**
+ * Cheap preflight over an arbitrary payload's raw top-level collections and nested
+ * habit arrays, run before the expensive Zod parse traverses every element. Rejects
+ * obviously oversized input up front; only after confirming `habits.length` is within
+ * cap does it scan those at-most-500 raw habits. Non-array members are ignored here
+ * and fail later through the normal Zod/type checks (issue #35).
+ */
+function assertRawCollectionLimits(payload: unknown): void {
+  if (!payload || typeof payload !== 'object') {
+    return
+  }
+
+  const candidate = payload as { habits?: unknown, entries?: unknown, suggestions?: unknown }
+
+  if (Array.isArray(candidate.entries) && candidate.entries.length > COLLECTION_LIMITS.entries) {
+    throw new Error('Import rejected: entry count exceeds the limit')
+  }
+
+  if (Array.isArray(candidate.suggestions) && candidate.suggestions.length > COLLECTION_LIMITS.suggestions) {
+    throw new Error('Import rejected: suggestion count exceeds the limit')
+  }
+
+  if (Array.isArray(candidate.habits)) {
+    assertRawHabitLimits(candidate.habits)
+  }
+}
+
+/**
  * Validate and (if needed) migrate an arbitrary persisted/imported payload to
  * the current {@link AppDataV2} shape.
  *
@@ -145,6 +216,10 @@ export function createEmptyAppData(): AppDataV2 {
  * {@link createEmptyAppData}.
  */
 export function parseAppData(payload: unknown): AppDataV2 {
+  // Cheap raw-count preflight: reject an obviously oversized payload before Zod
+  // traverses (and the migration copies) every element (issue #35).
+  assertRawCollectionLimits(payload)
+
   const version
     = payload && typeof payload === 'object'
       ? (payload as { schemaVersion?: unknown }).schemaVersion
@@ -181,6 +256,12 @@ export function parseAppData(payload: unknown): AppDataV2 {
 export function normalizeHabitPauses(value: unknown): Habit['pauses'] {
   if (!Array.isArray(value)) {
     return []
+  }
+
+  // Defensively reject an over-limit raw array so a direct future caller can't
+  // bypass the pause cap by skipping the import preflight (issue #35).
+  if (value.length > COLLECTION_LIMITS.pausesPerHabit) {
+    throw new Error('Import rejected: a habit exceeds the pauses limit')
   }
 
   const pauses: Habit['pauses'] = []

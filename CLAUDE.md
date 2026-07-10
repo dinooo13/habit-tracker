@@ -18,14 +18,18 @@ diagrams and `docs/adr/` for the recorded design decisions.
 | `npm run dev` | Start the dev server with HMR. |
 | `npm run test` | Run the Vitest suite once (`vitest run`). |
 | `npm run test:watch` | Run Vitest in watch mode. |
+| `npm run lint` | Lint all code with ESLint (read-only check; fails on any violation). |
+| `npm run lint:fix` | Apply safe ESLint/Stylistic autofixes, then re-check. |
 | `npm run typecheck` | Type-check with `nuxt typecheck` (`vue-tsc`). |
 | `npm run build` | Production build. |
 | `npm run preview` | Serve the built output locally. |
 
-CI (`.github/workflows/ci.yml`, Node 22) runs **`npm test` + `npm run typecheck`** (test
-job) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
-treat `npm run test`, `npm run typecheck`, and `npm run build` as the definition of done —
-run `npm run test` and `npm run typecheck` before considering work complete.
+CI (`.github/workflows/ci.yml`, Node 22) runs **`npm run lint` + `npm test` +
+`npm run typecheck`** (test job — lint runs first so cheap static failures stop the job
+early) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
+treat `npm run lint`, `npm run test`, `npm run typecheck`, and `npm run build` as the
+definition of done — run them before considering work complete. Linting/formatting is owned
+by `@nuxt/eslint` (flat config + ESLint Stylistic); see ADR-0013.
 
 ## Architecture map
 

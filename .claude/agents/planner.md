@@ -75,8 +75,8 @@ allocate an ADR number in the plan; the implementer allocates it at build time
 
 ## Test plan
 | # | Test case | Type (unit/e2e) | Steps | Expected |
-Done = `npm run test` + `npm run typecheck` + `npm run build` green, with tests for
-every behavior change (`docs/WORKFLOW.md`).
+Done = `npm run lint` + `npm run test` + `npm run typecheck` + `npm run build` green, with
+tests for every behavior change (`docs/WORKFLOW.md`).
 
 ## Suggested labels & branch
 `effort:` / `area:` labels (from `.github/labels.yml`) and branch

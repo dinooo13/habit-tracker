@@ -17,6 +17,7 @@ Closes #<!-- issue number; use Refs # if this only partially addresses it -->
 
 <!-- How you verified this. Note anything that couldn't be tested here. -->
 
+- [ ] `npm run lint` passes
 - [ ] `npm run test` passes
 - [ ] `npm run typecheck` passes
 - [ ] `npm run build` succeeds

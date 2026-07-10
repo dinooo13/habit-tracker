@@ -55,6 +55,7 @@ Open a PR using the [PR template](../.github/PULL_REQUEST_TEMPLATE.md):
 A change is done when all of the following hold (this is also the CI gate —
 `.github/workflows/ci.yml`):
 
+- `npm run lint` passes (ESLint + Stylistic; see [adr/0013](adr/0013-nuxt-eslint-flat-config.md)).
 - `npm run test` passes.
 - `npm run typecheck` passes.
 - `npm run build` succeeds.

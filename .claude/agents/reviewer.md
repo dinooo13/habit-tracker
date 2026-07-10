@@ -53,7 +53,7 @@ Fetch and check out the PR branch, then review:
   updates exist when the change is structural; **the ADR number collides with neither
   `main` nor any other open PR** (parallel PRs have both claimed the same number
   before — check); no accepted ADR reversed; no `specs/` files.
-- **Gates** — run `npm run test`, `npm run typecheck`, `npm run build` (and
+- **Gates** — run `npm run lint`, `npm run test`, `npm run typecheck`, `npm run build` (and
   `npm run test:e2e` if UI/flows changed and browsers are available; otherwise note
   that CI's `e2e` job covers it). A red gate is **blocking**. Exception: for a
   **Markdown-only diff** (verify with `git diff --name-only origin/main`), skip the
@@ -66,7 +66,7 @@ One comment on the PR, first line `<!-- routine:code-review sha={head} -->`:
 - **Verdict:** `Approve` (no blocking findings) or `Changes requested`.
 - **Blocking** — numbered, each with `file:line` and why it must be fixed before merge.
 - **Non-blocking / nits** — optional improvements.
-- **Gate results** — the test/typecheck/build (and e2e) output you observed.
+- **Gate results** — the lint/test/typecheck/build (and e2e) output you observed.
 
 ## 5. Label transition
 

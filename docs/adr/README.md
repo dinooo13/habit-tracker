@@ -38,3 +38,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0009](0009-persistence-adapter-interface.md) | Persistence adapter interface | Accepted |
 | [0010](0010-appdatav2-flexible-schedules-pause-ranges.md) | AppDataV2 — flexible schedules & pause ranges | Accepted |
 | [0011](0011-absolute-session-timeout-for-dummy-auth.md) | Absolute session timeout for dummy auth | Accepted |
+| [0013](0013-nuxt-eslint-flat-config.md) | Nuxt ESLint flat config — repository-wide linting & formatting standard | Accepted |

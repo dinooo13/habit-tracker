@@ -6,6 +6,8 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest run",
@@ -28,8 +30,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.16.0",
     "@playwright/test": "^1.61.0",
     "@types/node": "^22.19.21",
+    "eslint": "^10.6.0",
     "fake-indexeddb": "^6.2.5",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",

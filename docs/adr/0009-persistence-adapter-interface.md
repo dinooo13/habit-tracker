@@ -9,7 +9,7 @@ Persistence was already abstracted at the *consumer* seam: every consumer
 (`app/plugins/bootstrap.client.ts`, `app/pages/app/settings.vue`,
 `app/composables/use-demo-data.ts`) touches storage only through
 `usePersistence()`'s `load()` / `save()` / `clear()`, and `AppDataV1` — validated
-by Zod in `app/utils/storage-schema.ts` independently of the backend — is the only
+by Zod in `app/utils/persistence/storage-schema.ts` independently of the backend — is the only
 contract that crosses the boundary.
 
 Swapping the backend was still not a drop-in, though:
@@ -26,18 +26,18 @@ Swapping the backend was still not a drop-in, though:
 ## Decision
 
 Introduce a thin **`PersistenceAdapter`** interface
-(`app/utils/persistence-adapter.ts`) with `load()`, `save()`, `clear()`, and
+(`app/utils/persistence/persistence-adapter.ts`) with `load()`, `save()`, `clear()`, and
 `hasData()`. `usePersistence()` depends on this interface, defaulting to the Dexie
 backend but accepting an injected adapter.
 
 - The Dexie code becomes **`DexiePersistenceAdapter`**
-  (`app/utils/dexie-persistence-adapter.ts`, renamed from `habit-database.ts`)
+  (`app/utils/persistence/dexie-persistence-adapter.ts`, renamed from `habit-database.ts`)
   implementing the interface. The `HabitDatabase` schema/class is an internal
   detail; the database instance is constructor-injectable, replacing the old
   module-level singleton.
 - The one-time legacy-`localStorage` migration moves to a backend-agnostic
   `migrateLegacyLocalStorage(adapter, storage)` in
-  `app/utils/legacy-migration.ts`, depending only on `hasData`/`save` plus a
+  `app/utils/persistence/legacy-migration.ts`, depending only on `hasData`/`save` plus a
   `Storage`, so it runs regardless of the active backend.
 - `usePersistence()` keeps the `import.meta.client` guards and the empty-state
   fallback, so adapters can assume a client environment.
@@ -62,9 +62,9 @@ load → hydrate → reconcile → persist flow in `bootstrap.client.ts` are unt
 
 ## References
 
-- `app/utils/persistence-adapter.ts` — the interface.
-- `app/utils/dexie-persistence-adapter.ts` — default Dexie implementation.
-- `app/utils/legacy-migration.ts` — backend-agnostic legacy import.
+- `app/utils/persistence/persistence-adapter.ts` — the interface.
+- `app/utils/persistence/dexie-persistence-adapter.ts` — default Dexie implementation.
+- `app/utils/persistence/legacy-migration.ts` — backend-agnostic legacy import.
 - `app/composables/use-persistence.ts` — interface-dependent orchestration.
 - `tests/dexie-persistence-adapter.test.ts`, `tests/legacy-migration.test.ts`.
 - Supersedes no ADR; refines [ADR-0002](0002-local-first-storage-with-indexeddb-dexie.md).

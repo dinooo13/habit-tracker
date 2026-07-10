@@ -17,7 +17,7 @@ indexes, and relatively aggressive eviction.
 ## Decision
 
 Persist all application data in **IndexedDB**, accessed through **[Dexie](https://dexie.org/)**.
-The schema (`app/utils/dexie-persistence-adapter.ts`) defines tables for `habits`, `entries` (indexed by
+The schema (`app/utils/persistence/dexie-persistence-adapter.ts`) defines tables for `habits`, `entries` (indexed by
 `habitId`, `date`, `status`), and `suggestions` (indexed by `entryId`, `createdAt`), plus a
 `meta` table holding the settings object and schema version. Load/save/clear are implemented
 as pure functions over the database so they are unit-testable with `fake-indexeddb`.
@@ -42,9 +42,9 @@ rather than a sync backend.
 
 ## References
 
-- `app/utils/dexie-persistence-adapter.ts` — Dexie schema and CRUD (the default
+- `app/utils/persistence/dexie-persistence-adapter.ts` — Dexie schema and CRUD (the default
   `PersistenceAdapter`; see [ADR-0009](0009-persistence-adapter-interface.md)).
 - `app/composables/use-persistence.ts` — load/save orchestration.
-- `app/utils/legacy-migration.ts` — backend-agnostic legacy `localStorage` import.
+- `app/utils/persistence/legacy-migration.ts` — backend-agnostic legacy `localStorage` import.
 - `app/plugins/bootstrap.client.ts` — `navigator.storage.persist()` request.
 - Tracking: original migration issue #2 / PR #3.

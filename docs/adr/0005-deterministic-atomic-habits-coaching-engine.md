@@ -13,7 +13,7 @@ hard to test.
 
 ## Decision
 
-Implement coaching as a **deterministic rule engine** (`app/utils/atomic-rules.ts`). Two
+Implement coaching as a **deterministic rule engine** (`app/utils/domain/atomic-rules.ts`). Two
 lookup tables — `BUILD_RULES` and `BREAK_RULES` — map each of the eight miss-reason codes to a
 small set of suggestion templates. Each template carries the Atomic law it serves (`obvious`,
 `attractive`, `easy`, `satisfying`), a `direction` (`increase` for build habits, `decrease`
@@ -36,7 +36,7 @@ them.
 
 ## References
 
-- `app/utils/atomic-rules.ts` — `BUILD_RULES`, `BREAK_RULES`, `generateSuggestionsForMissedEntry`.
+- `app/utils/domain/atomic-rules.ts` — `BUILD_RULES`, `BREAK_RULES`, `generateSuggestionsForMissedEntry`.
 - `app/stores/coach.ts` — generation, reconciliation, storage.
 - `app/types/app-data.ts` — `CoachingSuggestion`, `AtomicLaw`, `LawDirection`, `MissReasonCode`.
 - `docs/glossary.md` — the laws, directions, and reason codes explained.

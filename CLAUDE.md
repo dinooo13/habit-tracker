@@ -42,14 +42,14 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
 | `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
-| `app/utils/` | Pure helpers: `atomic-rules.ts`, `date.ts`, `id.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `dummy-auth.ts`, `security-log.ts`, `storage-health.ts`, `primary-color.ts`, `route-mapping.ts`, `demo-data-generator.ts`. |
+| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`), `persistence/` (`persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |
 
 Key files to know: `app/types/app-data.ts`, `app/stores/*`, `app/composables/use-persistence.ts`,
-`app/plugins/bootstrap.client.ts`, `app/utils/atomic-rules.ts`, `app/utils/persistence-adapter.ts`,
-`app/utils/dexie-persistence-adapter.ts`, `app/middleware/auth.global.ts`.
+`app/plugins/bootstrap.client.ts`, `app/utils/domain/atomic-rules.ts`, `app/utils/persistence/persistence-adapter.ts`,
+`app/utils/persistence/dexie-persistence-adapter.ts`, `app/middleware/auth.global.ts`.
 
 ## Data model
 
@@ -81,10 +81,10 @@ See `docs/glossary.md` for the domain vocabulary.
   `dueHabitsForDate`, `todayDueHabits`); query helpers use cached `Map`s where hot.
 - **Composables** use the `use*` naming convention.
 - **Date keys** are local `YYYY-MM-DD` strings, never `Date` objects, to dodge timezone bugs
-  (`app/utils/date.ts`). Times are `HH:MM` strings.
-- **IDs** are `prefix_uuid` via `createId(prefix)` in `app/utils/id.ts`.
+  (`app/utils/domain/date.ts`). Times are `HH:MM` strings.
+- **IDs** are `prefix_uuid` via `createId(prefix)` in `app/utils/domain/id.ts`.
 - **Validation**: anything loaded or imported is parsed through Zod before it reaches a store
-  (`app/utils/storage-schema.ts`); invalid data falls back to empty state.
+  (`app/utils/persistence/storage-schema.ts`); invalid data falls back to empty state.
 
 ## Persistence flow
 
@@ -101,7 +101,7 @@ See `docs/glossary.md` for the domain vocabulary.
 - **SSR is disabled** (`ssr: false`). Browser-only APIs must be guarded with
   `import.meta.client` (or run inside `*.client.ts` plugins). IndexedDB, `localStorage`,
   `Notification`, and `navigator.storage` are all client-only.
-- **Auth is a demo gate, not security.** `app/utils/dummy-auth.ts` + `app/middleware/auth.global.ts`
+- **Auth is a demo gate, not security.** `app/utils/auth/dummy-auth.ts` + `app/middleware/auth.global.ts`
   is a `localStorage` flag with client-only route guards. Do not treat it as a security
   boundary — see `SECURITY.md` and `docs/adr/0007-client-side-dummy-auth.md`.
 - **Notifications are best-effort.** The reminder engine polls every 30s and only fires when
@@ -110,7 +110,7 @@ See `docs/glossary.md` for the domain vocabulary.
   new workers download but activate only when the user confirms the reload banner in
   `app/layouts/app.vue` (`app/composables/use-pwa-update.ts`). See ADR-0008.
 - **Dummy-auth sessions expire.** An absolute 7-day expiry stamp lives in its own
-  `localStorage` key outside the `AppDataV2` envelope (`app/utils/dummy-auth.ts`); see ADR-0011.
+  `localStorage` key outside the `AppDataV2` envelope (`app/utils/auth/dummy-auth.ts`); see ADR-0011.
 - **Nuxt UI documentation contract.** When using Nuxt UI components, defer to
   <https://ui.nuxt.com/llms.txt> and its linked `raw/docs/...` pages for exact props/slots/events.
   Those raw docs are the source of truth when there is ambiguity.

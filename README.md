@@ -82,7 +82,7 @@ app/
 ├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo
 ├── stores/                # Pinia: habits, entries, coach, settings
 ├── composables/           # use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data
-├── utils/                 # atomic-rules, date, id, persistence-adapter, dexie-persistence-adapter, storage-schema, ...
+├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)
 └── plugins/               # bootstrap.client (load → hydrate → reconcile → persist)
@@ -95,10 +95,10 @@ and coaching flows.
 
 - **Local-first.** All habits, entries, coaching suggestions, and settings persist in
   **IndexedDB** via Dexie, reached through a swappable `PersistenceAdapter` interface
-  (`app/utils/persistence-adapter.ts`, default `app/utils/dexie-persistence-adapter.ts`).
+  (`app/utils/persistence/persistence-adapter.ts`, default `app/utils/persistence/dexie-persistence-adapter.ts`).
   There is no server.
 - **Versioned envelope.** Data is stored as an `AppDataV2` object (`schemaVersion: 2`) and
-  validated with Zod on load (`app/utils/storage-schema.ts`); older `AppDataV1` payloads migrate
+  validated with Zod on load (`app/utils/persistence/storage-schema.ts`); older `AppDataV1` payloads migrate
   up via a one-way `migrateToV2`, and corrupt data falls back to an empty state rather than
   crashing.
 - **Legacy migration.** A previous `localStorage` payload is migrated into IndexedDB on first

@@ -19,7 +19,7 @@ The app is a **client-only Nuxt SPA** (`ssr: false`) with **no backend**:
 These are deliberate trade-offs for a local-first demo app, **not** bugs to be surprised by:
 
 - **The auth gate is not a security boundary.** Authentication is a single `localStorage` flag
-  (`app/utils/dummy-auth.ts`) checked by client-side route middleware
+  (`app/utils/auth/dummy-auth.ts`) checked by client-side route middleware
   (`app/middleware/auth.global.ts`). Anyone with the browser, devtools, or any script on the
   same origin can bypass it. It exists for UX, not protection. See
   [ADR-0007](docs/adr/0007-client-side-dummy-auth.md).
@@ -64,7 +64,7 @@ Findings from the review that have since been mitigated within the local-first m
   download but only activate after the user confirms via a reload banner. See
   [ADR-0008](docs/adr/0008-pwa-best-effort-reminders.md).
 - **Security event logging (SEC-16).** A lightweight, in-memory client-side event log
-  (`app/utils/security-log.ts`) records auth, import/export, deletion, validation-failure, and
+  (`app/utils/observability/security-log.ts`) records auth, import/export, deletion, validation-failure, and
   storage events to a bounded ring buffer + console. No network, no persistence.
 - **Storage-quota / write-failure notice (SEC-18).** Persistence write failures (especially
   `QuotaExceededError`) and a best-effort `navigator.storage.estimate()` pre-check now surface

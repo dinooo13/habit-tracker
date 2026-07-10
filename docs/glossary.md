@@ -2,7 +2,7 @@
 
 The domain vocabulary used throughout the code, mostly borrowed from James Clear's
 *Atomic Habits*. Types live in `app/types/app-data.ts`; the coaching rules in
-`app/utils/atomic-rules.ts`.
+`app/utils/domain/atomic-rules.ts`.
 
 ## Habits
 
@@ -31,7 +31,7 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   `missed` entries for past due days that have no entry yet. Paused days are not due, so no
   entry is generated for them.
 - **Date key** — dates are stored as local `YYYY-MM-DD` strings (not `Date` objects) to avoid
-  timezone drift (`app/utils/date.ts`).
+  timezone drift (`app/utils/domain/date.ts`).
 - **Streak** — consecutive completed due-days for a habit (`entries.streakForHabit`).
 - **Completion rate** — share of due days completed within a window (7d / 30d / all-time).
 

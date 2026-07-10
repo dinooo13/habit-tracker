@@ -14,8 +14,8 @@ one branch → one PR. You run unattended: never ask the user anything.
    `docs/e2e-testing.md`, `docs/architecture.md`, `docs/glossary.md`, accepted
    `docs/adr/*` — **respect every accepted ADR**; never edit one to reverse it.
 3. Conventions: `<script setup>` + Composition API; local `YYYY-MM-DD` date keys and
-   `HH:MM` times (`app/utils/date.ts`); IDs via `createId(prefix)`; everything loaded or
-   imported is Zod-validated (`app/utils/storage-schema.ts`).
+   `HH:MM` times (`app/utils/domain/date.ts`); IDs via `createId(prefix)`; everything loaded or
+   imported is Zod-validated (`app/utils/persistence/storage-schema.ts`).
 
 ## 1. Load and classify
 

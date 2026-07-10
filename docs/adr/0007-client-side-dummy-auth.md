@@ -14,7 +14,7 @@ local-first app.
 ## Decision
 
 Implement a **demo auth gate**: a single boolean flag in `localStorage`
-(`habit-tracker:v1:dummy-auth`, in `app/utils/dummy-auth.ts`) read by a global route
+(`habit-tracker:v1:dummy-auth`, in `app/utils/auth/dummy-auth.ts`) read by a global route
 middleware (`app/middleware/auth.global.ts`) that redirects unauthenticated visitors away from
 `/app/*` to `/login`, and handles legacy URL redirects. Post-login redirects are validated as
 safe internal paths (`isSafeInternalRedirect`) to avoid open-redirect issues.
@@ -38,6 +38,6 @@ hardening required before production.
 
 ## References
 
-- `app/utils/dummy-auth.ts` — flag storage + `isSafeInternalRedirect` / `resolveRedirectTarget`.
+- `app/utils/auth/dummy-auth.ts` — flag storage + `isSafeInternalRedirect` / `resolveRedirectTarget`.
 - `app/composables/use-dummy-auth.ts` — session state.
 - `app/middleware/auth.global.ts` — route protection + legacy redirects.

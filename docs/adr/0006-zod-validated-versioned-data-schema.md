@@ -15,7 +15,7 @@ evolve over time, so we need a way to know which version of the shape we are loo
 Wrap all persisted data in a **versioned envelope**, `AppDataV1`, carrying an explicit
 `schemaVersion: 1` alongside `habits`, `entries`, `suggestions`, and `settings`
 (`app/types/app-data.ts`). On every load or import, validate the raw object with a **Zod**
-schema (`app/utils/storage-schema.ts`) before it touches a store. Validation failure is not
+schema (`app/utils/persistence/storage-schema.ts`) before it touches a store. Validation failure is not
 fatal: the app falls back to a well-formed empty state rather than throwing.
 
 The explicit `schemaVersion` is the hook for future migrations: a later `AppDataV2` can be
@@ -34,5 +34,5 @@ introduced with an upgrade step keyed off the version number.
 ## References
 
 - `app/types/app-data.ts` — `AppDataV1`, `APP_DATA_SCHEMA_VERSION`, domain types.
-- `app/utils/storage-schema.ts` — Zod schema, parse, empty-state fallback.
+- `app/utils/persistence/storage-schema.ts` — Zod schema, parse, empty-state fallback.
 - `tests/storage-schema.test.ts` — validation behavior.

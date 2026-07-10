@@ -32,12 +32,19 @@ flowchart TD
     backup["use-backup-nudge"]
   end
 
-  subgraph Utils["Utilities (app/utils)"]
-    rules["atomic-rules"]
-    date["date"]
-    schema["storage-schema (Zod)"]
-    adapter["persistence-adapter (interface)"]
-    dexie["dexie-persistence-adapter (Dexie)"]
+  subgraph Utils["Utilities (app/utils, by intent — ADR-0014)"]
+    subgraph UDomain["domain/"]
+      rules["atomic-rules"]
+      date["date"]
+    end
+    subgraph UPersist["persistence/"]
+      schema["storage-schema (Zod)"]
+      adapter["persistence-adapter (interface)"]
+      dexie["dexie-persistence-adapter (Dexie)"]
+    end
+    subgraph UOther["ui/ · auth/ · observability/"]
+      other["primary-color · dummy-auth · route-mapping · security-log · storage-health"]
+    end
   end
 
   Storage[("IndexedDB")]
@@ -116,7 +123,7 @@ Two cross-cutting, client-only flows guard the local-first model:
   the app layout and applies the waiting worker only on user confirmation.
 
 Both, plus auth and import/export/delete actions, emit structured events into the in-memory
-security log (`app/utils/security-log.ts`, SEC-16) — a bounded ring buffer with a console sink,
+security log (`app/utils/observability/security-log.ts`, SEC-16) — a bounded ring buffer with a console sink,
 no network and no persistence.
 
 ## Coaching flow
@@ -142,7 +149,7 @@ flowchart LR
 File-based routing under `app/pages/`. Public: `/`, `/login`. Protected (gated by
 `app/middleware/auth.global.ts`): `/app`, `/app/habits`, `/app/habits/new`,
 `/app/habits/[id]`, `/app/review`, `/app/insights`, `/app/settings`. The middleware also maps
-legacy top-level paths (e.g. `/habits` → `/app/habits`) via `app/utils/route-mapping.ts`.
+legacy top-level paths (e.g. `/habits` → `/app/habits`) via `app/utils/auth/route-mapping.ts`.
 
 ## Related
 

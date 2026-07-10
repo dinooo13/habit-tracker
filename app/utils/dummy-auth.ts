@@ -46,7 +46,7 @@ export function readDummyAuth(storage: ReadableStorage | null | undefined): bool
 export function writeDummyAuth(
   storage: WritableStorage | null | undefined,
   isLoggedIn: boolean,
-  ttlMs: number = DUMMY_AUTH_TTL_MS
+  ttlMs: number = DUMMY_AUTH_TTL_MS,
 ): void {
   if (!storage) {
     return

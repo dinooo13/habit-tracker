@@ -1,7 +1,7 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import type { HabitPause, HabitType } from '~/types/app-data'
+
+definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const router = useRouter()
@@ -24,7 +24,7 @@ function onSubmit(payload: {
     scheduleWeekdays: payload.scheduleWeekdays,
     reminderTime: payload.reminderTime,
     startDate: payload.startDate,
-    pauses: payload.pauses
+    pauses: payload.pauses,
   })
 
   if (payload.archived) {
@@ -34,7 +34,7 @@ function onSubmit(payload: {
   toast.add({
     title: 'Habit created',
     description: `${habit.name} has been added to your plan.`,
-    color: 'success'
+    color: 'success',
   })
 
   router.push('/app/habits')
@@ -46,12 +46,19 @@ function onSubmit(payload: {
     <UCard>
       <template #header>
         <div class="space-y-1">
-          <h1 class="text-2xl font-semibold">Create habit</h1>
-          <p class="text-sm text-muted">Define identity, schedule, and optional reminder.</p>
+          <h1 class="text-2xl font-semibold">
+            Create habit
+          </h1>
+          <p class="text-sm text-muted">
+            Define identity, schedule, and optional reminder.
+          </p>
         </div>
       </template>
 
-      <HabitForm submit-label="Create habit" @submit="onSubmit" />
+      <HabitForm
+        submit-label="Create habit"
+        @submit="onSubmit"
+      />
     </UCard>
   </UPage>
 </template>

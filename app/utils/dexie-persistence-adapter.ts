@@ -32,7 +32,7 @@ export class HabitDatabase extends Dexie {
       habits: 'id, startDate',
       entries: 'id, habitId, date, status',
       suggestions: 'id, entryId, createdAt',
-      meta: 'key'
+      meta: 'key',
     })
   }
 }
@@ -68,8 +68,8 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         db.suggestions.bulkPut(plain.suggestions),
         db.meta.bulkPut([
           { key: SCHEMA_VERSION_META_KEY, value: plain.schemaVersion },
-          { key: SETTINGS_META_KEY, value: plain.settings }
-        ])
+          { key: SETTINGS_META_KEY, value: plain.settings },
+        ]),
       ])
     })
   }
@@ -89,8 +89,8 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
           db.entries.toArray(),
           db.suggestions.toArray(),
           db.meta.get(SCHEMA_VERSION_META_KEY),
-          db.meta.get(SETTINGS_META_KEY)
-        ])
+          db.meta.get(SETTINGS_META_KEY),
+        ]),
     )
 
     if (!schemaVersionRecord) {
@@ -103,15 +103,16 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         habits,
         entries,
         suggestions,
-        settings: settingsRecord?.value
+        settings: settingsRecord?.value,
       })
-    } catch (error) {
+    }
+    catch (error) {
       // Stored data failed Zod validation — fall back to empty state and log the
       // failure (SEC-16) so the silent reset is observable.
       recordSecurityEvent(
         'data.validation_failed',
         'error',
-        error instanceof Error ? error.message : 'Stored AppData failed validation'
+        error instanceof Error ? error.message : 'Stored AppData failed validation',
       )
       return createEmptyAppData()
     }

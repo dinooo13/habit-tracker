@@ -11,7 +11,7 @@ import {
   createEmptyAppData,
   migrateToV2,
   normalizeHabitPauses,
-  parseAppData
+  parseAppData,
 } from '~/utils/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
@@ -29,7 +29,7 @@ function buildHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-02-01T00:00:00.000Z',
     updatedAt: '2026-02-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -42,7 +42,7 @@ function buildEntry(overrides: Partial<HabitEntry> = {}): HabitEntry {
     completedAt: null,
     missReasonCode: null,
     missReasonNote: null,
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -61,8 +61,8 @@ function buildV1Envelope() {
         startDate: '2026-02-01',
         archived: false,
         createdAt: '2026-02-01T00:00:00.000Z',
-        updatedAt: '2026-02-01T00:00:00.000Z'
-      }
+        updatedAt: '2026-02-01T00:00:00.000Z',
+      },
     ],
     entries: [],
     suggestions: [],
@@ -70,8 +70,8 @@ function buildV1Envelope() {
       notificationsEnabled: false,
       dailyReviewTime: '20:00',
       weekStartsOn: 1 as const,
-      primaryColor: 'emerald' as const
-    }
+      primaryColor: 'emerald' as const,
+    },
   }
 }
 
@@ -128,7 +128,7 @@ describe('V1 → V2 migration', () => {
   it('migrates the legacy V1 fixture cleanly to V2', () => {
     const parsed = parseAppData(JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')))
     expect(parsed.schemaVersion).toBe(2)
-    expect(parsed.habits.every((habit) => Array.isArray(habit.pauses))).toBe(true)
+    expect(parsed.habits.every(habit => Array.isArray(habit.pauses))).toBe(true)
   })
 
   it('migrateToV2 preserves entries/suggestions/settings untouched', () => {
@@ -148,8 +148,8 @@ describe('normalizeHabitPauses', () => {
         { start: '2026-03-01', end: '2026-03-07' },
         { start: '2026-03-10', end: '2026-03-01' }, // reversed → dropped
         { start: 'x', end: 'y' }, // not dates → dropped
-        'nonsense'
-      ])
+        'nonsense',
+      ]),
     ).toEqual([{ start: '2026-03-01', end: '2026-03-07' }])
   })
 
@@ -163,7 +163,7 @@ describe('pause-aware due-date rule', () => {
   const habit = buildHabit({
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
     startDate: '2026-02-01',
-    pauses: [{ start: '2026-03-02', end: '2026-03-08' }]
+    pauses: [{ start: '2026-03-02', end: '2026-03-08' }],
   })
 
   it('isDateInHabitPause is inclusive on both ends', () => {
@@ -195,8 +195,8 @@ describe('pause-aware due-date rule', () => {
     const overlapping = buildHabit({
       pauses: [
         { start: '2026-03-02', end: '2026-03-05' },
-        { start: '2026-03-04', end: '2026-03-10' }
-      ]
+        { start: '2026-03-04', end: '2026-03-10' },
+      ],
     })
     for (const date of ['2026-03-02', '2026-03-04', '2026-03-07', '2026-03-10']) {
       expect(isHabitDueOnDate(overlapping, date)).toBe(false)
@@ -214,7 +214,7 @@ describe('store integration with pauses', () => {
     const store = useHabitsStore()
     store.hydrate([buildHabit({ pauses: [{ start: '2026-03-02', end: '2026-03-08' }] })])
 
-    expect(store.dueHabitsForDate('2026-03-01').map((h) => h.id)).toEqual(['habit_1'])
+    expect(store.dueHabitsForDate('2026-03-01').map(h => h.id)).toEqual(['habit_1'])
     expect(store.dueHabitsForDate('2026-03-05')).toHaveLength(0)
   })
 
@@ -223,14 +223,14 @@ describe('store integration with pauses', () => {
     const entriesStore = useEntriesStore()
     const habit = buildHabit({
       startDate: '2026-03-01',
-      pauses: [{ start: '2026-03-03', end: '2026-03-05' }]
+      pauses: [{ start: '2026-03-03', end: '2026-03-05' }],
     })
     habitsStore.hydrate([habit])
 
     // currentDateKey = 2026-03-08, so 03-01..03-07 are historical
     entriesStore.ensureMissedEntries(habitsStore.activeHabits, '2026-03-08')
 
-    const dates = entriesStore.entries.map((entry) => entry.date).sort()
+    const dates = entriesStore.entries.map(entry => entry.date).sort()
     expect(dates).toContain('2026-03-02')
     expect(dates).not.toContain('2026-03-03')
     expect(dates).not.toContain('2026-03-04')
@@ -250,7 +250,7 @@ describe('store integration with pauses', () => {
       buildEntry({ id: 'e_reflected', date: '2026-03-04', status: 'missed', missReasonCode: 'forgot' }),
       buildEntry({ id: 'e_done', date: '2026-03-05', status: 'done', completedAt: '2026-03-05T08:00:00.000Z' }),
       buildEntry({ id: 'e_skipped', date: '2026-03-03', status: 'skipped' }),
-      buildEntry({ id: 'e_outside', date: '2026-03-09', status: 'missed', missReasonCode: null })
+      buildEntry({ id: 'e_outside', date: '2026-03-09', status: 'missed', missReasonCode: null }),
     ])
     coachStore.hydrate([
       {
@@ -261,14 +261,14 @@ describe('store integration with pauses', () => {
         title: 't',
         action: 'a',
         rationale: 'r',
-        createdAt: '2026-03-04T00:00:00.000Z'
-      }
+        createdAt: '2026-03-04T00:00:00.000Z',
+      },
     ])
 
     const removed = habitsStore.pruneMissedEntriesInPauses('habit_1')
 
     expect(removed).toBe(1)
-    const ids = entriesStore.entries.map((entry) => entry.id).sort()
+    const ids = entriesStore.entries.map(entry => entry.id).sort()
     expect(ids).toEqual(['e_done', 'e_outside', 'e_reflected', 'e_skipped'])
     expect(coachStore.suggestions).toHaveLength(0) // suggestion for removed entry is cleaned up
   })
@@ -277,14 +277,14 @@ describe('store integration with pauses', () => {
     const entriesStore = useEntriesStore()
     const habit = buildHabit({
       startDate: '2026-03-01',
-      pauses: [{ start: '2026-03-03', end: '2026-03-05' }]
+      pauses: [{ start: '2026-03-03', end: '2026-03-05' }],
     })
 
     // 2026-03-01..2026-03-06 = 6 scheduled days; 3 are paused → 3 due days.
     entriesStore.hydrate([
       buildEntry({ id: 'a', date: '2026-03-01', status: 'done', completedAt: 'x' }),
       buildEntry({ id: 'b', date: '2026-03-02', status: 'done', completedAt: 'x' }),
-      buildEntry({ id: 'c', date: '2026-03-06', status: 'missed' })
+      buildEntry({ id: 'c', date: '2026-03-06', status: 'missed' }),
     ])
 
     // 2 done out of 3 due days = 67%
@@ -297,7 +297,7 @@ describe('store integration with pauses', () => {
     const coachStore = useCoachStore()
 
     habitsStore.hydrate([
-      buildHabit({ startDate: '2026-03-01', pauses: [{ start: '2026-03-01', end: '2026-03-31' }] })
+      buildHabit({ startDate: '2026-03-01', pauses: [{ start: '2026-03-01', end: '2026-03-31' }] }),
     ])
     entriesStore.ensureMissedEntries(habitsStore.activeHabits, '2026-03-15')
     const created = coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
@@ -317,14 +317,14 @@ describe('store integration with pauses', () => {
       startDate: '2026-02-01',
       pauses: [
         { start: '2026-03-10', end: '2026-03-12' },
-        { start: '2026-03-01', end: '2026-03-05' }
-      ]
+        { start: '2026-03-01', end: '2026-03-05' },
+      ],
     })
 
     // sorted by start
     expect(created.pauses).toEqual([
       { start: '2026-03-01', end: '2026-03-05' },
-      { start: '2026-03-10', end: '2026-03-12' }
+      { start: '2026-03-10', end: '2026-03-12' },
     ])
 
     const updated = store.updateHabit(created.id, {
@@ -335,7 +335,7 @@ describe('store integration with pauses', () => {
       reminderTime: null,
       startDate: '2026-02-01',
       archived: false,
-      pauses: [{ start: '2026-04-01', end: '2026-04-07' }]
+      pauses: [{ start: '2026-04-01', end: '2026-04-07' }],
     })
 
     expect(updated?.pauses).toEqual([{ start: '2026-04-01', end: '2026-04-07' }])

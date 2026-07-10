@@ -40,7 +40,7 @@ export async function hydrateDemoPayload(payload: AppData, dependencies: DemoHyd
     ...payload,
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot()
+    settings: settingsStore.snapshot(),
   })
 }
 
@@ -53,10 +53,10 @@ export function useDemoData() {
 
   const isLoading = ref(false)
   const hasExistingData = computed(
-    () => habitsStore.habits.length > 0 || entriesStore.entries.length > 0 || coachStore.suggestions.length > 0
+    () => habitsStore.habits.length > 0 || entriesStore.entries.length > 0 || coachStore.suggestions.length > 0,
   )
 
-  async function loadDemoData(options: { replaceExisting?: boolean } = {}): Promise<{ loaded: boolean; reason?: 'existing-data' }> {
+  async function loadDemoData(options: { replaceExisting?: boolean } = {}): Promise<{ loaded: boolean, reason?: 'existing-data' }> {
     const { replaceExisting = false } = options
 
     if (!replaceExisting && hasExistingData.value) {
@@ -72,11 +72,12 @@ export function useDemoData() {
         entriesStore,
         coachStore,
         settingsStore,
-        persistence
+        persistence,
       })
 
       return { loaded: true }
-    } finally {
+    }
+    finally {
       isLoading.value = false
     }
   }
@@ -84,6 +85,6 @@ export function useDemoData() {
   return {
     isLoading,
     hasExistingData,
-    loadDemoData
+    loadDemoData,
   }
 }

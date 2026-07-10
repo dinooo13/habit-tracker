@@ -24,7 +24,7 @@ watch(storageHealth.lastError, (message) => {
     title: 'Could not save your changes',
     description: message,
     color: 'error',
-    icon: 'i-lucide-database-backup'
+    icon: 'i-lucide-database-backup',
   })
 })
 
@@ -34,7 +34,7 @@ watch(storageHealth.isQuotaLow, (low, wasLow) => {
       title: 'Storage is running low',
       description: 'Export a backup and remove old data to avoid losing changes.',
       color: 'warning',
-      icon: 'i-lucide-triangle-alert'
+      icon: 'i-lucide-triangle-alert',
     })
   }
 })
@@ -44,7 +44,7 @@ const primaryNavItems: PrimaryNavItem[] = [
   { label: 'Habits', to: '/app/habits', icon: 'i-lucide-list-checks' },
   { label: 'Review', to: '/app/review', icon: 'i-lucide-clipboard-check' },
   { label: 'Insights', to: '/app/insights', icon: 'i-lucide-chart-line' },
-  { label: 'Settings', to: '/app/settings', icon: 'i-lucide-settings' }
+  { label: 'Settings', to: '/app/settings', icon: 'i-lucide-settings' },
 ]
 
 function isActivePath(path: string): boolean {
@@ -69,13 +69,16 @@ async function handleLogout(): Promise<void> {
       class="rounded-none"
       :actions="[
         { label: 'Reload', color: 'primary', variant: 'solid', onClick: () => pwaUpdate.reload() },
-        { label: 'Later', color: 'neutral', variant: 'ghost', onClick: () => pwaUpdate.dismiss() }
+        { label: 'Later', color: 'neutral', variant: 'ghost', onClick: () => pwaUpdate.dismiss() },
       ]"
     />
 
     <header class="sticky top-0 z-40 border-b border-default/60 bg-default/70 shadow-sm backdrop-blur-xl">
       <UContainer class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <NuxtLink class="flex items-center gap-2 text-base font-semibold tracking-tight text-primary" to="/app">
+        <NuxtLink
+          class="flex items-center gap-2 text-base font-semibold tracking-tight text-primary"
+          to="/app"
+        >
           <BrandLogo class="size-7 shrink-0" />
           <span>Atomic Habit Tracker</span>
         </NuxtLink>

@@ -49,6 +49,6 @@ export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()
   return {
     load,
     save,
-    clear
+    clear,
   }
 }

@@ -7,7 +7,7 @@ function missedYesterday(name: string) {
   const habit = makeHabit({
     name,
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
-    startDate: addDaysKey(todayKey(), -10)
+    startDate: addDaysKey(todayKey(), -10),
   })
   const entry = makeEntry({ habitId: habit.id, date: addDaysKey(todayKey(), -1), status: 'missed' })
   return { habit, data: makeAppData({ habits: [habit], entries: [entry] }) }

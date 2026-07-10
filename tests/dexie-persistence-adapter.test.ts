@@ -44,7 +44,7 @@ describe('DexiePersistenceAdapter', () => {
     expect(loaded.entries).toHaveLength(fixture.entries.length)
     expect(loaded.suggestions).toHaveLength(fixture.suggestions.length)
 
-    const byId = new Map(loaded.habits.map((habit) => [habit.id, habit]))
+    const byId = new Map(loaded.habits.map(habit => [habit.id, habit]))
     for (const habit of fixture.habits) {
       expect(byId.get(habit.id)).toEqual(habit)
     }
@@ -82,7 +82,7 @@ describe('DexiePersistenceAdapter', () => {
     expect(result).toEqual(createEmptyAppData())
 
     const events = recentSecurityEvents()
-    expect(events.some((event) => event.type === 'data.validation_failed' && event.level === 'error')).toBe(true)
+    expect(events.some(event => event.type === 'data.validation_failed' && event.level === 'error')).toBe(true)
 
     clearSecurityLog()
     vi.restoreAllMocks()

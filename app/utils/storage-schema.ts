@@ -6,7 +6,7 @@ import {
   MISS_REASON_CODES,
   PRIMARY_COLOR_OPTIONS,
   type AppDataV2,
-  type Habit
+  type Habit,
 } from '~/types/app-data'
 import { compareDateKeys, isValidDateKey } from '~/utils/date'
 
@@ -21,10 +21,10 @@ const dateKeySchema = z.string().refine(isValidDateKey, 'Invalid or out-of-range
 const HabitPauseSchema = z
   .object({
     start: dateKeySchema,
-    end: dateKeySchema
+    end: dateKeySchema,
   })
-  .refine((pause) => compareDateKeys(pause.start, pause.end) <= 0, {
-    message: 'Pause end must be on or after start'
+  .refine(pause => compareDateKeys(pause.start, pause.end) <= 0, {
+    message: 'Pause end must be on or after start',
   })
 
 // ── V1 input schema (migration input only) ───────────────────────────────────
@@ -44,13 +44,13 @@ const HabitV1Schema = z.object({
   startDate: dateKeySchema,
   archived: z.boolean(),
   createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp),
-  updatedAt: z.string().min(1).max(FIELD_LIMITS.timestamp)
+  updatedAt: z.string().min(1).max(FIELD_LIMITS.timestamp),
 })
 
 // ── V2 schemas (current shape) ───────────────────────────────────────────────
 
 const HabitSchema = HabitV1Schema.extend({
-  pauses: z.array(HabitPauseSchema)
+  pauses: z.array(HabitPauseSchema),
 })
 
 const HabitEntrySchema = z.object({
@@ -60,7 +60,7 @@ const HabitEntrySchema = z.object({
   status: z.enum(['done', 'missed', 'skipped']),
   completedAt: z.string().min(1).max(FIELD_LIMITS.timestamp).nullable(),
   missReasonCode: z.enum(MISS_REASON_CODES).nullable(),
-  missReasonNote: z.string().max(FIELD_LIMITS.note).nullable()
+  missReasonNote: z.string().max(FIELD_LIMITS.note).nullable(),
 })
 
 const CoachingSuggestionSchema = z.object({
@@ -71,7 +71,7 @@ const CoachingSuggestionSchema = z.object({
   title: z.string().min(1).max(FIELD_LIMITS.suggestionText),
   action: z.string().min(1).max(FIELD_LIMITS.suggestionText),
   rationale: z.string().min(1).max(FIELD_LIMITS.suggestionText),
-  createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp)
+  createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp),
 })
 
 const SettingsSchema = z.object({
@@ -86,7 +86,7 @@ const SettingsSchema = z.object({
   // back-compatible without a schemaVersion bump. lastExportedAt is an ISO timestamp;
   // backupNudgeSnoozedUntil is a YYYY-MM-DD date key.
   lastExportedAt: z.string().max(FIELD_LIMITS.timestamp).nullable().default(null),
-  backupNudgeSnoozedUntil: dateKeySchema.nullable().default(null)
+  backupNudgeSnoozedUntil: dateKeySchema.nullable().default(null),
 })
 
 // The non-habit tables are identical across V1 and V2.
@@ -95,7 +95,7 @@ const AppDataV1Schema = z.object({
   habits: z.array(HabitV1Schema),
   entries: z.array(HabitEntrySchema),
   suggestions: z.array(CoachingSuggestionSchema),
-  settings: SettingsSchema
+  settings: SettingsSchema,
 })
 
 export const AppDataV2Schema = z.object({
@@ -103,7 +103,7 @@ export const AppDataV2Schema = z.object({
   habits: z.array(HabitSchema),
   entries: z.array(HabitEntrySchema),
   suggestions: z.array(CoachingSuggestionSchema),
-  settings: SettingsSchema
+  settings: SettingsSchema,
 })
 
 type AppDataV1Parsed = z.output<typeof AppDataV1Schema>
@@ -116,10 +116,10 @@ type AppDataV1Parsed = z.output<typeof AppDataV1Schema>
 export function migrateToV2(v1: AppDataV1Parsed): AppDataV2 {
   return {
     schemaVersion: APP_DATA_SCHEMA_VERSION,
-    habits: v1.habits.map((habit) => ({ ...habit, pauses: [] })),
+    habits: v1.habits.map(habit => ({ ...habit, pauses: [] })),
     entries: v1.entries,
     suggestions: v1.suggestions,
-    settings: v1.settings
+    settings: v1.settings,
   }
 }
 
@@ -129,7 +129,7 @@ export function createEmptyAppData(): AppDataV2 {
     habits: [],
     entries: [],
     suggestions: [],
-    settings: { ...DEFAULT_SETTINGS }
+    settings: { ...DEFAULT_SETTINGS },
   }
 }
 
@@ -145,8 +145,8 @@ export function createEmptyAppData(): AppDataV2 {
  * {@link createEmptyAppData}.
  */
 export function parseAppData(payload: unknown): AppDataV2 {
-  const version =
-    payload && typeof payload === 'object'
+  const version
+    = payload && typeof payload === 'object'
       ? (payload as { schemaVersion?: unknown }).schemaVersion
       : undefined
 
@@ -164,8 +164,8 @@ export function parseAppData(payload: unknown): AppDataV2 {
     throw new Error(`Unsupported schemaVersion: ${String(version)}`)
   }
 
-  const candidate =
-    payload && typeof payload === 'object'
+  const candidate
+    = payload && typeof payload === 'object'
       ? { ...(payload as object), schemaVersion: 1 }
       : payload
 

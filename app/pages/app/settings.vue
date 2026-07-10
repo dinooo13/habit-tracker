@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { Habit, PrimaryColor } from '~/types/app-data'
@@ -10,6 +8,8 @@ import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey
 import { createId } from '~/utils/id'
 import { safeJsonParse } from '~/utils/safe-json'
 import { PRIMARY_COLOR_LABELS } from '~/utils/primary-color'
+
+definePageMeta({ layout: 'app' })
 
 const settingsStore = useSettingsStore()
 const habitsStore = useHabitsStore()
@@ -26,17 +26,17 @@ const backupNudge = useBackupNudge()
 
 const notificationEnabled = computed({
   get: () => settingsStore.notificationsEnabled,
-  set: (value: boolean) => settingsStore.setNotificationsEnabled(value)
+  set: (value: boolean) => settingsStore.setNotificationsEnabled(value),
 })
 
 const weekStartsOnItems = [
   { label: 'Monday', value: 1 },
-  { label: 'Sunday', value: 0 }
+  { label: 'Sunday', value: 0 },
 ]
 
 const weekStartsOn = computed({
   get: () => settingsStore.weekStartsOn,
-  set: (value: 0 | 1) => settingsStore.setWeekStartsOn(value)
+  set: (value: 0 | 1) => settingsStore.setWeekStartsOn(value),
 })
 
 const primaryColorChips: Record<PrimaryColor, ChipProps> = {
@@ -44,15 +44,15 @@ const primaryColorChips: Record<PrimaryColor, ChipProps> = {
   emerald: { ui: { base: 'primary-color-chip-base primary-color-chip-emerald' } },
   violet: { ui: { base: 'primary-color-chip-base primary-color-chip-violet' } },
   rose: { ui: { base: 'primary-color-chip-base primary-color-chip-rose' } },
-  amber: { ui: { base: 'primary-color-chip-base primary-color-chip-amber' } }
+  amber: { ui: { base: 'primary-color-chip-base primary-color-chip-amber' } },
 }
 
 const primaryColorOrder: PrimaryColor[] = ['emerald', 'sky', 'violet', 'rose', 'amber']
 
-const primaryColorItems = primaryColorOrder.map((value) => ({
+const primaryColorItems = primaryColorOrder.map(value => ({
   value: value as PrimaryColor,
   label: PRIMARY_COLOR_LABELS[value],
-  chip: primaryColorChips[value as PrimaryColor]
+  chip: primaryColorChips[value as PrimaryColor],
 })) satisfies SelectItem[]
 
 function getPrimaryColorChip(value: string | undefined): ChipProps | undefined {
@@ -61,12 +61,12 @@ function getPrimaryColorChip(value: string | undefined): ChipProps | undefined {
 
 const primaryColor = computed({
   get: () => settingsStore.primaryColor,
-  set: (value: PrimaryColor) => settingsStore.setPrimaryColor(value)
+  set: (value: PrimaryColor) => settingsStore.setPrimaryColor(value),
 })
 
 const initialTime = parseTimeString(settingsStore.dailyReviewTime)
 const dailyReviewTime = shallowRef<Time | null>(
-  initialTime ? new Time(initialTime.hour, initialTime.minute, 0) : null
+  initialTime ? new Time(initialTime.hour, initialTime.minute, 0) : null,
 )
 
 watch(dailyReviewTime, (value) => {
@@ -130,7 +130,7 @@ async function requestPermission(): Promise<void> {
 
   toast.add({
     title: `Notification permission: ${notificationPermission.value}`,
-    color: notificationPermission.value === 'granted' ? 'success' : 'warning'
+    color: notificationPermission.value === 'granted' ? 'success' : 'warning',
   })
 }
 
@@ -140,7 +140,7 @@ function buildCurrentPayload() {
     habits: habitsStore.snapshot(),
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot()
+    settings: settingsStore.snapshot(),
   }
 }
 
@@ -180,8 +180,8 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
   const weekdayValues = Array.isArray(candidate.scheduleWeekdays)
     ? [...new Set(candidate.scheduleWeekdays.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
     : []
-  const startDate =
-    typeof candidate.startDate === 'string' && isValidDateKey(candidate.startDate)
+  const startDate
+    = typeof candidate.startDate === 'string' && isValidDateKey(candidate.startDate)
       ? candidate.startDate
       : todayDateKey()
   const reminderTime = typeof candidate.reminderTime === 'string' && TIME_REGEX.test(candidate.reminderTime)
@@ -191,31 +191,31 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
   // Reject rather than trust over-long fields so a crafted import can't exhaust
   // storage or degrade rendering (issue #1, SEC-06).
   if (
-    !name ||
-    !type ||
-    !identityStatement ||
-    !weekdayValues.length ||
-    name.length > FIELD_LIMITS.name ||
-    identityStatement.length > FIELD_LIMITS.identity
+    !name
+    || !type
+    || !identityStatement
+    || !weekdayValues.length
+    || name.length > FIELD_LIMITS.name
+    || identityStatement.length > FIELD_LIMITS.identity
   ) {
     return null
   }
 
   const now = nowIso()
-  const id =
-    typeof candidate.id === 'string' && candidate.id.trim() && candidate.id.length <= FIELD_LIMITS.id
+  const id
+    = typeof candidate.id === 'string' && candidate.id.trim() && candidate.id.length <= FIELD_LIMITS.id
       ? candidate.id
       : createId('habit')
-  const createdAt =
-    typeof candidate.createdAt === 'string' &&
-    candidate.createdAt.trim() &&
-    candidate.createdAt.length <= FIELD_LIMITS.timestamp
+  const createdAt
+    = typeof candidate.createdAt === 'string'
+      && candidate.createdAt.trim()
+      && candidate.createdAt.length <= FIELD_LIMITS.timestamp
       ? candidate.createdAt
       : now
-  const updatedAt =
-    typeof candidate.updatedAt === 'string' &&
-    candidate.updatedAt.trim() &&
-    candidate.updatedAt.length <= FIELD_LIMITS.timestamp
+  const updatedAt
+    = typeof candidate.updatedAt === 'string'
+      && candidate.updatedAt.trim()
+      && candidate.updatedAt.length <= FIELD_LIMITS.timestamp
       ? candidate.updatedAt
       : now
 
@@ -230,14 +230,15 @@ function normalizeImportedHabit(payload: unknown): Habit | null {
     archived: typeof candidate.archived === 'boolean' ? candidate.archived : false,
     pauses: normalizeHabitPauses(candidate.pauses),
     createdAt,
-    updatedAt
+    updatedAt,
   }
 }
 
 function extractHabitsFromImportPayload(payload: unknown): Habit[] {
   try {
     return parseAppData(payload).habits
-  } catch {
+  }
+  catch {
     // Continue with habits-only payload formats.
   }
 
@@ -252,7 +253,7 @@ function extractHabitsFromImportPayload(payload: unknown): Habit[] {
   }
 
   return rawHabits
-    .map((item) => normalizeImportedHabit(item))
+    .map(item => normalizeImportedHabit(item))
     .filter((item): item is Habit => Boolean(item))
 }
 
@@ -262,7 +263,7 @@ async function persistCurrentState(): Promise<void> {
     habits: habitsStore.snapshot(),
     entries: entriesStore.snapshot(),
     suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot()
+    settings: settingsStore.snapshot(),
   })
 }
 
@@ -270,10 +271,10 @@ function pluralize(value: number, singular: string, plural = `${singular}s`): st
   return value === 1 ? singular : plural
 }
 
-function mergeHabitsForImport(importedHabits: Habit[]): { mergedHabits: Habit[]; addedCount: number; updatedCount: number } {
+function mergeHabitsForImport(importedHabits: Habit[]): { mergedHabits: Habit[], addedCount: number, updatedCount: number } {
   const existingHabits = habitsStore.snapshot()
-  const existingHabitsById = new Map(existingHabits.map((habit) => [habit.id, habit]))
-  const dedupedImported = [...new Map(importedHabits.map((habit) => [habit.id, habit])).values()]
+  const existingHabitsById = new Map(existingHabits.map(habit => [habit.id, habit]))
+  const dedupedImported = [...new Map(importedHabits.map(habit => [habit.id, habit])).values()]
   const mergedHabits: Habit[] = []
   const importedIds = new Set<string>()
   let addedCount = 0
@@ -288,10 +289,11 @@ function mergeHabitsForImport(importedHabits: Habit[]): { mergedHabits: Habit[];
         ...importedHabit,
         id: existingHabit.id,
         createdAt: existingHabit.createdAt,
-        updatedAt: nowIso()
+        updatedAt: nowIso(),
       })
       updatedCount += 1
-    } else {
+    }
+    else {
       mergedHabits.push(importedHabit)
       addedCount += 1
     }
@@ -358,7 +360,7 @@ Output format:
 function buildCurrentHabitsPrompt(): string {
   const currentHabitsJson = JSON.stringify(
     {
-      habits: habitsStore.snapshot().map((habit) => ({
+      habits: habitsStore.snapshot().map(habit => ({
         id: habit.id,
         name: habit.name,
         type: habit.type,
@@ -367,11 +369,11 @@ function buildCurrentHabitsPrompt(): string {
         reminderTime: habit.reminderTime,
         startDate: habit.startDate,
         archived: habit.archived,
-        pauses: habit.pauses
-      }))
+        pauses: habit.pauses,
+      })),
     },
     null,
-    2
+    2,
   )
 
   return `You are helping me refine my existing habits for a habit-tracker app.
@@ -437,13 +439,14 @@ async function copyGettingStartedPrompt(): Promise<void> {
     toast.add({
       title: 'Prompt copied',
       description: 'Getting-started AI prompt copied to clipboard.',
-      color: 'success'
+      color: 'success',
     })
-  } catch {
+  }
+  catch {
     toast.add({
       title: 'Copy failed',
       description: 'Could not copy the prompt. Please try again.',
-      color: 'error'
+      color: 'error',
     })
   }
 }
@@ -454,13 +457,14 @@ async function copyCurrentHabitsPrompt(): Promise<void> {
     toast.add({
       title: 'Prompt copied',
       description: 'Current-habits AI prompt copied to clipboard.',
-      color: 'success'
+      color: 'success',
     })
-  } catch {
+  }
+  catch {
     toast.add({
       title: 'Copy failed',
       description: 'Could not copy the prompt. Please try again.',
-      color: 'error'
+      color: 'error',
     })
   }
 }
@@ -481,7 +485,7 @@ async function confirmImport(): Promise<void> {
     toast.add({
       title: 'No file selected',
       description: 'Choose a JSON file before importing.',
-      color: 'warning'
+      color: 'warning',
     })
     return
   }
@@ -496,7 +500,7 @@ async function confirmImport(): Promise<void> {
         toast.add({
           title: 'Import failed',
           description: 'No valid habits were found in the selected file.',
-          color: 'error'
+          color: 'error',
         })
         return
       }
@@ -510,9 +514,10 @@ async function confirmImport(): Promise<void> {
       toast.add({
         title: 'Habits imported',
         description: `${addedCount} ${pluralize(addedCount, 'habit')} added, ${updatedCount} ${pluralize(updatedCount, 'habit')} updated. History was ignored.`,
-        color: 'success'
+        color: 'success',
       })
-    } else {
+    }
+    else {
       const parsed = parseAppData(payload)
 
       habitsStore.hydrate(parsed.habits)
@@ -525,7 +530,7 @@ async function confirmImport(): Promise<void> {
       await persistence.save({
         ...parsed,
         entries: entriesStore.snapshot(),
-        suggestions: coachStore.snapshot()
+        suggestions: coachStore.snapshot(),
       })
       void storageHealth.checkQuota()
 
@@ -535,19 +540,20 @@ async function confirmImport(): Promise<void> {
       toast.add({
         title: 'Import complete',
         description: 'Backup data has been restored.',
-        color: 'success'
+        color: 'success',
       })
     }
 
     importModalOpen.value = false
-  } catch {
+  }
+  catch {
     logSecurityEvent('data.validation_failed', 'warn', 'Import rejected: invalid file')
     toast.add({
       title: 'Import failed',
       description: importHabitsOnly.value
         ? 'The file is not valid JSON with importable habits.'
         : 'The file is not valid AppData JSON.',
-      color: 'error'
+      color: 'error',
     })
   }
 }
@@ -576,7 +582,7 @@ async function deleteAllData(withBackup: boolean): Promise<void> {
   logSecurityEvent('data.delete', 'warn', withBackup ? 'all data deleted (backup downloaded)' : 'all data deleted')
   toast.add({
     title: withBackup ? 'Backup downloaded and data deleted' : 'All data deleted',
-    color: 'warning'
+    color: 'warning',
   })
 }
 
@@ -596,13 +602,14 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
     toast.add({
       title: 'Demo data loaded',
       description: 'Fixture habits and history are now available.',
-      color: 'success'
+      color: 'success',
     })
-  } catch {
+  }
+  catch {
     toast.add({
       title: 'Demo data failed',
       description: 'Could not load the fixture JSON. Please try again.',
-      color: 'error'
+      color: 'error',
     })
   }
 }
@@ -614,7 +621,9 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard>
         <template #header>
           <div class="space-y-1">
-            <h1 class="text-2xl font-semibold">Settings</h1>
+            <h1 class="text-2xl font-semibold">
+              Settings
+            </h1>
             <p class="text-sm text-muted">
               Manage reminders, personalize the experience, and keep your data safe.
             </p>
@@ -625,8 +634,13 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-bell-ring" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Notifications</h2>
+            <UIcon
+              name="i-lucide-bell-ring"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Notifications
+            </h2>
           </div>
         </template>
 
@@ -643,7 +657,12 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
             label="Enable local notifications"
             description="Notifications fire when the browser/PWA allows local scheduling."
           />
-          <UButton color="neutral" variant="outline" icon="i-lucide-bell-ring" @click="requestPermission">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-bell-ring"
+            @click="requestPermission"
+          >
             Request notification permission
           </UButton>
         </div>
@@ -652,17 +671,31 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-sliders-horizontal" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Preferences</h2>
+            <UIcon
+              name="i-lucide-sliders-horizontal"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Preferences
+            </h2>
           </div>
         </template>
 
         <div class="grid gap-4 md:grid-cols-2">
           <UFormField label="Daily review reminder">
-            <UInputTime v-model="dailyReviewTime" :hour-cycle="24" icon="i-lucide-clock-3" />
+            <UInputTime
+              v-model="dailyReviewTime"
+              :hour-cycle="24"
+              icon="i-lucide-clock-3"
+            />
           </UFormField>
           <UFormField label="Week starts on">
-            <USelect v-model="weekStartsOn" :items="weekStartsOnItems" value-key="value" class="w-full" />
+            <USelect
+              v-model="weekStartsOn"
+              :items="weekStartsOnItems"
+              value-key="value"
+              class="w-full"
+            />
           </UFormField>
         </div>
       </UCard>
@@ -670,24 +703,45 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-palette" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Theme</h2>
+            <UIcon
+              name="i-lucide-palette"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Theme
+            </h2>
           </div>
         </template>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <UFormField label="Theme mode" help="Default is System. You can switch to Light or Dark anytime.">
+          <UFormField
+            label="Theme mode"
+            help="Default is System. You can switch to Light or Dark anytime."
+          >
             <ClientOnly>
-              <UColorModeSelect class="w-full" color="neutral" />
+              <UColorModeSelect
+                class="w-full"
+                color="neutral"
+              />
               <template #fallback>
-                <UButton color="neutral" variant="outline" class="w-full justify-start" disabled>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  class="w-full justify-start"
+                  disabled
+                >
                   Theme mode
                 </UButton>
               </template>
             </ClientOnly>
           </UFormField>
           <UFormField label="Accent color">
-            <USelect v-model="primaryColor" :items="primaryColorItems" value-key="value" class="w-full">
+            <USelect
+              v-model="primaryColor"
+              :items="primaryColorItems"
+              value-key="value"
+              class="w-full"
+            >
               <template #leading="{ modelValue, ui }">
                 <UChip
                   v-if="modelValue"
@@ -706,8 +760,13 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-sparkles" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">AI habit prompts</h2>
+            <UIcon
+              name="i-lucide-sparkles"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              AI habit prompts
+            </h2>
           </div>
         </template>
 
@@ -715,12 +774,19 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
           <UCard variant="outline">
             <div class="space-y-3">
               <div class="space-y-1">
-                <p class="font-medium">Getting started prompt</p>
+                <p class="font-medium">
+                  Getting started prompt
+                </p>
                 <p class="text-sm text-muted">
                   Copies a guided prompt that asks questions and generates a downloadable import-ready habits JSON.
                 </p>
               </div>
-              <UButton color="neutral" variant="outline" icon="i-lucide-copy" @click="copyGettingStartedPrompt">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-copy"
+                @click="copyGettingStartedPrompt"
+              >
                 Copy getting started prompt
               </UButton>
             </div>
@@ -729,12 +795,19 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
           <UCard variant="outline">
             <div class="space-y-3">
               <div class="space-y-1">
-                <p class="font-medium">Current habits prompt</p>
+                <p class="font-medium">
+                  Current habits prompt
+                </p>
                 <p class="text-sm text-muted">
                   Copies a prompt with your current habits JSON so AI can refine and export an updated downloadable JSON.
                 </p>
               </div>
-              <UButton color="neutral" variant="outline" icon="i-lucide-copy" @click="copyCurrentHabitsPrompt">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-copy"
+                @click="copyCurrentHabitsPrompt"
+              >
                 Copy current habits prompt
               </UButton>
             </div>
@@ -743,7 +816,10 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
 
         <div class="mt-4 border-t border-default pt-3">
           <p class="flex items-start gap-2 text-xs text-muted">
-            <UIcon name="i-lucide-arrow-down-to-line" class="mt-0.5 size-3.5 shrink-0" />
+            <UIcon
+              name="i-lucide-arrow-down-to-line"
+              class="mt-0.5 size-3.5 shrink-0"
+            />
             <span>Next step: import your downloaded AI JSON in Backup and restore below.</span>
           </p>
         </div>
@@ -752,22 +828,48 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <UCard id="backup-restore">
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-database" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Backup and restore</h2>
+            <UIcon
+              name="i-lucide-database"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Backup and restore
+            </h2>
           </div>
         </template>
 
         <div class="flex flex-wrap items-center gap-3">
-          <UButton color="primary" variant="outline" icon="i-lucide-database" :loading="demoData.isLoading.value" @click="loadDemoDataFromSettings(false)">
+          <UButton
+            color="primary"
+            variant="outline"
+            icon="i-lucide-database"
+            :loading="demoData.isLoading.value"
+            @click="loadDemoDataFromSettings(false)"
+          >
             Load demo data
           </UButton>
-          <UButton color="neutral" variant="outline" icon="i-lucide-download" @click="exportJson">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-download"
+            @click="exportJson"
+          >
             Export JSON
           </UButton>
-          <UButton color="neutral" variant="outline" icon="i-lucide-upload" @click="importModalOpen = true">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-upload"
+            @click="importModalOpen = true"
+          >
             Import JSON
           </UButton>
-          <UButton color="error" variant="outline" icon="i-lucide-trash-2" @click="deleteAllModalOpen = true">
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash-2"
+            @click="deleteAllModalOpen = true"
+          >
             Delete all data
           </UButton>
         </div>
@@ -782,7 +884,10 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
     >
       <template #body>
         <div class="space-y-4">
-          <UFormField label="Backup file" required>
+          <UFormField
+            label="Backup file"
+            required
+          >
             <input
               type="file"
               accept="application/json"
@@ -812,10 +917,17 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
 
       <template #footer>
         <div class="flex w-full justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="importModalOpen = false">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="importModalOpen = false"
+          >
             Cancel
           </UButton>
-          <UButton icon="i-lucide-upload" @click="confirmImport">
+          <UButton
+            icon="i-lucide-upload"
+            @click="confirmImport"
+          >
             Import
           </UButton>
         </div>
@@ -840,10 +952,18 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
 
       <template #footer>
         <div class="flex w-full justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="replaceDemoDataModalOpen = false">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="replaceDemoDataModalOpen = false"
+          >
             Cancel
           </UButton>
-          <UButton color="warning" :loading="demoData.isLoading.value" @click="loadDemoDataFromSettings(true)">
+          <UButton
+            color="warning"
+            :loading="demoData.isLoading.value"
+            @click="loadDemoDataFromSettings(true)"
+          >
             Replace and load demo
           </UButton>
         </div>
@@ -869,15 +989,28 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
       <template #footer>
         <div class="flex w-full flex-col gap-2">
           <div class="flex justify-end">
-            <UButton color="neutral" variant="ghost" @click="deleteAllModalOpen = false">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              @click="deleteAllModalOpen = false"
+            >
               Cancel
             </UButton>
           </div>
           <div class="flex flex-wrap justify-end gap-2">
-            <UButton color="error" icon="i-lucide-download" @click="deleteAllData(true)">
+            <UButton
+              color="error"
+              icon="i-lucide-download"
+              @click="deleteAllData(true)"
+            >
               Download backup and delete all
             </UButton>
-            <UButton color="error" variant="outline" icon="i-lucide-trash-2" @click="deleteAllData(false)">
+            <UButton
+              color="error"
+              variant="outline"
+              icon="i-lucide-trash-2"
+              @click="deleteAllData(false)"
+            >
               Delete all
             </UButton>
           </div>

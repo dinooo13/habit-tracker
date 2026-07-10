@@ -10,18 +10,18 @@
 
 export type SecurityEventLevel = 'info' | 'warn' | 'error'
 
-export type SecurityEventType =
-  | 'auth.login'
-  | 'auth.logout'
-  | 'session.expired'
-  | 'data.import'
-  | 'data.export'
-  | 'data.delete'
-  | 'data.validation_failed'
-  | 'storage.quota_low'
-  | 'storage.write_failed'
-  | 'pwa.update.available'
-  | 'pwa.update.applied'
+export type SecurityEventType
+  = | 'auth.login'
+    | 'auth.logout'
+    | 'session.expired'
+    | 'data.import'
+    | 'data.export'
+    | 'data.delete'
+    | 'data.validation_failed'
+    | 'storage.quota_low'
+    | 'storage.write_failed'
+    | 'pwa.update.available'
+    | 'pwa.update.applied'
 
 export interface SecurityEvent {
   ts: string
@@ -39,9 +39,11 @@ function consoleSink(event: SecurityEvent): void {
   const message = `[security] ${event.type}${event.detail ? ` — ${event.detail}` : ''}`
   if (event.level === 'error') {
     console.error(message)
-  } else if (event.level === 'warn') {
+  }
+  else if (event.level === 'warn') {
     console.warn(message)
-  } else {
+  }
+  else {
     console.info(message)
   }
 }
@@ -53,13 +55,13 @@ function consoleSink(event: SecurityEvent): void {
 export function recordSecurityEvent(
   type: SecurityEventType,
   level: SecurityEventLevel = 'info',
-  detail?: string
+  detail?: string,
 ): SecurityEvent {
   const event: SecurityEvent = {
     ts: new Date().toISOString(),
     type,
     level,
-    ...(detail ? { detail } : {})
+    ...(detail ? { detail } : {}),
   }
 
   buffer.push(event)

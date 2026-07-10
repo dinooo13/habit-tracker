@@ -8,15 +8,15 @@ interface CoachState {
 
 export const useCoachStore = defineStore('coach', {
   state: (): CoachState => ({
-    suggestions: []
+    suggestions: [],
   }),
   getters: {
-    suggestionsForEntry: (state) => (entryId: string): CoachingSuggestion[] =>
-      state.suggestions.filter((suggestion) => suggestion.entryId === entryId),
-    suggestionsByHabit: (state) => (habitId: string, entries: HabitEntry[]): CoachingSuggestion[] => {
-      const entryIds = new Set(entries.filter((entry) => entry.habitId === habitId).map((entry) => entry.id))
-      return state.suggestions.filter((suggestion) => entryIds.has(suggestion.entryId))
-    }
+    suggestionsForEntry: state => (entryId: string): CoachingSuggestion[] =>
+      state.suggestions.filter(suggestion => suggestion.entryId === entryId),
+    suggestionsByHabit: state => (habitId: string, entries: HabitEntry[]): CoachingSuggestion[] => {
+      const entryIds = new Set(entries.filter(entry => entry.habitId === habitId).map(entry => entry.id))
+      return state.suggestions.filter(suggestion => entryIds.has(suggestion.entryId))
+    },
   },
   actions: {
     hydrate(suggestions: CoachingSuggestion[]): void {
@@ -27,18 +27,18 @@ export const useCoachStore = defineStore('coach', {
     },
     removeForEntry(entryId: string): number {
       const before = this.suggestions.length
-      this.suggestions = this.suggestions.filter((suggestion) => suggestion.entryId !== entryId)
+      this.suggestions = this.suggestions.filter(suggestion => suggestion.entryId !== entryId)
       return before - this.suggestions.length
     },
     generateForEntry(entry: HabitEntry, habit: Habit): CoachingSuggestion[] {
-      this.suggestions = this.suggestions.filter((suggestion) => suggestion.entryId !== entry.id)
+      this.suggestions = this.suggestions.filter(suggestion => suggestion.entryId !== entry.id)
       const generated = generateSuggestionsForMissedEntry(entry, habit)
       this.suggestions.push(...generated)
       return generated
     },
     reconcileMissingSuggestions(habits: Habit[], entries: HabitEntry[]): number {
-      const habitsById = new Map(habits.map((habit) => [habit.id, habit]))
-      const suggestionEntryIds = new Set(this.suggestions.map((suggestion) => suggestion.entryId))
+      const habitsById = new Map(habits.map(habit => [habit.id, habit]))
+      const suggestionEntryIds = new Set(this.suggestions.map(suggestion => suggestion.entryId))
       let createdSuggestions = 0
 
       for (const entry of entries) {
@@ -62,6 +62,6 @@ export const useCoachStore = defineStore('coach', {
       }
 
       return createdSuggestions
-    }
-  }
+    },
+  },
 })

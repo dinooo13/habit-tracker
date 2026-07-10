@@ -56,7 +56,8 @@ export class HabitFormPage {
     const checkbox = this.page.getByRole('checkbox', { name: 'Archive this habit' })
     if (archived) {
       await checkbox.check()
-    } else {
+    }
+    else {
       await checkbox.uncheck()
     }
   }

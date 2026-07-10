@@ -34,7 +34,7 @@ test.describe('Settings: backup & restore', () => {
     await settings.setImportFile({
       name: 'backup.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(backup))
+      buffer: Buffer.from(JSON.stringify(backup)),
     })
     await settings.confirmImport()
 
@@ -57,7 +57,7 @@ test.describe('Settings: backup & restore', () => {
     await settings.setImportFile({
       name: 'habits.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify(habitsOnly))
+      buffer: Buffer.from(JSON.stringify(habitsOnly)),
     })
     await settings.confirmImport()
 
@@ -76,7 +76,7 @@ test.describe('Settings: backup & restore', () => {
     await settings.setImportFile({
       name: 'broken.json',
       mimeType: 'application/json',
-      buffer: Buffer.from('not valid json {{{')
+      buffer: Buffer.from('not valid json {{{'),
     })
     await settings.confirmImport()
 

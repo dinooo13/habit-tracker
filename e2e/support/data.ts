@@ -9,7 +9,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: false,
   dailyReviewTime: '20:00',
   weekStartsOn: 1,
-  primaryColor: 'emerald'
+  primaryColor: 'emerald',
 }
 
 function pad2(value: number): string {
@@ -56,7 +56,7 @@ export function makeHabit(overrides: Partial<Habit> = {}): Habit {
     archived: overrides.archived ?? false,
     pauses: overrides.pauses ?? [],
     createdAt: overrides.createdAt ?? ISO,
-    updatedAt: overrides.updatedAt ?? ISO
+    updatedAt: overrides.updatedAt ?? ISO,
   }
 }
 
@@ -68,12 +68,12 @@ export function makeEntry(overrides: Partial<HabitEntry> & Pick<HabitEntry, 'hab
     status: overrides.status,
     completedAt: overrides.completedAt ?? (overrides.status === 'done' ? ISO : null),
     missReasonCode: overrides.missReasonCode ?? null,
-    missReasonNote: overrides.missReasonNote ?? null
+    missReasonNote: overrides.missReasonNote ?? null,
   }
 }
 
 export function makeSuggestion(
-  overrides: Partial<CoachingSuggestion> & Pick<CoachingSuggestion, 'entryId'>
+  overrides: Partial<CoachingSuggestion> & Pick<CoachingSuggestion, 'entryId'>,
 ): CoachingSuggestion {
   return {
     id: overrides.id ?? uid('suggestion'),
@@ -83,7 +83,7 @@ export function makeSuggestion(
     title: overrides.title ?? 'Make it obvious',
     action: overrides.action ?? 'Leave the book on your pillow.',
     rationale: overrides.rationale ?? 'A clear cue removes the friction of remembering.',
-    createdAt: overrides.createdAt ?? ISO
+    createdAt: overrides.createdAt ?? ISO,
   }
 }
 
@@ -93,7 +93,7 @@ export function makeAppData(overrides: Partial<AppData> = {}): AppData {
     habits: overrides.habits ?? [],
     entries: overrides.entries ?? [],
     suggestions: overrides.suggestions ?? [],
-    settings: { ...DEFAULT_SETTINGS, ...(overrides.settings ?? {}) }
+    settings: { ...DEFAULT_SETTINGS, ...(overrides.settings ?? {}) },
   }
 }
 
@@ -105,7 +105,7 @@ export function buildStreakData(length: number, habitOverrides: Partial<Habit> =
   const habit = makeHabit({
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
     startDate: addDaysKey(todayKey(), -(length + 5)),
-    ...habitOverrides
+    ...habitOverrides,
   })
 
   const entries: HabitEntry[] = []

@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 
-type FilePayload = { name: string; mimeType: string; buffer: Buffer }
+type FilePayload = { name: string, mimeType: string, buffer: Buffer }
 
 export class SettingsPage {
   constructor(private readonly page: Page) {}

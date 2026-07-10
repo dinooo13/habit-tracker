@@ -16,7 +16,7 @@ export function createId(prefix: string): string {
   // the non-cryptographic Math.random fallback where available (issue #1, SEC-04).
   if (typeof cryptoObj.getRandomValues === 'function') {
     const bytes = cryptoObj.getRandomValues(new Uint8Array(10))
-    return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`
+    return `${prefix}_${Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')}`
   }
 
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`

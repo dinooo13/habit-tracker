@@ -1,7 +1,7 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import type { HabitPause, HabitType } from '~/types/app-data'
+
+definePageMeta({ layout: 'app' })
 
 const route = useRoute()
 const router = useRouter()
@@ -29,14 +29,14 @@ function onSubmit(payload: {
     reminderTime: payload.reminderTime,
     startDate: payload.startDate,
     archived: payload.archived,
-    pauses: payload.pauses
+    pauses: payload.pauses,
   })
 
   if (!updated) {
     toast.add({
       title: 'Habit not found',
       description: 'The habit could not be updated.',
-      color: 'error'
+      color: 'error',
     })
     return
   }
@@ -47,7 +47,7 @@ function onSubmit(payload: {
   toast.add({
     title: 'Habit updated',
     description: `${updated.name} has been saved.`,
-    color: 'success'
+    color: 'success',
   })
 
   router.push('/app/habits')
@@ -59,12 +59,20 @@ function onSubmit(payload: {
     <UCard v-if="habit">
       <template #header>
         <div class="space-y-1">
-          <h1 class="text-2xl font-semibold">Edit habit</h1>
-          <p class="text-sm text-muted">Adjust schedule and coaching context.</p>
+          <h1 class="text-2xl font-semibold">
+            Edit habit
+          </h1>
+          <p class="text-sm text-muted">
+            Adjust schedule and coaching context.
+          </p>
         </div>
       </template>
 
-      <HabitForm :initial="habit" submit-label="Save changes" @submit="onSubmit" />
+      <HabitForm
+        :initial="habit"
+        submit-label="Save changes"
+        @submit="onSubmit"
+      />
     </UCard>
 
     <UEmpty

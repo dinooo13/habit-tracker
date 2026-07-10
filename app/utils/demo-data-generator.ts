@@ -127,84 +127,84 @@ const HABIT_DEFS: HabitDef[] = [
 
 const MISS_REASONS: Record<string, Array<[MissReasonCode, string]>> = {
   habit_morning_run: [
-    ['no_time', "Had to catch an early train — no time to run."],
-    ['low_motivation', "Dark and cold outside, couldn't bring myself to go."],
-    ['too_hard', "Still sore from the last session."],
-    ['forgot', "Set the wrong alarm and missed the run window."],
-    ['bad_environment', "Rain was too heavy to run safely."],
-    ['other', "Forgot about an early work call."],
-    ['no_time', "Family commitment took the whole morning."],
-    ['low_motivation', "Just couldn't get out of bed today."],
-    ['bad_environment', "Icy pavements — didn't want to risk a fall."],
-    ['social_pressure', "Slept at a friend's, routine completely disrupted."],
+    ['no_time', 'Had to catch an early train — no time to run.'],
+    ['low_motivation', 'Dark and cold outside, couldn\'t bring myself to go.'],
+    ['too_hard', 'Still sore from the last session.'],
+    ['forgot', 'Set the wrong alarm and missed the run window.'],
+    ['bad_environment', 'Rain was too heavy to run safely.'],
+    ['other', 'Forgot about an early work call.'],
+    ['no_time', 'Family commitment took the whole morning.'],
+    ['low_motivation', 'Just couldn\'t get out of bed today.'],
+    ['bad_environment', 'Icy pavements — didn\'t want to risk a fall.'],
+    ['social_pressure', 'Slept at a friend\'s, routine completely disrupted.'],
   ],
   habit_reading: [
-    ['no_time', "Work ran late and I was too tired to read."],
-    ['low_motivation', "Got distracted by a show I wanted to finish."],
-    ['too_hard', "The book is getting dense — hard to push through."],
-    ['forgot', "Fell asleep before picking up the book."],
-    ['bad_environment', "Too noisy at home to concentrate."],
-    ['social_pressure', "Friends came over and the evening disappeared."],
-    ['other', "Finished one book and hadn't started the next yet."],
-    ['no_immediate_reward', "Hard to feel progress on slow, heavy chapters."],
-    ['no_time', "Long commute then dinner — no evening left."],
-    ['low_motivation', "Wasn't in the right headspace for reading."],
+    ['no_time', 'Work ran late and I was too tired to read.'],
+    ['low_motivation', 'Got distracted by a show I wanted to finish.'],
+    ['too_hard', 'The book is getting dense — hard to push through.'],
+    ['forgot', 'Fell asleep before picking up the book.'],
+    ['bad_environment', 'Too noisy at home to concentrate.'],
+    ['social_pressure', 'Friends came over and the evening disappeared.'],
+    ['other', 'Finished one book and hadn\'t started the next yet.'],
+    ['no_immediate_reward', 'Hard to feel progress on slow, heavy chapters.'],
+    ['no_time', 'Long commute then dinner — no evening left.'],
+    ['low_motivation', 'Wasn\'t in the right headspace for reading.'],
   ],
   habit_no_snacks: [
-    ['bad_environment', "Friend brought snacks over, hard to say no."],
-    ['social_pressure', "Birthday party — cake was non-negotiable."],
-    ['no_immediate_reward', "Was restless and snacking calmed me down."],
-    ['low_motivation', "Long day — rewarded myself with crisps."],
-    ['forgot', "Ate on autopilot before I remembered."],
-    ['other', "Dinner was too light, got hungry at 11 pm."],
-    ['too_hard', "Was watching a film and the urge was overwhelming."],
-    ['bad_environment', "Partner was snacking right next to me all evening."],
-    ['social_pressure', "Work drinks ran late and snacks were on the table."],
-    ['forgot', "Mindlessly grabbed something while reading."],
+    ['bad_environment', 'Friend brought snacks over, hard to say no.'],
+    ['social_pressure', 'Birthday party — cake was non-negotiable.'],
+    ['no_immediate_reward', 'Was restless and snacking calmed me down.'],
+    ['low_motivation', 'Long day — rewarded myself with crisps.'],
+    ['forgot', 'Ate on autopilot before I remembered.'],
+    ['other', 'Dinner was too light, got hungry at 11 pm.'],
+    ['too_hard', 'Was watching a film and the urge was overwhelming.'],
+    ['bad_environment', 'Partner was snacking right next to me all evening.'],
+    ['social_pressure', 'Work drinks ran late and snacks were on the table.'],
+    ['forgot', 'Mindlessly grabbed something while reading.'],
   ],
   habit_meditation: [
-    ['no_time', "Back-to-back meetings ran into meditation time."],
-    ['bad_environment', "Kids were too noisy to focus."],
-    ['forgot', "Got into work flow and forgot until too late."],
-    ['low_motivation', "Mind was too scattered to even start."],
-    ['too_hard', "Kept getting interrupted by notifications."],
-    ['other', "Rushed straight from bed to work — no morning routine."],
-    ['no_immediate_reward', "Hard to feel the benefit on already-stressed days."],
-    ['social_pressure', "Guest at home made sitting quietly feel awkward."],
-    ['forgot', "Was on a call at 8:30 and it slipped my mind after."],
-    ['no_time', "Early office start — had to skip."],
+    ['no_time', 'Back-to-back meetings ran into meditation time.'],
+    ['bad_environment', 'Kids were too noisy to focus.'],
+    ['forgot', 'Got into work flow and forgot until too late.'],
+    ['low_motivation', 'Mind was too scattered to even start.'],
+    ['too_hard', 'Kept getting interrupted by notifications.'],
+    ['other', 'Rushed straight from bed to work — no morning routine.'],
+    ['no_immediate_reward', 'Hard to feel the benefit on already-stressed days.'],
+    ['social_pressure', 'Guest at home made sitting quietly feel awkward.'],
+    ['forgot', 'Was on a call at 8:30 and it slipped my mind after.'],
+    ['no_time', 'Early office start — had to skip.'],
   ],
   habit_social_media_limit: [
-    ['social_pressure', "Colleague texted and I opened the app to reply."],
-    ['forgot', "Opened Twitter on autopilot before 18:00."],
-    ['bad_environment', "Boring commute — scrolled to pass the time."],
-    ['low_motivation', "Anxious about the news, felt compelled to check."],
-    ['no_immediate_reward', "Missed feeling connected during the lunch break."],
-    ['other', "Had to check a work Slack channel urgently before 18:00."],
-    ['too_hard', "Phone was right there and the habit kicked in."],
-    ['social_pressure', "Group chat was blowing up and I didn't want to miss it."],
-    ['forgot', "Checked Instagram while waiting in a queue."],
-    ['bad_environment', "TV show was boring so I reached for my phone."],
+    ['social_pressure', 'Colleague texted and I opened the app to reply.'],
+    ['forgot', 'Opened Twitter on autopilot before 18:00.'],
+    ['bad_environment', 'Boring commute — scrolled to pass the time.'],
+    ['low_motivation', 'Anxious about the news, felt compelled to check.'],
+    ['no_immediate_reward', 'Missed feeling connected during the lunch break.'],
+    ['other', 'Had to check a work Slack channel urgently before 18:00.'],
+    ['too_hard', 'Phone was right there and the habit kicked in.'],
+    ['social_pressure', 'Group chat was blowing up and I didn\'t want to miss it.'],
+    ['forgot', 'Checked Instagram while waiting in a queue.'],
+    ['bad_environment', 'TV show was boring so I reached for my phone.'],
   ],
   habit_water_intake: [
-    ['forgot', "Was out all day and didn't track my intake."],
-    ['no_time', "So busy I only managed two glasses all day."],
-    ['bad_environment', "No water bottle with me at the event."],
-    ['low_motivation', "Just wasn't thirsty and didn't push myself."],
-    ['other', "Had a lot of coffee instead — convinced myself it counted."],
-    ['forgot', "Skipped breakfast and forgot to start tracking."],
-    ['no_immediate_reward', "Hard to notice a difference from day to day."],
-    ['too_hard', "Eight glasses feels like a lot when you're not thirsty."],
+    ['forgot', 'Was out all day and didn\'t track my intake.'],
+    ['no_time', 'So busy I only managed two glasses all day.'],
+    ['bad_environment', 'No water bottle with me at the event.'],
+    ['low_motivation', 'Just wasn\'t thirsty and didn\'t push myself.'],
+    ['other', 'Had a lot of coffee instead — convinced myself it counted.'],
+    ['forgot', 'Skipped breakfast and forgot to start tracking.'],
+    ['no_immediate_reward', 'Hard to notice a difference from day to day.'],
+    ['too_hard', 'Eight glasses feels like a lot when you\'re not thirsty.'],
   ],
   habit_journaling: [
-    ['no_time', "Got to bed far later than planned."],
-    ['low_motivation', "Nothing noteworthy happened — didn't see the point."],
-    ['forgot', "Fell asleep before I even opened the journal."],
-    ['too_hard', "Stared at a blank page and gave up after two minutes."],
-    ['bad_environment', "Room was dark and I didn't want to wake my partner."],
-    ['other', "Thought I'd do it in the morning — and didn't."],
-    ['no_immediate_reward', "Hard to see the value when the day felt mundane."],
-    ['social_pressure', "Was on a video call until midnight."],
+    ['no_time', 'Got to bed far later than planned.'],
+    ['low_motivation', 'Nothing noteworthy happened — didn\'t see the point.'],
+    ['forgot', 'Fell asleep before I even opened the journal.'],
+    ['too_hard', 'Stared at a blank page and gave up after two minutes.'],
+    ['bad_environment', 'Room was dark and I didn\'t want to wake my partner.'],
+    ['other', 'Thought I\'d do it in the morning — and didn\'t.'],
+    ['no_immediate_reward', 'Hard to see the value when the day felt mundane.'],
+    ['social_pressure', 'Was on a video call until midnight.'],
   ],
 }
 
@@ -219,8 +219,8 @@ interface SuggestionTemplate {
 
 const SUGGESTION_TEMPLATES: Record<LawKey, SuggestionTemplate[]> = {
   'obvious/increase': [
-    { title: 'Make it visible', action: "Place your gear or materials somewhere you can't miss them the night before.", rationale: 'Out of sight is out of mind — a visible cue primes action automatically.' },
-    { title: 'Stack onto an existing cue', action: 'Attach this habit directly after something you already do every day.', rationale: "Implementation intentions ('after X, I will Y') dramatically improve follow-through." },
+    { title: 'Make it visible', action: 'Place your gear or materials somewhere you can\'t miss them the night before.', rationale: 'Out of sight is out of mind — a visible cue primes action automatically.' },
+    { title: 'Stack onto an existing cue', action: 'Attach this habit directly after something you already do every day.', rationale: 'Implementation intentions (\'after X, I will Y\') dramatically improve follow-through.' },
     { title: 'Use a habit tracker', action: 'Add a visible checkbox or tally to your daily routine.', rationale: 'Tracking creates a visual streak that motivates you to maintain consistency.' },
     { title: 'Design a cue card', action: 'Write the habit on a sticky note and put it somewhere unavoidable.', rationale: 'Environmental cues are more reliable triggers than relying on memory alone.' },
   ],
@@ -231,9 +231,9 @@ const SUGGESTION_TEMPLATES: Record<LawKey, SuggestionTemplate[]> = {
     { title: 'Uninstall or log out', action: 'Remove the app or sign out so there is an extra step to get back in.', rationale: 'Inconvenience before the behaviour is one of the most effective deterrents.' },
   ],
   'attractive/increase': [
-    { title: 'Temptation bundling', action: 'Pair this habit with something you genuinely enjoy, like a podcast or coffee.', rationale: "Combining a 'want' with a 'should' makes the habit much more appealing." },
+    { title: 'Temptation bundling', action: 'Pair this habit with something you genuinely enjoy, like a podcast or coffee.', rationale: 'Combining a \'want\' with a \'should\' makes the habit much more appealing.' },
     { title: 'Find an accountability partner', action: 'Share your goal with someone and check in weekly.', rationale: 'We naturally adopt habits that feel expected or normal in our social circle.' },
-    { title: 'Connect to identity', action: "Before starting, remind yourself: 'This is who I am becoming.'", rationale: 'Linking a habit to identity makes the behaviour intrinsically motivating.' },
+    { title: 'Connect to identity', action: 'Before starting, remind yourself: \'This is who I am becoming.\'', rationale: 'Linking a habit to identity makes the behaviour intrinsically motivating.' },
     { title: 'Join a community', action: 'Find a group online or locally that shares this goal.', rationale: 'Belonging to a group that practises the same habit normalises it powerfully.' },
   ],
   'attractive/decrease': [
@@ -256,7 +256,7 @@ const SUGGESTION_TEMPLATES: Record<LawKey, SuggestionTemplate[]> = {
   'satisfying/increase': [
     { title: 'Reward completion immediately', action: 'Give yourself a small treat right after completing the habit.', rationale: 'Immediate rewards wire the brain to associate the habit with pleasure.' },
     { title: 'Track your streak visually', action: 'Mark every successful day on a calendar — never break the chain.', rationale: 'Visual progress creates satisfaction that motivates continuation.' },
-    { title: 'Celebrate with a small gesture', action: "Say 'yes!' or do a fist pump when done — however small it feels.", rationale: 'Positive emotion immediately after a behaviour strengthens the neural loop.' },
+    { title: 'Celebrate with a small gesture', action: 'Say \'yes!\' or do a fist pump when done — however small it feels.', rationale: 'Positive emotion immediately after a behaviour strengthens the neural loop.' },
     { title: 'Log a wins note', action: 'Write one sentence about how the habit made you feel today.', rationale: 'Recording progress creates a tangible sense of growth that is rewarding to revisit.' },
   ],
   'satisfying/decrease': [
@@ -294,13 +294,13 @@ export function generateDemoData(today = new Date()): AppData {
   // the demo shows the flexible-schedule feature: no missed entries are created
   // for those days (ADR-0010).
   const pauseStart = shiftMonths(endDate, -3)
-  const pausesByHabit: Record<string, Array<{ start: string; end: string }>> = {
-    habit_reading: [{ start: dateToKey(pauseStart), end: dateToKey(shiftDays(pauseStart, 6)) }]
+  const pausesByHabit: Record<string, Array<{ start: string, end: string }>> = {
+    habit_reading: [{ start: dateToKey(pauseStart), end: dateToKey(shiftDays(pauseStart, 6)) }],
   }
 
   function isInDemoPause(habitId: string, dateKey: string): boolean {
     return (pausesByHabit[habitId] ?? []).some(
-      (pause) => dateKey >= pause.start && dateKey <= pause.end
+      pause => dateKey >= pause.start && dateKey <= pause.end,
     )
   }
 
@@ -351,9 +351,11 @@ export function generateDemoData(today = new Date()): AppData {
       let status: 'done' | 'missed' | 'skipped'
       if (roll < successRate) {
         status = 'done'
-      } else if (roll < successRate + (1 - successRate) * SKIP_RATE) {
+      }
+      else if (roll < successRate + (1 - successRate) * SKIP_RATE) {
         status = 'skipped'
-      } else {
+      }
+      else {
         status = 'missed'
       }
 

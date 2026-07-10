@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures'
 import { DashboardPage } from '../support/pages/dashboard'
-import { addDaysKey, makeAppData, makeHabit, todayKey, weekdayOf } from '../support/data'
+import { addDaysKey, makeAppData, makeHabit, todayKey } from '../support/data'
 
 // A habit that is due every day, with no entries yet — always "open" today.
 function dailyHabit(name: string) {
@@ -8,7 +8,7 @@ function dailyHabit(name: string) {
     name,
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
     startDate: addDaysKey(todayKey(), -3),
-    reminderTime: null
+    reminderTime: null,
   })
 }
 

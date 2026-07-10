@@ -18,7 +18,8 @@ function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppData | null {
 
     try {
       return parseAppData(safeJsonParse(value))
-    } catch {
+    }
+    catch {
       // Fall through to the next legacy key.
     }
   }
@@ -38,7 +39,7 @@ function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppData | null {
  */
 export async function migrateLegacyLocalStorage(
   adapter: Pick<PersistenceAdapter, 'hasData' | 'save'>,
-  storage: Pick<Storage, 'getItem' | 'removeItem'>
+  storage: Pick<Storage, 'getItem' | 'removeItem'>,
 ): Promise<boolean> {
   if (await adapter.hasData()) {
     // Already migrated (or started fresh on the active backend); drop stale legacy copies.

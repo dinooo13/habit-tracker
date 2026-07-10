@@ -12,16 +12,16 @@ describe('fixture data', () => {
     expect(parsed.habits.length).toBeGreaterThanOrEqual(5)
     expect(parsed.entries.length).toBeGreaterThan(140)
 
-    const statuses = new Set(parsed.entries.map((entry) => entry.status))
+    const statuses = new Set(parsed.entries.map(entry => entry.status))
     expect(statuses.has('done')).toBe(true)
     expect(statuses.has('missed')).toBe(true)
     expect(statuses.has('skipped')).toBe(true)
 
-    const reflectedMissed = parsed.entries.filter((entry) => entry.status === 'missed' && entry.missReasonCode)
+    const reflectedMissed = parsed.entries.filter(entry => entry.status === 'missed' && entry.missReasonCode)
     expect(reflectedMissed.length).toBeGreaterThan(0)
     expect(parsed.suggestions.length).toBeGreaterThan(0)
 
-    const dates = parsed.entries.map((entry) => entry.date).sort()
+    const dates = parsed.entries.map(entry => entry.date).sort()
     expect(dates[0]).toBe('2025-12-26')
     expect(dates[dates.length - 1]).toBe('2026-02-08')
   })

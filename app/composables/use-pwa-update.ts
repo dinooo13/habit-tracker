@@ -24,7 +24,7 @@ export function usePwaUpdate(): PwaUpdateController {
     return {
       needRefresh: computed(() => false),
       reload: async () => {},
-      dismiss: () => {}
+      dismiss: () => {},
     }
   }
 
@@ -37,7 +37,7 @@ export function usePwaUpdate(): PwaUpdateController {
       reload: async () => {},
       dismiss: () => {
         fallbackNeedRefresh.value = false
-      }
+      },
     }
   }
 

@@ -8,7 +8,7 @@ import {
   isValidDateKey,
   MAX_DATE_RANGE_DAYS,
   parseTimeString,
-  relativeDayLabel
+  relativeDayLabel,
 } from '~/utils/date'
 import type { Habit } from '~/types/app-data'
 
@@ -23,7 +23,7 @@ const sampleHabit: Habit = {
   archived: false,
   pauses: [],
   createdAt: '2026-02-01T00:00:00.000Z',
-  updatedAt: '2026-02-01T00:00:00.000Z'
+  updatedAt: '2026-02-01T00:00:00.000Z',
 }
 
 describe('date utilities', () => {
@@ -31,7 +31,7 @@ describe('date utilities', () => {
     expect(dateKeyRange('2026-02-01', '2026-02-03')).toEqual([
       '2026-02-01',
       '2026-02-02',
-      '2026-02-03'
+      '2026-02-03',
     ])
   })
 

@@ -6,7 +6,7 @@ import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/dexie-persistenc
 import {
   LEGACY_LAST_VALID_STORAGE_KEY,
   LEGACY_STORAGE_KEY,
-  migrateLegacyLocalStorage
+  migrateLegacyLocalStorage,
 } from '~/utils/legacy-migration'
 import type { PersistenceAdapter } from '~/utils/persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/storage-schema'
@@ -25,7 +25,7 @@ function createMemoryStorage(initial: Record<string, string> = {}) {
     removeItem: (key: string) => {
       store.delete(key)
     },
-    has: (key: string) => store.has(key)
+    has: (key: string) => store.has(key),
   }
 }
 
@@ -41,7 +41,7 @@ function createFakeAdapter(seed?: AppData): PersistenceAdapter {
     clear: async () => {
       data = null
     },
-    hasData: async () => data !== null
+    hasData: async () => data !== null,
   }
 }
 
@@ -62,7 +62,7 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
     const fixture = readFixture()
     const storage = createMemoryStorage({
       [LEGACY_STORAGE_KEY]: JSON.stringify(fixture),
-      [LEGACY_LAST_VALID_STORAGE_KEY]: JSON.stringify(fixture)
+      [LEGACY_LAST_VALID_STORAGE_KEY]: JSON.stringify(fixture),
     })
 
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
@@ -80,7 +80,7 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
     const fixture = readFixture()
     const storage = createMemoryStorage({
       [LEGACY_STORAGE_KEY]: '{not json',
-      [LEGACY_LAST_VALID_STORAGE_KEY]: JSON.stringify(fixture)
+      [LEGACY_LAST_VALID_STORAGE_KEY]: JSON.stringify(fixture),
     })
 
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
@@ -94,7 +94,7 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
     await adapter.save(existing)
 
     const storage = createMemoryStorage({
-      [LEGACY_STORAGE_KEY]: JSON.stringify(readFixture())
+      [LEGACY_STORAGE_KEY]: JSON.stringify(readFixture()),
     })
 
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
@@ -117,7 +117,7 @@ describe('migrateLegacyLocalStorage (backend-agnostic)', () => {
     const fixture = readFixture()
     const adapter = createFakeAdapter()
     const storage = createMemoryStorage({
-      [LEGACY_STORAGE_KEY]: JSON.stringify(fixture)
+      [LEGACY_STORAGE_KEY]: JSON.stringify(fixture),
     })
 
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
@@ -130,7 +130,7 @@ describe('migrateLegacyLocalStorage (backend-agnostic)', () => {
   it('leaves a seeded adapter untouched', async () => {
     const adapter = createFakeAdapter(createEmptyAppData())
     const storage = createMemoryStorage({
-      [LEGACY_STORAGE_KEY]: JSON.stringify(readFixture())
+      [LEGACY_STORAGE_KEY]: JSON.stringify(readFixture()),
     })
 
     const migrated = await migrateLegacyLocalStorage(adapter, storage)

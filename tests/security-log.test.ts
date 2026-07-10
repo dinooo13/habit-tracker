@@ -3,7 +3,7 @@ import {
   SECURITY_LOG_CAPACITY,
   clearSecurityLog,
   recentSecurityEvents,
-  recordSecurityEvent
+  recordSecurityEvent,
 } from '~/utils/security-log'
 
 describe('security log (SEC-16)', () => {

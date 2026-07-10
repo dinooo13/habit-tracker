@@ -20,14 +20,14 @@ test.describe('Persistence', () => {
       name: 'Persistent habit',
       identityStatement: 'I am consistent over time.',
       startDate: addDaysKey(todayKey(), -1),
-      weekdays: [0, 1, 2, 3, 4, 5, 6]
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
     })
     await form.submit()
     await expect(page.locator('.habit-card').filter({ hasText: 'Persistent habit' })).toBeVisible()
 
     await flushSave(page)
     await expect
-      .poll(async () => (await readPersistedStore<{ name: string }>(page, 'habits')).some((h) => h.name === 'Persistent habit'))
+      .poll(async () => (await readPersistedStore<{ name: string }>(page, 'habits')).some(h => h.name === 'Persistent habit'))
       .toBe(true)
     await page.reload()
     await expect(page.locator('.habit-card').filter({ hasText: 'Persistent habit' })).toBeVisible()
@@ -37,7 +37,7 @@ test.describe('Persistence', () => {
     const habit = makeHabit({
       name: 'Daily greens',
       scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
-      startDate: addDaysKey(todayKey(), -2)
+      startDate: addDaysKey(todayKey(), -2),
     })
     await seed(makeAppData({ habits: [habit] }))
     await page.goto('/app')
@@ -50,9 +50,9 @@ test.describe('Persistence', () => {
     // Wait until the "done" status has actually been written before reloading.
     await expect
       .poll(async () =>
-        (await readPersistedStore<{ habitId: string; status: string }>(page, 'entries')).some(
-          (e) => e.habitId === habit.id && e.status === 'done'
-        )
+        (await readPersistedStore<{ habitId: string, status: string }>(page, 'entries')).some(
+          e => e.habitId === habit.id && e.status === 'done',
+        ),
       )
       .toBe(true)
     await page.reload()

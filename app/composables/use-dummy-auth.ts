@@ -54,6 +54,6 @@ export function useDummyAuth() {
     isInitialized,
     initFromStorage,
     login,
-    logout
+    logout,
   }
 }

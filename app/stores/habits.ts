@@ -16,24 +16,24 @@ interface HabitsState {
  */
 function normalizePauses(pauses: HabitPause[] | undefined): HabitPause[] {
   return (pauses ?? [])
-    .filter((pause) => compareDateKeys(pause.start, pause.end) <= 0)
-    .map((pause) => ({ start: pause.start, end: pause.end }))
+    .filter(pause => compareDateKeys(pause.start, pause.end) <= 0)
+    .map(pause => ({ start: pause.start, end: pause.end }))
     .sort((left, right) => compareDateKeys(left.start, right.start) || compareDateKeys(left.end, right.end))
 }
 
 export const useHabitsStore = defineStore('habits', {
   state: (): HabitsState => ({
-    habits: []
+    habits: [],
   }),
   getters: {
-    activeHabits: (state): Habit[] => state.habits.filter((habit) => !habit.archived),
-    archivedHabits: (state): Habit[] => state.habits.filter((habit) => habit.archived),
-    habitById: (state) => (id: string): Habit | undefined => state.habits.find((habit) => habit.id === id),
-    dueHabitsForDate: (state) => (dateKey: string): Habit[] =>
-      state.habits.filter((habit) => isHabitDueOnDate(habit, dateKey)),
+    activeHabits: (state): Habit[] => state.habits.filter(habit => !habit.archived),
+    archivedHabits: (state): Habit[] => state.habits.filter(habit => habit.archived),
+    habitById: state => (id: string): Habit | undefined => state.habits.find(habit => habit.id === id),
+    dueHabitsForDate: state => (dateKey: string): Habit[] =>
+      state.habits.filter(habit => isHabitDueOnDate(habit, dateKey)),
     todayDueHabits(): Habit[] {
       return this.dueHabitsForDate(todayDateKey())
-    }
+    },
   },
   actions: {
     hydrate(habits: Habit[]): void {
@@ -55,7 +55,7 @@ export const useHabitsStore = defineStore('habits', {
         archived: false,
         pauses: normalizePauses(input.pauses),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       this.habits.unshift(habit)
@@ -97,11 +97,11 @@ export const useHabitsStore = defineStore('habits', {
       const coachStore = useCoachStore()
 
       const toRemove = entriesStore.entries.filter(
-        (entry) =>
-          entry.habitId === habit.id &&
-          entry.status === 'missed' &&
-          entry.missReasonCode === null &&
-          isDateInHabitPause(habit, entry.date)
+        entry =>
+          entry.habitId === habit.id
+          && entry.status === 'missed'
+          && entry.missReasonCode === null
+          && isDateInHabitPause(habit, entry.date),
       )
 
       for (const entry of toRemove) {
@@ -130,7 +130,7 @@ export const useHabitsStore = defineStore('habits', {
       habit.updatedAt = nowIso()
     },
     deleteHabit(id: string): void {
-      this.habits = this.habits.filter((habit) => habit.id !== id)
-    }
-  }
+      this.habits = this.habits.filter(habit => habit.id !== id)
+    },
+  },
 })

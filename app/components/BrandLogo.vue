@@ -9,8 +9,8 @@ const props = withDefaults(
   }>(),
   {
     centerText: null,
-    ariaLabel: 'Atomic Habit Tracker logo'
-  }
+    ariaLabel: 'Atomic Habit Tracker logo',
+  },
 )
 
 const centerTextDisplay = computed(() => {
@@ -44,16 +44,51 @@ const centerTextSize = computed(() => {
     :aria-label="props.ariaLabel"
   >
     <defs>
-      <linearGradient :id="gradientId" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
-        <stop offset="0" style="stop-color: var(--ui-color-primary-700)" />
-        <stop offset="1" style="stop-color: var(--ui-color-primary-400)" />
+      <linearGradient
+        :id="gradientId"
+        x1="96"
+        y1="96"
+        x2="416"
+        y2="416"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop
+          offset="0"
+          style="stop-color: var(--ui-color-primary-700)"
+        />
+        <stop
+          offset="1"
+          style="stop-color: var(--ui-color-primary-400)"
+        />
       </linearGradient>
     </defs>
 
-    <g fill="none" :stroke="`url(#${gradientId})`" stroke-width="22" stroke-linecap="round">
-      <ellipse cx="256" cy="256" rx="178" ry="112" />
-      <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(60 256 256)" />
-      <ellipse cx="256" cy="256" rx="178" ry="112" transform="rotate(-60 256 256)" />
+    <g
+      fill="none"
+      :stroke="`url(#${gradientId})`"
+      stroke-width="22"
+      stroke-linecap="round"
+    >
+      <ellipse
+        cx="256"
+        cy="256"
+        rx="178"
+        ry="112"
+      />
+      <ellipse
+        cx="256"
+        cy="256"
+        rx="178"
+        ry="112"
+        transform="rotate(60 256 256)"
+      />
+      <ellipse
+        cx="256"
+        cy="256"
+        rx="178"
+        ry="112"
+        transform="rotate(-60 256 256)"
+      />
     </g>
 
     <text

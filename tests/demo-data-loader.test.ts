@@ -15,7 +15,7 @@ describe('demo data loader helpers', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
-      json: async () => fixture
+      json: async () => fixture,
     }))
 
     const parsed = await fetchDemoPayload(fetchImpl as unknown as typeof fetch, '/fixtures/demo.json')
@@ -29,7 +29,7 @@ describe('demo data loader helpers', () => {
     const fetchImpl = vi.fn(async () => ({
       ok: false,
       status: 404,
-      json: async () => ({})
+      json: async () => ({}),
     }))
 
     await expect(fetchDemoPayload(fetchImpl as unknown as typeof fetch)).rejects.toThrow(/404/)
@@ -41,12 +41,12 @@ describe('demo data loader helpers', () => {
 
     const habitsStore = {
       get activeHabits() {
-        return state.habits.filter((habit) => !habit.archived)
+        return state.habits.filter(habit => !habit.archived)
       },
       hydrate: vi.fn((value) => {
         state.habits = value
       }),
-      snapshot: vi.fn(() => state.habits)
+      snapshot: vi.fn(() => state.habits),
     }
 
     const entriesStore = {
@@ -56,7 +56,7 @@ describe('demo data loader helpers', () => {
         entriesStore.entries = value
       }),
       snapshot: vi.fn(() => state.entries),
-      ensureMissedEntries: vi.fn()
+      ensureMissedEntries: vi.fn(),
     }
 
     const coachStore = {
@@ -66,7 +66,7 @@ describe('demo data loader helpers', () => {
         coachStore.suggestions = value
       }),
       snapshot: vi.fn(() => state.suggestions),
-      reconcileMissingSuggestions: vi.fn()
+      reconcileMissingSuggestions: vi.fn(),
     }
 
     const settingsStore = {
@@ -75,11 +75,11 @@ describe('demo data loader helpers', () => {
         state.settings = value
         settingsStore.primaryColor = value.primaryColor
       }),
-      snapshot: vi.fn(() => state.settings)
+      snapshot: vi.fn(() => state.settings),
     }
 
     const persistence = {
-      save: vi.fn()
+      save: vi.fn(),
     }
 
     await hydrateDemoPayload(parsed, {
@@ -87,7 +87,7 @@ describe('demo data loader helpers', () => {
       entriesStore: entriesStore as any,
       coachStore: coachStore as any,
       settingsStore: settingsStore as any,
-      persistence: persistence as any
+      persistence: persistence as any,
     })
 
     expect(habitsStore.hydrate).toHaveBeenCalledOnce()

@@ -76,8 +76,8 @@ export function computeBackupNudge(inputs: BackupNudgeInputs): BackupNudgeResult
   const days = Math.max(0, daysBetween(anchor, todayKey))
   const weeksUnexported = Math.floor(days / 7)
 
-  const isSnoozed =
-    Boolean(backupNudgeSnoozedUntil) && compareDateKeys(todayKey, backupNudgeSnoozedUntil as string) <= 0
+  const isSnoozed
+    = Boolean(backupNudgeSnoozedUntil) && compareDateKeys(todayKey, backupNudgeSnoozedUntil as string) <= 0
 
   const shouldShow = weeksUnexported >= BACKUP_NUDGE_THRESHOLD_WEEKS && !isSnoozed
 
@@ -103,8 +103,8 @@ export function useBackupNudge(): UseBackupNudge {
       entries: entriesStore.entries,
       lastExportedAt: settingsStore.lastExportedAt,
       backupNudgeSnoozedUntil: settingsStore.backupNudgeSnoozedUntil,
-      todayKey: todayDateKey()
-    })
+      todayKey: todayDateKey(),
+    }),
   )
 
   const shouldShow = computed(() => result.value.shouldShow)

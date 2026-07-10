@@ -14,8 +14,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: isDev },
   ssr: false,
-  modules: ['@nuxt/ui', '@pinia/nuxt', '@vite-pwa/nuxt'],
+  modules: ['@nuxt/ui', '@pinia/nuxt', '@vite-pwa/nuxt', '@nuxt/eslint'],
   css: ['~/assets/css/main.css'],
+  eslint: {
+    // Enable ESLint Stylistic so formatting is enforced by ESLint itself
+    // (subsumes Prettier); the optional dev-server checker stays off. See ADR-0013.
+    config: {
+      stylistic: true
+    }
+  },
   app: {
     baseURL: appBaseURL,
     head: {

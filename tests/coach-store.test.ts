@@ -15,7 +15,7 @@ function buildHabit(): Habit {
     archived: false,
     pauses: [],
     createdAt: '2026-02-08T00:00:00.000Z',
-    updatedAt: '2026-02-08T00:00:00.000Z'
+    updatedAt: '2026-02-08T00:00:00.000Z',
   }
 }
 
@@ -27,7 +27,7 @@ function buildReflectedMissedEntry(): HabitEntry {
     status: 'missed',
     completedAt: null,
     missReasonCode: 'no_time',
-    missReasonNote: 'Too busy'
+    missReasonNote: 'Too busy',
   }
 }
 

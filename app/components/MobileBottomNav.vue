@@ -21,7 +21,10 @@ function isActivePath(path: string): boolean {
       class="mx-auto w-full max-w-md overflow-hidden rounded-full border border-default/80 bg-default/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur"
     >
       <ul class="grid grid-cols-5 gap-1">
-        <li v-for="item in props.items" :key="item.to">
+        <li
+          v-for="item in props.items"
+          :key="item.to"
+        >
           <ULink
             :to="item.to"
             :aria-current="isActivePath(item.to) ? 'page' : undefined"
@@ -32,7 +35,10 @@ function isActivePath(path: string): boolean {
                 : 'text-muted hover:bg-elevated hover:text-default'
             "
           >
-            <UIcon :name="item.icon" class="mb-0.5 size-4" />
+            <UIcon
+              :name="item.icon"
+              class="mb-0.5 size-4"
+            />
             <span class="truncate">{{ item.label }}</span>
           </ULink>
         </li>

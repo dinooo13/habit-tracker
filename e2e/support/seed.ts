@@ -3,7 +3,7 @@ import type { AppData } from '../../app/types/app-data'
 import {
   DUMMY_AUTH_EXPIRY_STORAGE_KEY,
   DUMMY_AUTH_STORAGE_KEY,
-  DUMMY_AUTH_TTL_MS
+  DUMMY_AUTH_TTL_MS,
 } from './constants'
 
 // The Dexie schema mirrored from app/utils/dexie-persistence-adapter.ts. The
@@ -83,7 +83,7 @@ export async function seedData(page: Page, data: AppData): Promise<void> {
  */
 export function readPersistedStore<T = Record<string, unknown>>(
   page: Page,
-  store: 'habits' | 'entries' | 'suggestions'
+  store: 'habits' | 'entries' | 'suggestions',
 ): Promise<T[]> {
   return page.evaluate(
     ({ databaseName, storeName }) => {
@@ -102,7 +102,7 @@ export function readPersistedStore<T = Record<string, unknown>>(
         }
       })
     },
-    { databaseName: DATABASE_NAME, storeName: store }
+    { databaseName: DATABASE_NAME, storeName: store },
   )
 }
 
@@ -115,6 +115,6 @@ export async function authenticate(page: Page): Promise<void> {
       window.localStorage.setItem(key as string, '1')
       window.localStorage.setItem(expiryKey as string, String(Date.now() + (ttlMs as number)))
     },
-    [DUMMY_AUTH_STORAGE_KEY, DUMMY_AUTH_EXPIRY_STORAGE_KEY, DUMMY_AUTH_TTL_MS]
+    [DUMMY_AUTH_STORAGE_KEY, DUMMY_AUTH_EXPIRY_STORAGE_KEY, DUMMY_AUTH_TTL_MS],
   )
 }

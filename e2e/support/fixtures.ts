@@ -21,7 +21,7 @@ export const test = base.extend<Fixtures>({
 
   seed: async ({ page }, use) => {
     await use((data: AppData) => seedData(page, data))
-  }
+  },
 })
 
 export { expect }

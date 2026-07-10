@@ -16,7 +16,7 @@ function validHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-02-01T00:00:00.000Z',
     updatedAt: '2026-02-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -29,7 +29,7 @@ describe('storage schema', () => {
   it('rejects invalid schema versions', () => {
     const invalid = {
       ...createEmptyAppData(),
-      schemaVersion: 99
+      schemaVersion: 99,
     }
 
     expect(() => parseAppData(invalid)).toThrow()
@@ -82,7 +82,7 @@ describe('storage schema', () => {
       archived: false,
       pauses: [],
       createdAt: '2026-02-01T00:00:00.000Z',
-      updatedAt: '2026-02-01T00:00:00.000Z'
+      updatedAt: '2026-02-01T00:00:00.000Z',
     })
 
     expect(() => parseAppData(payload)).toThrow()
@@ -121,7 +121,7 @@ describe('storage schema', () => {
       status: 'missed',
       completedAt: null,
       missReasonCode: 'forgot',
-      missReasonNote: 'a'.repeat(FIELD_LIMITS.note + 1)
+      missReasonNote: 'a'.repeat(FIELD_LIMITS.note + 1),
     })
     expect(() => parseAppData(payload)).toThrow()
   })

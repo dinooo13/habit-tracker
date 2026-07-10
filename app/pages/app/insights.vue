@@ -1,8 +1,8 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/date'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
+
+definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
@@ -103,7 +103,7 @@ function dailyCompletionRate(date: string): number {
 }
 
 const selectedCompletionRate = computed(() =>
-  overallCompletionRate(selectedWindowStart.value, today.value)
+  overallCompletionRate(selectedWindowStart.value, today.value),
 )
 
 const previousCompletionRate = computed(() => {
@@ -154,25 +154,25 @@ const completionDeltaColor = computed<'success' | 'warning' | 'neutral'>(() => {
 
 const habitInsights = computed(() =>
   activeHabits.value
-    .map((habit) => ({
+    .map(habit => ({
       habit,
       streak: entriesStore.streakForHabit(habit.id),
-      rate: entriesStore.completionRateForHabit(habit, selectedWindowStart.value, today.value)
+      rate: entriesStore.completionRateForHabit(habit, selectedWindowStart.value, today.value),
     }))
     .sort((left, right) =>
       right.rate - left.rate
       || right.streak - left.streak
-      || left.habit.name.localeCompare(right.habit.name)
-    )
+      || left.habit.name.localeCompare(right.habit.name),
+    ),
 )
 
 const filteredHabitInsights = computed(() => {
   if (performanceFilter.value === 'needs') {
-    return habitInsights.value.filter((item) => item.rate < 60)
+    return habitInsights.value.filter(item => item.rate < 60)
   }
 
   if (performanceFilter.value === 'best') {
-    return habitInsights.value.filter((item) => item.rate >= 80)
+    return habitInsights.value.filter(item => item.rate >= 80)
   }
 
   return habitInsights.value
@@ -183,12 +183,12 @@ watch(performanceFilter, () => {
 })
 
 const visibleHabitInsights = computed(() =>
-  showAllHabits.value ? filteredHabitInsights.value : filteredHabitInsights.value.slice(0, 3)
+  showAllHabits.value ? filteredHabitInsights.value : filteredHabitInsights.value.slice(0, 3),
 )
 
 const canToggleAllHabits = computed(() => filteredHabitInsights.value.length > 3)
 const hiddenHabitCount = computed(() =>
-  Math.max(filteredHabitInsights.value.length - visibleHabitInsights.value.length, 0)
+  Math.max(filteredHabitInsights.value.length - visibleHabitInsights.value.length, 0),
 )
 
 function completionRateColor(rate: number): 'success' | 'warning' | 'error' {
@@ -226,21 +226,21 @@ const reasonDistribution = computed(() => {
       code,
       label: MISS_REASON_LABELS[code as keyof typeof MISS_REASON_LABELS],
       count,
-      percent: total ? Math.round((count / total) * 100) : 0
+      percent: total ? Math.round((count / total) * 100) : 0,
     }))
 })
 
 const visibleReasonDistribution = computed(() =>
-  showAllReasons.value ? reasonDistribution.value : reasonDistribution.value.slice(0, 3)
+  showAllReasons.value ? reasonDistribution.value : reasonDistribution.value.slice(0, 3),
 )
 
 const canToggleAllReasons = computed(() => reasonDistribution.value.length > 3)
 
 const completionTrendSeries = computed(() =>
-  dateKeyRange(selectedWindowStart.value, today.value).map((date) => ({
+  dateKeyRange(selectedWindowStart.value, today.value).map(date => ({
     date,
-    rate: dailyCompletionRate(date)
-  }))
+    rate: dailyCompletionRate(date),
+  })),
 )
 
 const completionChartViewWidth = 100
@@ -249,7 +249,7 @@ const completionChartPlot = {
   left: 2,
   right: 98,
   top: 4,
-  bottom: 52
+  bottom: 52,
 } as const
 
 const completionChartPlotWidth = completionChartPlot.right - completionChartPlot.left
@@ -263,7 +263,7 @@ function formatTrendDate(dateKey: string | undefined): string {
 
   return formatDateKeyForLocale(dateKey, dateLocale.value, {
     day: 'numeric',
-    month: 'short'
+    month: 'short',
   })
 }
 
@@ -281,13 +281,13 @@ const completionTrendPoints = computed(() => {
     return {
       ...point,
       x,
-      y
+      y,
     }
   })
 })
 
 const completionTrendLinePoints = computed(() =>
-  completionTrendPoints.value.map((point) => `${point.x},${point.y}`).join(' ')
+  completionTrendPoints.value.map(point => `${point.x},${point.y}`).join(' '),
 )
 
 const completionTrendGuideX = computed(() => {
@@ -298,7 +298,7 @@ const completionTrendGuideX = computed(() => {
 
   const values = points
     .filter((_, index) => points.length <= 8 || index === 0 || index === points.length - 1 || index % 5 === 0)
-    .map((point) => point.x)
+    .map(point => point.x)
 
   return [...new Set(values)]
 })
@@ -308,7 +308,7 @@ const completionTrendGuideY = computed(() => [
   completionChartPlot.top + completionChartPlotHeight * 0.25,
   completionChartPlot.top + completionChartPlotHeight * 0.5,
   completionChartPlot.top + completionChartPlotHeight * 0.75,
-  completionChartPlot.bottom
+  completionChartPlot.bottom,
 ])
 
 function completionChartYPercent(y: number): string {
@@ -317,11 +317,11 @@ function completionChartYPercent(y: number): string {
 
 const inferredCoachUptake = computed(() => {
   const suggestionsWithEntries = coachStore.suggestions
-    .map((suggestion) => ({
+    .map(suggestion => ({
       suggestion,
-      entry: entriesStore.entries.find((candidate) => candidate.id === suggestion.entryId)
+      entry: entriesStore.entries.find(candidate => candidate.id === suggestion.entryId),
     }))
-    .filter((item): item is { suggestion: typeof coachStore.suggestions[number]; entry: typeof entriesStore.entries[number] } => {
+    .filter((item): item is { suggestion: typeof coachStore.suggestions[number], entry: typeof entriesStore.entries[number] } => {
       if (!item.entry) {
         return false
       }
@@ -353,7 +353,7 @@ const inferredCoachUptake = computed(() => {
     observableCount += 1
 
     const improved = dateKeyRange(observationStart, observationEnd).some(
-      (date) => entriesStore.entryByHabitAndDate(item.entry.habitId, date)?.status === 'done'
+      date => entriesStore.entryByHabitAndDate(item.entry.habitId, date)?.status === 'done',
     )
 
     if (improved) {
@@ -375,7 +375,9 @@ const inferredCoachUptake = computed(() => {
       <UCard>
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-2xl font-semibold">Insights</h1>
+            <h1 class="text-2xl font-semibold">
+              Insights
+            </h1>
             <div class="inline-flex items-center gap-1 rounded-md border border-default/60 p-1">
               <UButton
                 size="xs"
@@ -407,14 +409,26 @@ const inferredCoachUptake = computed(() => {
 
         <div class="grid grid-cols-2 gap-3">
           <UCard variant="outline">
-            <p class="text-sm text-muted">Active habits</p>
-            <p class="text-2xl font-semibold">{{ activeHabits.length }}</p>
-            <p class="text-xs text-muted">Currently tracked</p>
+            <p class="text-sm text-muted">
+              Active habits
+            </p>
+            <p class="text-2xl font-semibold">
+              {{ activeHabits.length }}
+            </p>
+            <p class="text-xs text-muted">
+              Currently tracked
+            </p>
           </UCard>
           <UCard variant="outline">
-            <p class="text-sm text-muted">Coaching uptake</p>
-            <p class="text-2xl font-semibold">{{ inferredCoachUptake }}%</p>
-            <p class="text-xs text-muted">Inferred from follow-up completions</p>
+            <p class="text-sm text-muted">
+              Coaching uptake
+            </p>
+            <p class="text-2xl font-semibold">
+              {{ inferredCoachUptake }}%
+            </p>
+            <p class="text-xs text-muted">
+              Inferred from follow-up completions
+            </p>
           </UCard>
         </div>
       </UCard>
@@ -423,8 +437,13 @@ const inferredCoachUptake = computed(() => {
         <UCard>
           <template #header>
             <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-trending-up" class="size-5 text-muted" />
-              <h2 class="text-lg font-semibold">Completion trend</h2>
+              <UIcon
+                name="i-lucide-trending-up"
+                class="size-5 text-muted"
+              />
+              <h2 class="text-lg font-semibold">
+                Completion trend
+              </h2>
             </div>
           </template>
 
@@ -436,7 +455,11 @@ const inferredCoachUptake = computed(() => {
                   <span>{{ formatTrendDate(completionTrendSeries[completionTrendSeries.length - 1]?.date) }}</span>
                 </div>
                 <div class="relative h-32 overflow-hidden rounded-md bg-elevated/20 px-1 py-1 lg:h-auto lg:min-h-[10rem] lg:flex-1">
-                  <svg class="absolute inset-0 h-full w-full text-muted/30" :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`" preserveAspectRatio="none">
+                  <svg
+                    class="absolute inset-0 h-full w-full text-muted/30"
+                    :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`"
+                    preserveAspectRatio="none"
+                  >
                     <line
                       v-for="y in completionTrendGuideY"
                       :key="`y-${y}`"
@@ -458,7 +481,11 @@ const inferredCoachUptake = computed(() => {
                       stroke-width="0.4"
                     />
                   </svg>
-                  <svg class="absolute inset-0 h-full w-full text-primary" :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`" preserveAspectRatio="none">
+                  <svg
+                    class="absolute inset-0 h-full w-full text-primary"
+                    :viewBox="`0 0 ${completionChartViewWidth} ${completionChartViewHeight}`"
+                    preserveAspectRatio="none"
+                  >
                     <polyline
                       :points="completionTrendLinePoints"
                       fill="none"
@@ -479,9 +506,18 @@ const inferredCoachUptake = computed(() => {
                     </circle>
                   </svg>
                   <div class="pointer-events-none absolute inset-0 right-1 text-[10px] text-muted/70">
-                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartPlot.top) }">100%</span>
-                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartMidY) }">50%</span>
-                    <span class="absolute right-0 -translate-y-1/2" :style="{ top: completionChartYPercent(completionChartPlot.bottom) }">0%</span>
+                    <span
+                      class="absolute right-0 -translate-y-1/2"
+                      :style="{ top: completionChartYPercent(completionChartPlot.top) }"
+                    >100%</span>
+                    <span
+                      class="absolute right-0 -translate-y-1/2"
+                      :style="{ top: completionChartYPercent(completionChartMidY) }"
+                    >50%</span>
+                    <span
+                      class="absolute right-0 -translate-y-1/2"
+                      :style="{ top: completionChartYPercent(completionChartPlot.bottom) }"
+                    >0%</span>
                   </div>
                 </div>
               </div>
@@ -489,10 +525,18 @@ const inferredCoachUptake = computed(() => {
             <div class="mt-auto space-y-2">
               <UProgress :model-value="selectedCompletionRate" />
               <div class="flex items-end justify-between gap-3">
-                <p class="text-sm text-muted">Completion for {{ selectedWindowLabel }}</p>
-                <p class="text-3xl font-semibold">{{ selectedCompletionRate }}%</p>
+                <p class="text-sm text-muted">
+                  Completion for {{ selectedWindowLabel }}
+                </p>
+                <p class="text-3xl font-semibold">
+                  {{ selectedCompletionRate }}%
+                </p>
               </div>
-              <UBadge v-if="completionDeltaLabel" :color="completionDeltaColor" variant="subtle">
+              <UBadge
+                v-if="completionDeltaLabel"
+                :color="completionDeltaColor"
+                variant="subtle"
+              >
                 {{ completionDeltaLabel }}
               </UBadge>
             </div>
@@ -502,8 +546,13 @@ const inferredCoachUptake = computed(() => {
         <UCard>
           <template #header>
             <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-list-checks" class="size-5 text-muted" />
-              <h2 class="text-lg font-semibold">Habit performance</h2>
+              <UIcon
+                name="i-lucide-list-checks"
+                class="size-5 text-muted"
+              />
+              <h2 class="text-lg font-semibold">
+                Habit performance
+              </h2>
             </div>
           </template>
 
@@ -551,7 +600,10 @@ const inferredCoachUptake = computed(() => {
                 description="Switch filters to explore other performance groups."
               />
 
-              <div v-else class="space-y-2">
+              <div
+                v-else
+                class="space-y-2"
+              >
                 <div
                   v-for="item in visibleHabitInsights"
                   :key="item.habit.id"
@@ -563,13 +615,22 @@ const inferredCoachUptake = computed(() => {
                     >
                       {{ item.habit.name }}
                     </p>
-                    <UBadge :color="completionRateColor(item.rate)" variant="subtle" class="shrink-0">
+                    <UBadge
+                      :color="completionRateColor(item.rate)"
+                      variant="subtle"
+                      class="shrink-0"
+                    >
                       {{ item.rate }}%
                     </UBadge>
                   </div>
                   <div class="mt-2 flex items-center justify-between gap-3 text-xs text-muted">
                     <span>{{ completionWindow === 'all' ? 'All-time completion' : `${selectedCompletionDays}-day completion` }}</span>
-                    <UBadge color="neutral" variant="outline">Streak: {{ item.streak }}</UBadge>
+                    <UBadge
+                      color="neutral"
+                      variant="outline"
+                    >
+                      Streak: {{ item.streak }}
+                    </UBadge>
                   </div>
                 </div>
               </div>
@@ -591,8 +652,13 @@ const inferredCoachUptake = computed(() => {
         <UCard>
           <template #header>
             <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-pie-chart" class="size-5 text-muted" />
-              <h2 class="text-lg font-semibold">Miss reasons</h2>
+              <UIcon
+                name="i-lucide-pie-chart"
+                class="size-5 text-muted"
+              />
+              <h2 class="text-lg font-semibold">
+                Miss reasons
+              </h2>
             </div>
           </template>
 
@@ -608,20 +674,32 @@ const inferredCoachUptake = computed(() => {
               "
             />
 
-            <div v-else class="space-y-2">
+            <div
+              v-else
+              class="space-y-2"
+            >
               <div
                 v-for="item in visibleReasonDistribution"
                 :key="item.code"
                 class="rounded-lg border border-default/60 p-3"
               >
                 <div class="flex items-center justify-between gap-3 text-sm">
-                  <p class="font-medium">{{ item.label }}</p>
-                  <p class="text-muted">{{ item.percent }}%</p>
+                  <p class="font-medium">
+                    {{ item.label }}
+                  </p>
+                  <p class="text-muted">
+                    {{ item.percent }}%
+                  </p>
                 </div>
                 <p class="mt-1 text-xs text-muted">
                   {{ item.count }} miss{{ item.count === 1 ? '' : 'es' }}
                 </p>
-                <UProgress v-if="showAllReasons" class="mt-2" :model-value="item.percent" color="warning" />
+                <UProgress
+                  v-if="showAllReasons"
+                  class="mt-2"
+                  :model-value="item.percent"
+                  color="warning"
+                />
               </div>
 
               <UButton

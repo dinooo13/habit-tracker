@@ -13,7 +13,7 @@ function entryLookupKey(habitId: string, date: string): string {
 
 export const useEntriesStore = defineStore('entries', {
   state: (): EntriesState => ({
-    entries: []
+    entries: [],
   }),
   getters: {
     entryLookup: (state): Map<string, HabitEntry> => {
@@ -26,16 +26,16 @@ export const useEntriesStore = defineStore('entries', {
     entryByHabitAndDate(): (habitId: string, date: string) => HabitEntry | undefined {
       return (habitId, date) => this.entryLookup.get(entryLookupKey(habitId, date))
     },
-    entriesForDate: (state) => (date: string): HabitEntry[] =>
-      state.entries.filter((entry) => entry.date === date),
+    entriesForDate: state => (date: string): HabitEntry[] =>
+      state.entries.filter(entry => entry.date === date),
     pendingReflectionEntries: (state): HabitEntry[] =>
       state.entries
-        .filter((entry) => entry.status === 'missed' && entry.missReasonCode === null)
+        .filter(entry => entry.status === 'missed' && entry.missReasonCode === null)
         .sort((left, right) => right.date.localeCompare(left.date)),
-    entriesByHabit: (state) => (habitId: string): HabitEntry[] =>
+    entriesByHabit: state => (habitId: string): HabitEntry[] =>
       state.entries
-        .filter((entry) => entry.habitId === habitId)
-        .sort((left, right) => left.date.localeCompare(right.date))
+        .filter(entry => entry.habitId === habitId)
+        .sort((left, right) => left.date.localeCompare(right.date)),
   },
   actions: {
     hydrate(entries: HabitEntry[]): void {
@@ -67,14 +67,14 @@ export const useEntriesStore = defineStore('entries', {
         status,
         completedAt,
         missReasonCode: null,
-        missReasonNote: null
+        missReasonNote: null,
       }
 
       this.entries.push(created)
       return created
     },
     removeEntry(entryId: string): HabitEntry | null {
-      const index = this.entries.findIndex((entry) => entry.id === entryId)
+      const index = this.entries.findIndex(entry => entry.id === entryId)
       if (index < 0) {
         return null
       }
@@ -83,7 +83,7 @@ export const useEntriesStore = defineStore('entries', {
       return removed ?? null
     },
     clearStatus(habitId: string, date: string): HabitEntry | null {
-      const index = this.entries.findIndex((entry) => entry.habitId === habitId && entry.date === date)
+      const index = this.entries.findIndex(entry => entry.habitId === habitId && entry.date === date)
       if (index < 0) {
         return null
       }
@@ -92,7 +92,7 @@ export const useEntriesStore = defineStore('entries', {
       return removed ?? null
     },
     setMissReason(entryId: string, reason: MissReasonCode, note: string | null): HabitEntry | null {
-      const entry = this.entries.find((candidate) => candidate.id === entryId)
+      const entry = this.entries.find(candidate => candidate.id === entryId)
       if (!entry) {
         return null
       }
@@ -104,7 +104,7 @@ export const useEntriesStore = defineStore('entries', {
     },
     ensureMissedEntries(habits: Habit[], currentDateKey: string): number {
       const latestHistoricalDate = addDays(currentDateKey, -1)
-      const existingLookup = new Set(this.entries.map((entry) => entryLookupKey(entry.habitId, entry.date)))
+      const existingLookup = new Set(this.entries.map(entry => entryLookupKey(entry.habitId, entry.date)))
       let createdCount = 0
 
       for (const habit of habits) {
@@ -134,7 +134,7 @@ export const useEntriesStore = defineStore('entries', {
             status: 'missed',
             completedAt: null,
             missReasonCode: null,
-            missReasonNote: null
+            missReasonNote: null,
           })
           existingLookup.add(lookupKey)
           createdCount += 1
@@ -170,13 +170,13 @@ export const useEntriesStore = defineStore('entries', {
     },
     completionRateForHabit(habit: Habit, fromDate: string, toDate: string): number {
       const dates = dateKeyRange(fromDate, toDate)
-      const dueDates = dates.filter((date) => isHabitDueOnDate(habit, date))
+      const dueDates = dates.filter(date => isHabitDueOnDate(habit, date))
 
       if (!dueDates.length) {
         return 0
       }
 
-      const doneCount = dueDates.filter((date) => this.entryByHabitAndDate(habit.id, date)?.status === 'done').length
+      const doneCount = dueDates.filter(date => this.entryByHabitAndDate(habit.id, date)?.status === 'done').length
       return Math.round((doneCount / dueDates.length) * 100)
     },
     reasonDistribution(): Record<string, number> {
@@ -191,6 +191,6 @@ export const useEntriesStore = defineStore('entries', {
       }
 
       return distribution
-    }
-  }
+    },
+  },
 })

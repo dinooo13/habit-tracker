@@ -3,7 +3,7 @@ import {
   recordSecurityEvent,
   type SecurityEvent,
   type SecurityEventLevel,
-  type SecurityEventType
+  type SecurityEventType,
 } from '~/utils/security-log'
 
 /**
@@ -15,7 +15,7 @@ export function useSecurityLog() {
   function logSecurityEvent(
     type: SecurityEventType,
     level: SecurityEventLevel = 'info',
-    detail?: string
+    detail?: string,
   ): SecurityEvent {
     return recordSecurityEvent(type, level, detail)
   }
@@ -26,6 +26,6 @@ export function useSecurityLog() {
 
   return {
     logSecurityEvent,
-    recentEvents
+    recentEvents,
   }
 }

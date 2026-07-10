@@ -41,13 +41,15 @@ export function useStorageHealth(): StorageHealth {
         warnedQuota.value = true
         const ratio = (estimate.usage ?? 0) / (estimate.quota ?? 1)
         logSecurityEvent('storage.quota_low', 'warn', `Storage usage at ${Math.round(ratio * 100)}% of quota`)
-      } else if (!low) {
+      }
+      else if (!low) {
         // Reset the one-shot guard once we drop back below the threshold.
         warnedQuota.value = false
       }
 
       return low
-    } catch {
+    }
+    catch {
       // estimate() may reject or be blocked; treat as non-fatal.
       return false
     }

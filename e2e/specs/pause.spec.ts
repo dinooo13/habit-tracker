@@ -8,7 +8,7 @@ test.describe('Pause mode', () => {
       name: 'Daily journal',
       scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
       startDate: addDaysKey(todayKey(), -10),
-      pauses: [{ start: addDaysKey(todayKey(), -2), end: addDaysKey(todayKey(), 2) }]
+      pauses: [{ start: addDaysKey(todayKey(), -2), end: addDaysKey(todayKey(), 2) }],
     })
     await seed(makeAppData({ habits: [habit] }))
 

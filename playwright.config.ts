@@ -29,19 +29,19 @@ export default defineConfig({
     // an init script (see e2e/support/fixtures.ts). Login itself is tested
     // explicitly in auth.spec.ts.
     locale: 'en-US',
-    timezoneId: 'UTC'
+    timezoneId: 'UTC',
   },
 
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'] },
     },
     {
       // One mobile viewport project to exercise MobileBottomNav.vue.
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 7'] }
-    }
+      use: { ...devices['Pixel 7'] },
+    },
   ],
 
   webServer: {
@@ -51,6 +51,6 @@ export default defineConfig({
     timeout: 180_000,
     stdout: 'pipe',
     stderr: 'pipe',
-    env: { NUXT_TELEMETRY_DISABLED: '1' }
-  }
+    env: { NUXT_TELEMETRY_DISABLED: '1' },
+  },
 })

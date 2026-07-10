@@ -13,7 +13,7 @@ test.describe('Habit CRUD', () => {
       name: 'Read 10 pages',
       identityStatement: 'I am a daily learner.',
       startDate: addDaysKey(todayKey(), -1),
-      weekdays: [0, 1, 2, 3, 4, 5, 6]
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
     })
     await form.submit()
 
@@ -36,7 +36,7 @@ test.describe('Habit CRUD', () => {
       type: 'break',
       name: 'No late-night snacks',
       identityStatement: 'I protect my sleep.',
-      weekdays: [0, 1, 2, 3, 4, 5, 6]
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
     })
     await form.submit()
 
@@ -86,7 +86,7 @@ test.describe('Habit CRUD', () => {
     const habit = makeHabit({
       name: 'Evening walk',
       scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
-      startDate: addDaysKey(todayKey(), -2)
+      startDate: addDaysKey(todayKey(), -2),
     })
     await seed(makeAppData({ habits: [habit] }))
     await page.goto('/app/habits')

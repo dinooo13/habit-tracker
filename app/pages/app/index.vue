@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import type { TabsItem } from '@nuxt/ui'
 import {
   addDays,
@@ -11,8 +9,10 @@ import {
   formatTimeString,
   isDateInHabitPause,
   relativeDayLabel,
-  todayDateKey
+  todayDateKey,
 } from '~/utils/date'
+
+definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
@@ -37,16 +37,16 @@ const displayDate = computed(() =>
   formatDateKeyForLocale(selectedDateKey.value, dateLocale.value, {
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
-  })
+    year: 'numeric',
+  }),
 )
 const relativeLabel = computed(() =>
-  relativeDayLabel(selectedDateKey.value, today, dateLocale.value)
+  relativeDayLabel(selectedDateKey.value, today, dateLocale.value),
 )
 
 // Earliest date a habit could have an entry, used to bound the calendar.
 const earliestHabitStart = computed(() => {
-  const starts = habitsStore.habits.map((habit) => habit.startDate)
+  const starts = habitsStore.habits.map(habit => habit.startDate)
   if (!starts.length) {
     return null
   }
@@ -60,15 +60,15 @@ const calendarValue = computed({
     if (value) {
       selectDate(calendarDateToDateKey(value))
     }
-  }
+  },
 })
 const calendarMaxValue = computed(() => dateKeyToCalendarDate(today) ?? undefined)
 const calendarMinValue = computed(() =>
-  earliestHabitStart.value ? dateKeyToCalendarDate(earliestHabitStart.value) ?? undefined : undefined
+  earliestHabitStart.value ? dateKeyToCalendarDate(earliestHabitStart.value) ?? undefined : undefined,
 )
 const canGoNext = computed(() => isViewingPast.value)
 const canGoPrev = computed(() =>
-  !earliestHabitStart.value || compareDateKeys(addDays(selectedDateKey.value, -1), earliestHabitStart.value) >= 0
+  !earliestHabitStart.value || compareDateKeys(addDays(selectedDateKey.value, -1), earliestHabitStart.value) >= 0,
 )
 
 const datePickerOpen = ref(false)
@@ -104,26 +104,26 @@ const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))
 // are currently inside a pause range (ADR-0010). Surfaced so a quiet queue is
 // explained rather than mysterious.
 const pausedHabitsForDate = computed(() =>
-  habitsStore.activeHabits.filter((habit) => isDateInHabitPause(habit, dateKey.value))
+  habitsStore.activeHabits.filter(habit => isDateInHabitPause(habit, dateKey.value)),
 )
 
 const dueHabitModels = computed(() =>
-  dueHabits.value.map((habit) => ({
+  dueHabits.value.map(habit => ({
     habit,
-    entry: entriesStore.entryByHabitAndDate(habit.id, dateKey.value)
-  }))
+    entry: entriesStore.entryByHabitAndDate(habit.id, dateKey.value),
+  })),
 )
 
 const doneCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'done').length
+  () => dueHabitModels.value.filter(model => model.entry?.status === 'done').length,
 )
 
 const skippedCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'skipped').length
+  () => dueHabitModels.value.filter(model => model.entry?.status === 'skipped').length,
 )
 
 const missedCount = computed(
-  () => dueHabitModels.value.filter((model) => model.entry?.status === 'missed').length
+  () => dueHabitModels.value.filter(model => model.entry?.status === 'missed').length,
 )
 
 const reviewedCount = computed(() => doneCount.value + skippedCount.value + missedCount.value)
@@ -139,29 +139,29 @@ const queueProgressValue = computed(() => {
 const pendingReflections = computed(() => entriesStore.pendingReflectionEntries)
 const activeHabitStreaks = computed(() =>
   habitsStore.habits
-    .filter((habit) => !habit.archived)
-    .map((habit) => ({
+    .filter(habit => !habit.archived)
+    .map(habit => ({
       id: habit.id,
       name: habit.name,
       type: habit.type,
-      streak: entriesStore.streakForHabit(habit.id)
+      streak: entriesStore.streakForHabit(habit.id),
     }))
-    .sort((left, right) => right.streak - left.streak || left.name.localeCompare(right.name))
+    .sort((left, right) => right.streak - left.streak || left.name.localeCompare(right.name)),
 )
-const activeStreakCount = computed(() => activeHabitStreaks.value.filter((item) => item.streak > 0).length)
+const activeStreakCount = computed(() => activeHabitStreaks.value.filter(item => item.streak > 0).length)
 const activeStreakCountLabel = computed(() =>
-  activeStreakCount.value > 99 ? '99+' : String(activeStreakCount.value)
+  activeStreakCount.value > 99 ? '99+' : String(activeStreakCount.value),
 )
 
 const tabItems: TabsItem[] = [
   { label: 'Open', icon: 'i-lucide-clock-3', slot: 'open', value: 'open' },
-  { label: 'Reviewed', icon: 'i-lucide-list-checks', slot: 'all', value: 'all' }
+  { label: 'Reviewed', icon: 'i-lucide-list-checks', slot: 'all', value: 'all' },
 ]
 
 const tabsUi = {
   list: 'grid w-full grid-cols-2',
   trigger: 'min-w-0 justify-center py-1 text-sm leading-none !font-medium data-[state=active]:!font-medium',
-  label: 'truncate whitespace-nowrap'
+  label: 'truncate whitespace-nowrap',
 }
 const rightBadgeClass = 'w-[50px] justify-center text-center whitespace-nowrap tabular-nums text-xs'
 const actionRowClass = 'flex flex-wrap items-center gap-2'
@@ -177,27 +177,27 @@ const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warn
     color: 'primary',
     cardClass: 'border-primary',
     dotClass: 'bg-primary',
-    badgeVariant: 'soft'
+    badgeVariant: 'soft',
   },
   break: {
     label: 'Break',
     color: 'warning',
     cardClass: 'border-warning',
     dotClass: 'bg-warning',
-    badgeVariant: 'soft'
-  }
+    badgeVariant: 'soft',
+  },
 }
 
 const statusMeta: Record<QueueStatus, { label: string, color: 'primary' | 'success' | 'warning' | 'neutral', variant: 'outline' | 'subtle' }> = {
   open: { label: 'Open', color: 'primary', variant: 'outline' },
   done: { label: 'Done', color: 'success', variant: 'subtle' },
   missed: { label: 'Missed', color: 'warning', variant: 'subtle' },
-  skipped: { label: 'Skipped', color: 'neutral', variant: 'subtle' }
+  skipped: { label: 'Skipped', color: 'neutral', variant: 'subtle' },
 }
 const reviewedStatusOrder: Record<ReviewedStatus, number> = {
   done: 0,
   missed: 1,
-  skipped: 2
+  skipped: 2,
 }
 
 function reminderSortValue(reminderTime: string | null): number {
@@ -217,7 +217,7 @@ function reminderSortValue(reminderTime: string | null): number {
 
 function compareByReminderThenName(
   left: (typeof dueHabitModels.value)[number],
-  right: (typeof dueHabitModels.value)[number]
+  right: (typeof dueHabitModels.value)[number],
 ): number {
   return (
     reminderSortValue(left.habit.reminderTime) - reminderSortValue(right.habit.reminderTime)
@@ -227,13 +227,13 @@ function compareByReminderThenName(
 
 const openHabits = computed(() =>
   dueHabitModels.value
-    .filter((model) => !model.entry)
-    .sort(compareByReminderThenName)
+    .filter(model => !model.entry)
+    .sort(compareByReminderThenName),
 )
 
 const reviewedHabits = computed(() =>
   dueHabitModels.value
-    .filter((model) => Boolean(model.entry))
+    .filter(model => Boolean(model.entry))
     .sort((left, right) => {
       const leftStatus = left.entry?.status
       const rightStatus = right.entry?.status
@@ -244,7 +244,7 @@ const reviewedHabits = computed(() =>
         leftStatusRank - rightStatusRank
         || compareByReminderThenName(left, right)
       )
-    })
+    }),
 )
 
 function queueStatus(status: 'done' | 'missed' | 'skipped' | undefined): QueueStatus {
@@ -260,8 +260,8 @@ const toast = useToast()
 function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'): void {
   entriesStore.setStatus(habitId, dateKey.value, status)
 
-  const title =
-    status === 'done'
+  const title
+    = status === 'done'
       ? 'Nice work'
       : status === 'missed'
         ? 'Marked as missed'
@@ -303,7 +303,9 @@ function reopenHabit(habitId: string): void {
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="space-y-1">
-              <p class="text-sm text-muted">{{ relativeLabel }}</p>
+              <p class="text-sm text-muted">
+                {{ relativeLabel }}
+              </p>
               <div class="flex items-center gap-1">
                 <UButton
                   color="neutral"
@@ -345,8 +347,15 @@ function reopenHabit(habitId: string): void {
                   @click="goToNextDay"
                 />
               </div>
-              <div v-if="isViewingPast" class="flex items-center gap-2">
-                <UBadge color="warning" variant="subtle" icon="i-lucide-history">
+              <div
+                v-if="isViewingPast"
+                class="flex items-center gap-2"
+              >
+                <UBadge
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-history"
+                >
                   Viewing a past day
                 </UBadge>
                 <UButton
@@ -372,9 +381,14 @@ function reopenHabit(habitId: string): void {
         </template>
 
         <div class="space-y-3">
-          <div v-if="activeHabitStreaks.length" class="space-y-2">
+          <div
+            v-if="activeHabitStreaks.length"
+            class="space-y-2"
+          >
             <div class="flex items-center justify-between text-xs text-muted">
-              <p class="font-medium uppercase tracking-wide">Active streaks</p>
+              <p class="font-medium uppercase tracking-wide">
+                Active streaks
+              </p>
               <p>{{ activeHabitStreaks.length }} habits</p>
             </div>
 
@@ -385,7 +399,11 @@ function reopenHabit(habitId: string): void {
                 class="w-36 shrink-0 rounded-md border border-default/80 bg-elevated/60 px-2 py-1.5"
               >
                 <div class="flex items-baseline gap-2">
-                  <span class="-translate-y-[1px] size-1.5 shrink-0 rounded-full" :class="typeMeta(item.type).dotClass" aria-hidden="true" />
+                  <span
+                    class="-translate-y-[1px] size-1.5 shrink-0 rounded-full"
+                    :class="typeMeta(item.type).dotClass"
+                    aria-hidden="true"
+                  />
                   <p
                     class="min-w-0 text-xs font-medium leading-tight [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
                   >
@@ -393,7 +411,10 @@ function reopenHabit(habitId: string): void {
                   </p>
                 </div>
                 <div class="mt-1 flex items-center gap-1 text-xs text-muted">
-                  <UIcon name="i-lucide-flame" class="size-3.5" />
+                  <UIcon
+                    name="i-lucide-flame"
+                    class="size-3.5"
+                  />
                   <span>{{ item.streak }}d streak</span>
                 </div>
               </div>
@@ -407,13 +428,22 @@ function reopenHabit(habitId: string): void {
           <UProgress :model-value="queueProgressValue" />
 
           <div class="flex flex-wrap items-center gap-2">
-            <UBadge color="success" variant="subtle">
+            <UBadge
+              color="success"
+              variant="subtle"
+            >
               Done: {{ doneCount }}
             </UBadge>
-            <UBadge color="neutral" variant="subtle">
+            <UBadge
+              color="neutral"
+              variant="subtle"
+            >
               Skipped: {{ skippedCount }}
             </UBadge>
-            <UBadge color="warning" variant="subtle">
+            <UBadge
+              color="warning"
+              variant="subtle"
+            >
               Missed: {{ missedCount }}
             </UBadge>
           </div>
@@ -454,8 +484,13 @@ function reopenHabit(habitId: string): void {
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-list-todo" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">{{ isToday ? "Today's habit queue" : 'Habit queue' }}</h2>
+            <UIcon
+              name="i-lucide-list-todo"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              {{ isToday ? "Today's habit queue" : 'Habit queue' }}
+            </h2>
           </div>
         </template>
 
@@ -495,10 +530,18 @@ function reopenHabit(habitId: string): void {
                   <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1">
                       <div class="flex items-center gap-2">
-                        <span class="size-2 rounded-full" :class="typeMeta(model.habit.type).dotClass" aria-hidden="true" />
-                        <h3 class="font-semibold">{{ model.habit.name }}</h3>
+                        <span
+                          class="size-2 rounded-full"
+                          :class="typeMeta(model.habit.type).dotClass"
+                          aria-hidden="true"
+                        />
+                        <h3 class="font-semibold">
+                          {{ model.habit.name }}
+                        </h3>
                       </div>
-                      <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
+                      <p class="text-sm text-muted">
+                        {{ model.habit.identityStatement }}
+                      </p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-1.5">
                       <UBadge
@@ -508,13 +551,20 @@ function reopenHabit(habitId: string): void {
                       >
                         {{ typeMeta(model.habit.type).label }}
                       </UBadge>
-                      <UBadge color="neutral" variant="soft" :class="rightBadgeClass">
+                      <UBadge
+                        color="neutral"
+                        variant="soft"
+                        :class="rightBadgeClass"
+                      >
                         {{ reminderLabel(model.habit.reminderTime) }}
                       </UBadge>
                     </div>
                   </div>
 
-                  <div v-if="model.entry" :class="actionRowClass">
+                  <div
+                    v-if="model.entry"
+                    :class="actionRowClass"
+                  >
                     <UBadge
                       :color="statusMeta[queueStatus(model.entry.status)].color"
                       :variant="statusMeta[queueStatus(model.entry.status)].variant"
@@ -556,10 +606,18 @@ function reopenHabit(habitId: string): void {
                   <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1">
                       <div class="flex items-center gap-2">
-                        <span class="size-2 rounded-full" :class="typeMeta(model.habit.type).dotClass" aria-hidden="true" />
-                        <h3 class="font-semibold">{{ model.habit.name }}</h3>
+                        <span
+                          class="size-2 rounded-full"
+                          :class="typeMeta(model.habit.type).dotClass"
+                          aria-hidden="true"
+                        />
+                        <h3 class="font-semibold">
+                          {{ model.habit.name }}
+                        </h3>
                       </div>
-                      <p class="text-sm text-muted">{{ model.habit.identityStatement }}</p>
+                      <p class="text-sm text-muted">
+                        {{ model.habit.identityStatement }}
+                      </p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-1.5">
                       <UBadge
@@ -569,7 +627,11 @@ function reopenHabit(habitId: string): void {
                       >
                         {{ typeMeta(model.habit.type).label }}
                       </UBadge>
-                      <UBadge color="neutral" variant="soft" :class="rightBadgeClass">
+                      <UBadge
+                        color="neutral"
+                        variant="soft"
+                        :class="rightBadgeClass"
+                      >
                         {{ reminderLabel(model.habit.reminderTime) }}
                       </UBadge>
                     </div>
@@ -577,16 +639,33 @@ function reopenHabit(habitId: string): void {
 
                   <div :class="actionRowClass">
                     <UTooltip text="Mark completed">
-                      <UButton size="sm" color="success" icon="i-lucide-check" @click="setHabitStatus(model.habit.id, 'done')">
+                      <UButton
+                        size="sm"
+                        color="success"
+                        icon="i-lucide-check"
+                        @click="setHabitStatus(model.habit.id, 'done')"
+                      >
                         Done
                       </UButton>
                     </UTooltip>
                     <UTooltip text="Mark missed">
-                      <UButton size="sm" color="warning" variant="soft" icon="i-lucide-alert-circle" @click="setHabitStatus(model.habit.id, 'missed')">
+                      <UButton
+                        size="sm"
+                        color="warning"
+                        variant="soft"
+                        icon="i-lucide-alert-circle"
+                        @click="setHabitStatus(model.habit.id, 'missed')"
+                      >
                         Missed
                       </UButton>
                     </UTooltip>
-                    <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-skip-forward" @click="setHabitStatus(model.habit.id, 'skipped')">
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-skip-forward"
+                      @click="setHabitStatus(model.habit.id, 'skipped')"
+                    >
                       Skip
                     </UButton>
                   </div>

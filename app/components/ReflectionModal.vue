@@ -11,17 +11,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  submit: [payload: { reason: MissReasonCode; note: string | null; action: 'close' | 'next' }]
+  'submit': [payload: { reason: MissReasonCode, note: string | null, action: 'close' | 'next' }]
 }>()
 
 const state = reactive({
   reason: 'forgot' as MissReasonCode,
-  note: ''
+  note: '',
 })
 
-const reasonItems = MISS_REASON_CODES.map((code) => ({
+const reasonItems = MISS_REASON_CODES.map(code => ({
   label: MISS_REASON_LABELS[code],
-  value: code
+  value: code,
 }))
 
 watch(
@@ -31,21 +31,26 @@ watch(
       state.reason = 'forgot'
       state.note = ''
     }
-  }
+  },
 )
 
 function submit(action: 'close' | 'next'): void {
   emit('submit', {
     reason: state.reason,
     note: state.note.trim() || null,
-    action
+    action,
   })
   emit('update:open', false)
 }
 </script>
 
 <template>
-  <UModal :open="open" title="Missed habit reflection" description="Capture why this slipped so the coach can suggest better tactics." @update:open="emit('update:open', $event)">
+  <UModal
+    :open="open"
+    title="Missed habit reflection"
+    description="Capture why this slipped so the coach can suggest better tactics."
+    @update:open="emit('update:open', $event)"
+  >
     <template #body>
       <div class="space-y-4">
         <UAlert
@@ -56,8 +61,16 @@ function submit(action: 'close' | 'next'): void {
           :description="`Scheduled for ${date}`"
         />
 
-        <UFormField label="Why did this habit miss?" required>
-          <USelect v-model="state.reason" :items="reasonItems" value-key="value" class="w-full" />
+        <UFormField
+          label="Why did this habit miss?"
+          required
+        >
+          <USelect
+            v-model="state.reason"
+            :items="reasonItems"
+            value-key="value"
+            class="w-full"
+          />
         </UFormField>
 
         <UFormField label="Optional details">
@@ -73,14 +86,33 @@ function submit(action: 'close' | 'next'): void {
 
     <template #footer>
       <div class="flex w-full justify-end gap-2">
-        <UButton color="neutral" variant="ghost" @click="emit('update:open', false)">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="emit('update:open', false)"
+        >
           Cancel
         </UButton>
-        <UButton color="neutral" variant="outline" size="sm" class="whitespace-nowrap" icon="i-lucide-check" @click="submit('close')">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          class="whitespace-nowrap"
+          icon="i-lucide-check"
+          @click="submit('close')"
+        >
           Save
         </UButton>
-        <UTooltip v-if="hasNext" text="Saves and opens next reflection">
-          <UButton size="sm" class="whitespace-nowrap" icon="i-lucide-arrow-right" @click="submit('next')">
+        <UTooltip
+          v-if="hasNext"
+          text="Saves and opens next reflection"
+        >
+          <UButton
+            size="sm"
+            class="whitespace-nowrap"
+            icon="i-lucide-arrow-right"
+            @click="submit('next')"
+          >
             Next
           </UButton>
         </UTooltip>

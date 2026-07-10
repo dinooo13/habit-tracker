@@ -7,4 +7,16 @@
 // requires it — no blanket source exclusions.
 import withNuxt from './.nuxt/eslint.config.mjs'
 
-export default withNuxt()
+export default withNuxt(
+  {
+    // Unit (Vitest) and e2e (Playwright) tests deliberately construct mock
+    // stores, malformed payloads, and mock storage. `any` casts and dynamic
+    // `delete` are intentional characterization tools here, not production
+    // patterns, so relax these two rules for test code only.
+    files: ['tests/**/*.ts', 'e2e/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-dynamic-delete': 'off',
+    },
+  },
+)

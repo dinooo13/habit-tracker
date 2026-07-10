@@ -16,7 +16,7 @@ function buildHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-02-08T00:00:00.000Z',
     updatedAt: '2026-02-08T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -29,7 +29,7 @@ function buildEntry(overrides: Partial<HabitEntry> = {}): HabitEntry {
     completedAt: '2026-02-08T10:00:00.000Z',
     missReasonCode: null,
     missReasonNote: null,
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -211,7 +211,7 @@ describe('entries store — ensureMissedEntries', () => {
     const habit = buildHabit({
       id: 'habit_mon',
       startDate: '2026-02-02',
-      scheduleWeekdays: [1] // Mondays only
+      scheduleWeekdays: [1], // Mondays only
     })
 
     const count = store.ensureMissedEntries([habit], '2026-02-10')
@@ -219,8 +219,8 @@ describe('entries store — ensureMissedEntries', () => {
     expect(count).toBe(2)
     const entries = store.entriesByHabit('habit_mon')
     expect(entries).toHaveLength(2)
-    expect(entries.map((e) => e.date).sort()).toEqual(['2026-02-02', '2026-02-09'])
-    expect(entries.every((e) => e.status === 'missed')).toBe(true)
+    expect(entries.map(e => e.date).sort()).toEqual(['2026-02-02', '2026-02-09'])
+    expect(entries.every(e => e.status === 'missed')).toBe(true)
   })
 
   it('never creates an entry for currentDateKey itself (today)', () => {
@@ -295,7 +295,7 @@ describe('entries store — streakForHabit', () => {
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'done' }),
       buildEntry({ id: 'e2', date: '2026-02-07', status: 'done' }),
-      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' })
+      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' }),
     ])
 
     expect(store.streakForHabit('habit_1')).toBe(3)
@@ -312,7 +312,7 @@ describe('entries store — streakForHabit', () => {
       buildEntry({ id: 'e1', date: '2026-02-05', status: 'done' }),
       buildEntry({ id: 'e2', date: '2026-02-06', status: 'done' }),
       buildEntry({ id: 'e3', date: '2026-02-07', status: 'missed' }),
-      buildEntry({ id: 'e4', date: '2026-02-08', status: 'missed' })
+      buildEntry({ id: 'e4', date: '2026-02-08', status: 'missed' }),
     ])
 
     // NOTE: The streak algorithm iterates from the end backwards. It skips non-done
@@ -327,7 +327,7 @@ describe('entries store — streakForHabit', () => {
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'done' }),
       buildEntry({ id: 'e2', date: '2026-02-07', status: 'missed' }),
-      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' })
+      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' }),
     ])
 
     expect(store.streakForHabit('habit_1')).toBe(1)
@@ -338,7 +338,7 @@ describe('entries store — streakForHabit', () => {
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'done' }),
       buildEntry({ id: 'e2', date: '2026-02-07', status: 'skipped' }),
-      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' })
+      buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' }),
     ])
 
     expect(store.streakForHabit('habit_1')).toBe(1)
@@ -368,7 +368,7 @@ describe('entries store — completionRateForHabit', () => {
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-09', status: 'done', habitId: 'habit_1' }),
       buildEntry({ id: 'e2', date: '2026-02-10', status: 'done', habitId: 'habit_1' }),
-      buildEntry({ id: 'e3', date: '2026-02-11', status: 'missed', habitId: 'habit_1' })
+      buildEntry({ id: 'e3', date: '2026-02-11', status: 'missed', habitId: 'habit_1' }),
     ])
 
     const rate = store.completionRateForHabit(habit, '2026-02-09', '2026-02-11')
@@ -381,7 +381,7 @@ describe('entries store — completionRateForHabit', () => {
     const habit = buildHabit({ scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-02-09' })
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-09', status: 'done', habitId: 'habit_1' }),
-      buildEntry({ id: 'e2', date: '2026-02-10', status: 'done', habitId: 'habit_1' })
+      buildEntry({ id: 'e2', date: '2026-02-10', status: 'done', habitId: 'habit_1' }),
     ])
 
     const rate = store.completionRateForHabit(habit, '2026-02-09', '2026-02-10')
@@ -394,7 +394,7 @@ describe('entries store — completionRateForHabit', () => {
     const habit = buildHabit({ scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-02-09' })
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-09', status: 'missed', habitId: 'habit_1' }),
-      buildEntry({ id: 'e2', date: '2026-02-10', status: 'skipped', habitId: 'habit_1' })
+      buildEntry({ id: 'e2', date: '2026-02-10', status: 'skipped', habitId: 'habit_1' }),
     ])
 
     const rate = store.completionRateForHabit(habit, '2026-02-09', '2026-02-10')
@@ -414,13 +414,13 @@ describe('entries store — pendingReflectionEntries', () => {
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'missed', completedAt: null, missReasonCode: null }),
       buildEntry({ id: 'e2', date: '2026-02-07', status: 'missed', completedAt: null, missReasonCode: 'forgot' }),
       buildEntry({ id: 'e3', date: '2026-02-08', status: 'done' }),
-      buildEntry({ id: 'e4', date: '2026-02-09', status: 'missed', completedAt: null, missReasonCode: null })
+      buildEntry({ id: 'e4', date: '2026-02-09', status: 'missed', completedAt: null, missReasonCode: null }),
     ])
 
     const pending = store.pendingReflectionEntries
 
     expect(pending).toHaveLength(2)
-    expect(pending.every((e) => e.status === 'missed' && e.missReasonCode === null)).toBe(true)
+    expect(pending.every(e => e.status === 'missed' && e.missReasonCode === null)).toBe(true)
   })
 
   it('sorts pending reflection entries by date descending', () => {
@@ -428,12 +428,12 @@ describe('entries store — pendingReflectionEntries', () => {
     store.hydrate([
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'missed', completedAt: null, missReasonCode: null }),
       buildEntry({ id: 'e2', date: '2026-02-09', status: 'missed', completedAt: null, missReasonCode: null }),
-      buildEntry({ id: 'e3', date: '2026-02-07', status: 'missed', completedAt: null, missReasonCode: null })
+      buildEntry({ id: 'e3', date: '2026-02-07', status: 'missed', completedAt: null, missReasonCode: null }),
     ])
 
     const pending = store.pendingReflectionEntries
 
-    expect(pending.map((e) => e.date)).toEqual(['2026-02-09', '2026-02-07', '2026-02-06'])
+    expect(pending.map(e => e.date)).toEqual(['2026-02-09', '2026-02-07', '2026-02-06'])
   })
 
   it('returns empty array when no pending reflections exist', () => {
@@ -490,7 +490,7 @@ describe('entries store — reasonDistribution', () => {
       buildEntry({ id: 'e1', date: '2026-02-06', status: 'missed', completedAt: null, missReasonCode: 'forgot' }),
       buildEntry({ id: 'e2', date: '2026-02-07', status: 'missed', completedAt: null, missReasonCode: 'no_time' }),
       buildEntry({ id: 'e3', date: '2026-02-08', status: 'missed', completedAt: null, missReasonCode: 'forgot' }),
-      buildEntry({ id: 'e4', date: '2026-02-09', status: 'missed', completedAt: null, missReasonCode: null })
+      buildEntry({ id: 'e4', date: '2026-02-09', status: 'missed', completedAt: null, missReasonCode: null }),
     ])
 
     const dist = store.reasonDistribution()
@@ -507,7 +507,7 @@ describe('entries store — reasonDistribution', () => {
   it('skips entries whose missReasonCode is null', () => {
     const store = useEntriesStore()
     store.hydrate([
-      buildEntry({ id: 'e1', date: '2026-02-08', status: 'missed', completedAt: null, missReasonCode: null })
+      buildEntry({ id: 'e1', date: '2026-02-08', status: 'missed', completedAt: null, missReasonCode: null }),
     ])
 
     expect(store.reasonDistribution()).toEqual({})

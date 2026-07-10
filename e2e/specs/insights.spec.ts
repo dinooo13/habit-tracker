@@ -24,7 +24,7 @@ test.describe('Insights', () => {
 async function primaryColor500(page: import('@playwright/test').Page): Promise<string> {
   return (
     await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--ui-color-primary-500').trim()
+      getComputedStyle(document.documentElement).getPropertyValue('--ui-color-primary-500').trim(),
     )
   )
 }

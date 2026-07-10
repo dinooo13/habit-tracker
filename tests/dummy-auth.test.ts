@@ -6,7 +6,7 @@ import {
   isSafeInternalRedirect,
   readDummyAuth,
   resolveRedirectTarget,
-  writeDummyAuth
+  writeDummyAuth,
 } from '~/utils/dummy-auth'
 
 function createStorage(initial: Record<string, string> = {}) {
@@ -22,7 +22,7 @@ function createStorage(initial: Record<string, string> = {}) {
     },
     removeItem(key: string): void {
       delete data[key]
-    }
+    },
   }
 }
 
@@ -58,7 +58,7 @@ describe('dummy auth session expiry (SEC-03)', () => {
   it('reads true for a flag with an unexpired expiry stamp', () => {
     const storage = createStorage({
       [DUMMY_AUTH_STORAGE_KEY]: '1',
-      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now + 1000)
+      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now + 1000),
     })
 
     expect(readDummyAuth(storage)).toBe(true)
@@ -69,7 +69,7 @@ describe('dummy auth session expiry (SEC-03)', () => {
   it('reads false and clears keys once the expiry has passed', () => {
     const storage = createStorage({
       [DUMMY_AUTH_STORAGE_KEY]: '1',
-      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now - 1)
+      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now - 1),
     })
 
     expect(readDummyAuth(storage)).toBe(false)
@@ -84,7 +84,7 @@ describe('dummy auth session expiry (SEC-03)', () => {
 
     const nan = createStorage({
       [DUMMY_AUTH_STORAGE_KEY]: '1',
-      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: 'not-a-number'
+      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: 'not-a-number',
     })
     expect(readDummyAuth(nan)).toBe(false)
     expect(nan.data[DUMMY_AUTH_STORAGE_KEY]).toBeUndefined()
@@ -119,7 +119,7 @@ describe('dummy auth session expiry (SEC-03)', () => {
   it('clears both keys on logout', () => {
     const storage = createStorage({
       [DUMMY_AUTH_STORAGE_KEY]: '1',
-      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now + 1000)
+      [DUMMY_AUTH_EXPIRY_STORAGE_KEY]: String(now + 1000),
     })
 
     writeDummyAuth(storage, false)

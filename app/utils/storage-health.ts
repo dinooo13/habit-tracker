@@ -22,7 +22,7 @@ export function isQuotaExceededError(error: unknown): boolean {
  * Decide whether a `navigator.storage.estimate()` result indicates low storage.
  * Returns `false` defensively when either figure is missing or zero.
  */
-export function isQuotaLowFromEstimate(estimate: { usage?: number; quota?: number } | null | undefined): boolean {
+export function isQuotaLowFromEstimate(estimate: { usage?: number, quota?: number } | null | undefined): boolean {
   if (!estimate) {
     return false
   }

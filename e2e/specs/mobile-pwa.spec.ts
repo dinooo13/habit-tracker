@@ -3,7 +3,7 @@ import { test, expect } from '../support/fixtures'
 test.describe('PWA / shell', () => {
   test('the app shell loads and PWA assets are served', async ({ authedPage: page }) => {
     await page.goto('/app')
-    await expect(page.getByRole('heading', { name: "Today's habit queue" })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Today\'s habit queue' })).toBeVisible()
 
     // The PWA manifest is generated and served by the preview build. (With SSR
     // disabled the <link> is injected client-side, so fetch the endpoint.)

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import type { CoachingSuggestion, MissReasonCode } from '~/types/app-data'
 import { MISS_REASON_LABELS } from '~/utils/atomic-rules'
 import { addDays, compareDateKeys, todayDateKey } from '~/utils/date'
+
+definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
@@ -12,11 +12,11 @@ const toast = useToast()
 
 const pendingModels = computed(() =>
   entriesStore.pendingReflectionEntries
-    .map((entry) => ({
+    .map(entry => ({
       entry,
-      habit: habitsStore.habitById(entry.habitId)
+      habit: habitsStore.habitById(entry.habitId),
     }))
-    .filter((model) => Boolean(model.habit))
+    .filter(model => Boolean(model.habit)),
 )
 
 const pendingHabitGroups = computed(() => {
@@ -38,7 +38,7 @@ const pendingHabitGroups = computed(() => {
       habitId: habit.id,
       habitName: habit.name,
       entryIds: [model.entry.id],
-      latestDate: model.entry.date
+      latestDate: model.entry.date,
     })
   }
 
@@ -57,21 +57,21 @@ watch(
       return
     }
 
-    if (!selectedEntryId.value || !models.some((model) => model.entry.id === selectedEntryId.value)) {
+    if (!selectedEntryId.value || !models.some(model => model.entry.id === selectedEntryId.value)) {
       const firstModel = models.at(0)
       if (firstModel) {
         selectedEntryId.value = firstModel.entry.id
       }
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const selectedModel = computed(() =>
-  pendingModels.value.find((model) => model.entry.id === selectedEntryId.value) ?? null
+  pendingModels.value.find(model => model.entry.id === selectedEntryId.value) ?? null,
 )
 const hasNextPending = computed(
-  () => Boolean(selectedEntryId.value) && pendingModels.value.some((model) => model.entry.id !== selectedEntryId.value)
+  () => Boolean(selectedEntryId.value) && pendingModels.value.some(model => model.entry.id !== selectedEntryId.value),
 )
 
 interface SuggestionGroup {
@@ -84,7 +84,7 @@ interface SuggestionGroup {
 const suggestionsCutoffDate = computed(() => addDays(todayDateKey(), -6))
 const suggestionGroups = computed<SuggestionGroup[]>(() => {
   const sorted = [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
-  const entriesById = new Map(entriesStore.entries.map((entry) => [entry.id, entry]))
+  const entriesById = new Map(entriesStore.entries.map(entry => [entry.id, entry]))
   const groups = new Map<
     string,
     {
@@ -121,15 +121,15 @@ const suggestionGroups = computed<SuggestionGroup[]>(() => {
       habitId: habit.id,
       habitName: habit.name,
       suggestions: [suggestion],
-      missedEntryIds: new Set([entry.id])
+      missedEntryIds: new Set([entry.id]),
     })
   }
 
-  return [...groups.values()].map((group) => ({
+  return [...groups.values()].map(group => ({
     habitId: group.habitId,
     habitName: group.habitName,
     suggestions: group.suggestions,
-    missedCount: group.missedEntryIds.size
+    missedCount: group.missedEntryIds.size,
   }))
 })
 
@@ -210,16 +210,16 @@ function openLatestReflection(entryIds: string[]): void {
   openReflection(entryId)
 }
 
-function submitReflection(payload: { reason: MissReasonCode; note: string | null; action: 'close' | 'next' }): void {
+function submitReflection(payload: { reason: MissReasonCode, note: string | null, action: 'close' | 'next' }): void {
   const model = selectedModel.value
   if (!model?.habit) {
     return
   }
 
   const currentEntryId = model.entry.id
-  const nextEntryId =
-    payload.action === 'next'
-      ? pendingModels.value.find((model) => model.entry.id !== currentEntryId)?.entry.id ?? null
+  const nextEntryId
+    = payload.action === 'next'
+      ? pendingModels.value.find(model => model.entry.id !== currentEntryId)?.entry.id ?? null
       : null
 
   const entry = entriesStore.setMissReason(model.entry.id, payload.reason, payload.note)
@@ -235,17 +235,17 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
       remaining > 0
         ? `Reason captured: ${MISS_REASON_LABELS[payload.reason]} · ${remaining} remaining`
         : `Reason captured: ${MISS_REASON_LABELS[payload.reason]} · all done`,
-    color: 'success'
+    color: 'success',
   })
 
   if (nextEntryId) {
     selectedEntryId.value = nextEntryId
     modalOpen.value = true
-  } else {
+  }
+  else {
     modalOpen.value = false
   }
 }
-
 </script>
 
 <template>
@@ -254,7 +254,9 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
       <UCard>
         <template #header>
           <div class="space-y-1">
-            <h1 class="text-2xl font-semibold">Review missed habits</h1>
+            <h1 class="text-2xl font-semibold">
+              Review missed habits
+            </h1>
             <p class="text-sm text-muted">
               Reflect on misses to generate Atomic Habits tactics for your next attempt.
             </p>
@@ -273,8 +275,13 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-clipboard-list" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Pending reflections</h2>
+            <UIcon
+              name="i-lucide-clipboard-list"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Pending reflections
+            </h2>
           </div>
         </template>
 
@@ -285,17 +292,31 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
           description="All missed habits already have coaching context."
         />
 
-        <div v-else class="space-y-3">
-          <UCard v-for="group in pendingHabitGroups" :key="group.habitId" variant="outline">
+        <div
+          v-else
+          class="space-y-3"
+        >
+          <UCard
+            v-for="group in pendingHabitGroups"
+            :key="group.habitId"
+            variant="outline"
+          >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p class="font-semibold">{{ group.habitName }}</p>
+                <p class="font-semibold">
+                  {{ group.habitName }}
+                </p>
                 <p class="text-sm text-muted">
                   {{ group.entryIds.length }} pending
                   · latest miss on {{ group.latestDate }}
                 </p>
               </div>
-              <UButton color="warning" variant="soft" icon="i-lucide-pencil" @click="openLatestReflection(group.entryIds)">
+              <UButton
+                color="warning"
+                variant="soft"
+                icon="i-lucide-pencil"
+                @click="openLatestReflection(group.entryIds)"
+              >
                 Reflect latest
               </UButton>
             </div>
@@ -306,8 +327,13 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-lightbulb" class="size-5 text-muted" />
-            <h2 class="text-lg font-semibold">Coaching suggestions</h2>
+            <UIcon
+              name="i-lucide-lightbulb"
+              class="size-5 text-muted"
+            />
+            <h2 class="text-lg font-semibold">
+              Coaching suggestions
+            </h2>
             <UTooltip text="Suggestions are based on habits missed in the last 7 days. One suggestion is shown at a time.">
               <UButton
                 icon="i-lucide-circle-help"
@@ -327,8 +353,15 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
           description="Add reflection details to generate Atomic Habits recommendations."
         />
 
-        <div v-else class="grid gap-3 md:grid-cols-2">
-          <UCard v-for="group in suggestionGroups" :key="group.habitId" variant="outline">
+        <div
+          v-else
+          class="grid gap-3 md:grid-cols-2"
+        >
+          <UCard
+            v-for="group in suggestionGroups"
+            :key="group.habitId"
+            variant="outline"
+          >
             <div class="space-y-2">
               <div class="space-y-2 sm:flex sm:items-start sm:justify-between sm:gap-2">
                 <div class="min-w-0 space-y-1">
@@ -344,12 +377,22 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
               </div>
 
               <div class="border-t border-default/60 pt-3">
-                <div v-if="activeSuggestion(group)" class="space-y-2">
-                  <UBadge :color="activeSuggestionBadgeColor(group)" variant="soft">
+                <div
+                  v-if="activeSuggestion(group)"
+                  class="space-y-2"
+                >
+                  <UBadge
+                    :color="activeSuggestionBadgeColor(group)"
+                    variant="soft"
+                  >
                     {{ activeSuggestionLabel(group) }}
                   </UBadge>
-                  <p class="font-semibold">{{ activeSuggestionTitle(group) }}</p>
-                  <p class="text-sm text-muted">{{ activeSuggestionAction(group) }}</p>
+                  <p class="font-semibold">
+                    {{ activeSuggestionTitle(group) }}
+                  </p>
+                  <p class="text-sm text-muted">
+                    {{ activeSuggestionAction(group) }}
+                  </p>
                   <div class="space-y-2">
                     <UButton
                       size="xs"
@@ -360,30 +403,33 @@ function submitReflection(payload: { reason: MissReasonCode; note: string | null
                     >
                       Why this helps
                     </UButton>
-                    <p v-if="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '')" class="text-xs text-muted">
+                    <p
+                      v-if="isSuggestionRationaleExpanded(activeSuggestionId(group) ?? '')"
+                      class="text-xs text-muted"
+                    >
                       {{ activeSuggestionRationale(group) }}
                     </p>
                     <div class="border-t border-default/50 pt-3 -mb-1">
                       <div class="flex flex-wrap items-center gap-2">
-                      <UButton
-                        v-if="group.suggestions.length > 1"
-                        size="xs"
-                        color="neutral"
-                        variant="outline"
-                        icon="i-lucide-refresh-cw"
-                        @click="showAnotherSuggestion(group)"
-                      >
-                        Show another suggestion
-                      </UButton>
-                      <UButton
-                        size="xs"
-                        color="neutral"
-                        variant="outline"
-                        icon="i-lucide-arrow-up-right"
-                        :to="`/habits/${group.habitId}`"
-                      >
-                        Edit habit
-                      </UButton>
+                        <UButton
+                          v-if="group.suggestions.length > 1"
+                          size="xs"
+                          color="neutral"
+                          variant="outline"
+                          icon="i-lucide-refresh-cw"
+                          @click="showAnotherSuggestion(group)"
+                        >
+                          Show another suggestion
+                        </UButton>
+                        <UButton
+                          size="xs"
+                          color="neutral"
+                          variant="outline"
+                          icon="i-lucide-arrow-up-right"
+                          :to="`/habits/${group.habitId}`"
+                        >
+                          Edit habit
+                        </UButton>
                       </div>
                     </div>
                   </div>

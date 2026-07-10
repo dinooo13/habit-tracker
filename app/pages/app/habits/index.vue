@@ -1,8 +1,8 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'app' })
-
 import type { Habit } from '~/types/app-data'
 import { isDateInHabitPause, todayDateKey } from '~/utils/date'
+
+definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const settingsStore = useSettingsStore()
@@ -23,13 +23,13 @@ const weekdayLabels: Record<number, string> = {
   3: 'Wed',
   4: 'Thu',
   5: 'Fri',
-  6: 'Sat'
+  6: 'Sat',
 }
 
 const filteredHabits = computed(() =>
   habitsStore.habits
-    .filter((habit) => (showArchived.value ? true : !habit.archived))
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    .filter(habit => (showArchived.value ? true : !habit.archived))
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
 )
 
 const total = computed(() => filteredHabits.value.length)
@@ -48,7 +48,7 @@ const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warn
     dotClass: 'bg-primary',
     icon: 'i-lucide-circle-check',
     iconClass: 'text-primary',
-    badgeVariant: 'soft'
+    badgeVariant: 'soft',
   },
   break: {
     label: 'Break',
@@ -57,8 +57,8 @@ const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warn
     dotClass: 'bg-warning',
     icon: 'i-lucide-circle-x',
     iconClass: 'text-warning',
-    badgeVariant: 'soft'
-  }
+    badgeVariant: 'soft',
+  },
 }
 
 watch(total, (value) => {
@@ -84,7 +84,7 @@ function scheduleLabel(weekdays: number[]): string {
     return leftRank - rightRank || left - right
   })
 
-  return sortedDays.map((day) => weekdayLabels[day] ?? String(day)).join(', ')
+  return sortedDays.map(day => weekdayLabels[day] ?? String(day)).join(', ')
 }
 
 function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' } {
@@ -99,21 +99,36 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
         <template #header>
           <div class="space-y-2">
             <div class="flex items-start justify-between gap-3">
-              <h1 class="text-2xl font-semibold">Habits</h1>
-              <UButton to="/app/habits/new" icon="i-lucide-plus" class="shrink-0">
+              <h1 class="text-2xl font-semibold">
+                Habits
+              </h1>
+              <UButton
+                to="/app/habits/new"
+                icon="i-lucide-plus"
+                class="shrink-0"
+              >
                 Create habit
               </UButton>
             </div>
-            <p class="text-sm text-muted">Plan, edit, and archive your good and bad habit systems.</p>
+            <p class="text-sm text-muted">
+              Plan, edit, and archive your good and bad habit systems.
+            </p>
           </div>
         </template>
 
         <div class="space-y-2">
-          <UCheckbox v-model="showArchived" label="Show archived habits" color="neutral" />
+          <UCheckbox
+            v-model="showArchived"
+            label="Show archived habits"
+            color="neutral"
+          />
         </div>
       </UCard>
 
-      <p v-if="total" class="px-1 text-sm text-muted">
+      <p
+        v-if="total"
+        class="px-1 text-sm text-muted"
+      >
         {{ total }} habits shown
       </p>
 
@@ -125,18 +140,37 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
         :actions="[{ label: 'Create habit', to: '/app/habits/new', icon: 'i-lucide-plus' }]"
       />
 
-      <div v-else class="grid gap-4 md:grid-cols-2">
-        <UCard v-for="habit in pagedHabits" :key="habit.id" variant="outline" :class="['habit-card', typeMeta(habit.type).cardClass]">
+      <div
+        v-else
+        class="grid gap-4 md:grid-cols-2"
+      >
+        <UCard
+          v-for="habit in pagedHabits"
+          :key="habit.id"
+          variant="outline"
+          :class="['habit-card', typeMeta(habit.type).cardClass]"
+        >
           <template #header>
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
-                  <UIcon :name="typeMeta(habit.type).icon" class="size-4" :class="typeMeta(habit.type).iconClass" />
-                  <h2 class="font-semibold">{{ habit.name }}</h2>
+                  <UIcon
+                    :name="typeMeta(habit.type).icon"
+                    class="size-4"
+                    :class="typeMeta(habit.type).iconClass"
+                  />
+                  <h2 class="font-semibold">
+                    {{ habit.name }}
+                  </h2>
                 </div>
-                <p class="text-sm text-muted">{{ habit.identityStatement }}</p>
+                <p class="text-sm text-muted">
+                  {{ habit.identityStatement }}
+                </p>
               </div>
-              <UBadge :color="typeMeta(habit.type).color" :variant="typeMeta(habit.type).badgeVariant">
+              <UBadge
+                :color="typeMeta(habit.type).color"
+                :variant="typeMeta(habit.type).badgeVariant"
+              >
                 {{ typeMeta(habit.type).label }}
               </UBadge>
             </div>
@@ -144,28 +178,52 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
 
           <div class="space-y-3">
             <div class="flex flex-wrap gap-2">
-              <UBadge color="neutral" variant="outline">
+              <UBadge
+                color="neutral"
+                variant="outline"
+              >
                 Days: {{ scheduleLabel(habit.scheduleWeekdays) }}
               </UBadge>
-              <UBadge color="neutral" variant="outline">
+              <UBadge
+                color="neutral"
+                variant="outline"
+              >
                 Reminder: {{ habit.reminderTime ?? 'none' }}
               </UBadge>
-              <UBadge :color="habit.archived ? 'warning' : 'success'" variant="subtle">
+              <UBadge
+                :color="habit.archived ? 'warning' : 'success'"
+                variant="subtle"
+              >
                 {{ habit.archived ? 'Archived' : 'Active' }}
               </UBadge>
-              <UBadge v-if="!habit.archived && isCurrentlyPaused(habit)" color="info" variant="subtle" icon="i-lucide-pause">
+              <UBadge
+                v-if="!habit.archived && isCurrentlyPaused(habit)"
+                color="info"
+                variant="subtle"
+                icon="i-lucide-pause"
+              >
                 Paused
               </UBadge>
-              <UBadge v-else-if="habit.pauses.length" color="neutral" variant="subtle" icon="i-lucide-pause">
+              <UBadge
+                v-else-if="habit.pauses.length"
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-pause"
+              >
                 {{ habit.pauses.length }} {{ habit.pauses.length === 1 ? 'pause' : 'pauses' }}
               </UBadge>
             </div>
-
           </div>
 
           <template #footer>
             <div class="flex flex-wrap justify-end gap-2">
-              <UButton size="sm" color="neutral" variant="outline" :to="`/habits/${habit.id}`" icon="i-lucide-pencil">
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                :to="`/habits/${habit.id}`"
+                icon="i-lucide-pencil"
+              >
                 Edit
               </UButton>
               <UButton
@@ -182,8 +240,16 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
         </UCard>
       </div>
 
-      <div v-if="total > itemsPerPage" class="flex justify-center">
-        <UPagination v-model:page="page" :items-per-page="itemsPerPage" :total="total" show-edges />
+      <div
+        v-if="total > itemsPerPage"
+        class="flex justify-center"
+      >
+        <UPagination
+          v-model:page="page"
+          :items-per-page="itemsPerPage"
+          :total="total"
+          show-edges
+        />
       </div>
     </div>
   </UPage>

@@ -3,7 +3,7 @@ const STATIC_LEGACY_REDIRECTS: Record<string, string> = {
   '/habits/new': '/app/habits/new',
   '/review': '/app/review',
   '/insights': '/app/insights',
-  '/settings': '/app/settings'
+  '/settings': '/app/settings',
 }
 
 export function mapLegacyPath(path: string): string | null {

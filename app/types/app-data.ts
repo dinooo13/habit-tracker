@@ -13,7 +13,7 @@ export const MISS_REASON_CODES = [
   'bad_environment',
   'no_immediate_reward',
   'social_pressure',
-  'other'
+  'other',
 ] as const
 
 export type MissReasonCode = (typeof MISS_REASON_CODES)[number]
@@ -27,7 +27,7 @@ export const FIELD_LIMITS = {
   identity: 500,
   note: 1000,
   suggestionText: 500,
-  timestamp: 64
+  timestamp: 64,
 } as const
 
 /**
@@ -131,5 +131,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   weekStartsOn: 1,
   primaryColor: 'emerald',
   lastExportedAt: null,
-  backupNudgeSnoozedUntil: null
+  backupNudgeSnoozedUntil: null,
 }

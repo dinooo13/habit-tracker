@@ -10,7 +10,7 @@ function requestPersistentStorage(): void {
 
   navigator.storage
     .persisted()
-    .then((persisted) => (persisted ? true : navigator.storage.persist()))
+    .then(persisted => (persisted ? true : navigator.storage.persist()))
     .catch(() => false)
 }
 
@@ -42,7 +42,7 @@ export default defineNuxtPlugin(async () => {
     () => settingsStore.primaryColor,
     (value) => {
       applyPrimaryColorPalette(value)
-    }
+    },
   )
 
   let pendingPayload: AppData | null = null
@@ -79,7 +79,7 @@ export default defineNuxtPlugin(async () => {
       habits: habitsStore.snapshot(),
       entries: entriesStore.snapshot(),
       suggestions: coachStore.snapshot(),
-      settings: settingsStore.snapshot()
+      settings: settingsStore.snapshot(),
     }),
     (nextValue) => {
       pendingPayload = nextValue
@@ -88,7 +88,7 @@ export default defineNuxtPlugin(async () => {
       }
       saveTimer = setTimeout(flushPendingSave, 800)
     },
-    { deep: true }
+    { deep: true },
   )
 
   window.addEventListener('pagehide', flushPendingSave)

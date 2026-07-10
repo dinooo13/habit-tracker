@@ -50,7 +50,7 @@ export function parseDateKey(dateKey: string): Date {
 export function formatDateKeyForLocale(
   dateKey: string,
   locale: string | undefined,
-  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium' }
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
 ): string {
   const date = parseDateKey(dateKey)
   if (Number.isNaN(date.getTime())) {
@@ -59,7 +59,8 @@ export function formatDateKeyForLocale(
 
   try {
     return new Intl.DateTimeFormat(locale || undefined, options).format(date)
-  } catch {
+  }
+  catch {
     return new Intl.DateTimeFormat(undefined, options).format(date)
   }
 }
@@ -68,7 +69,7 @@ export function relativeDayLabel(
   dateKey: string,
   todayKey: string,
   locale: string | undefined,
-  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+  options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' },
 ): string {
   if (dateKey === todayKey) {
     return 'Today'
@@ -125,7 +126,7 @@ export function weekdayFromDateKey(dateKey: string): number {
  */
 export function isDateInHabitPause(habit: Habit, dateKey: string): boolean {
   return (habit.pauses ?? []).some(
-    (pause) => compareDateKeys(dateKey, pause.start) >= 0 && compareDateKeys(dateKey, pause.end) <= 0
+    pause => compareDateKeys(dateKey, pause.start) >= 0 && compareDateKeys(dateKey, pause.end) <= 0,
   )
 }
 
@@ -154,8 +155,8 @@ export function dateKeyRange(start: string, end: string): string[] {
 
   // Defense-in-depth: bound the window to the most-recent MAX_DATE_RANGE_DAYS so a
   // pathological (non-schema-validated) range can't freeze the tab (issue #1, SEC-09).
-  let cursor =
-    daysBetween(start, end) >= MAX_DATE_RANGE_DAYS ? addDays(end, -(MAX_DATE_RANGE_DAYS - 1)) : start
+  let cursor
+    = daysBetween(start, end) >= MAX_DATE_RANGE_DAYS ? addDays(end, -(MAX_DATE_RANGE_DAYS - 1)) : start
 
   const values: string[] = []
   while (compareDateKeys(cursor, end) <= 0) {
@@ -176,12 +177,13 @@ export function daysBetween(start: string, end: string): number {
 export function dateKeyToCalendarDate(dateKey: string): CalendarDate | null {
   try {
     return parseDate(dateKey)
-  } catch {
+  }
+  catch {
     return null
   }
 }
 
-export function calendarDateToDateKey(value: { year: number; month: number; day: number }): string {
+export function calendarDateToDateKey(value: { year: number, month: number, day: number }): string {
   return `${value.year}-${pad2(value.month)}-${pad2(value.day)}`
 }
 
@@ -189,7 +191,7 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
-export function parseTimeString(value: string | null): { hour: number; minute: number } | null {
+export function parseTimeString(value: string | null): { hour: number, minute: number } | null {
   if (!value) {
     return null
   }

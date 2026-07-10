@@ -22,7 +22,7 @@ function buildHabit(overrides: Partial<Habit> = {}): Habit {
     archived: false,
     createdAt: isoDaysAgo(0),
     updatedAt: isoDaysAgo(0),
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -35,7 +35,7 @@ function buildEntry(overrides: Partial<HabitEntry> = {}): HabitEntry {
     completedAt: isoDaysAgo(0),
     missReasonCode: null,
     missReasonNote: null,
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -46,7 +46,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [],
       lastExportedAt: isoDaysAgo(21),
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
 
     expect(result.weeksUnexported).toBe(3)
@@ -59,7 +59,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [buildEntry({ date: addDays(TODAY, -10) })],
       lastExportedAt: null,
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
 
     // Earliest anchor is the 35-day-old habit createdAt → floor(35 / 7) = 5 weeks.
@@ -73,7 +73,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [buildEntry({ date: addDays(TODAY, -60) })],
       lastExportedAt: null,
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
 
     expect(result.shouldShow).toBe(false)
@@ -85,7 +85,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [],
       lastExportedAt: null,
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
 
     expect(result.weeksUnexported).toBe(0)
@@ -97,20 +97,20 @@ describe('computeBackupNudge (#8)', () => {
       habits: [buildHabit({ createdAt: isoDaysAgo(60) })],
       entries: [],
       lastExportedAt: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     }
 
     // Snoozed until tomorrow → suppressed (inclusive of the snooze date).
     expect(
-      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: addDays(TODAY, 1) }).shouldShow
+      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: addDays(TODAY, 1) }).shouldShow,
     ).toBe(false)
     // Snooze date is today → still suppressed (snooze is inclusive of its end date).
     expect(
-      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: TODAY }).shouldShow
+      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: TODAY }).shouldShow,
     ).toBe(false)
     // Snooze ended yesterday → shown again.
     expect(
-      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: addDays(TODAY, -1) }).shouldShow
+      computeBackupNudge({ ...base, backupNudgeSnoozedUntil: addDays(TODAY, -1) }).shouldShow,
     ).toBe(true)
   })
 
@@ -120,7 +120,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [],
       lastExportedAt: `${addDays(TODAY, 5)}T12:00:00.000Z`,
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
 
     expect(result.weeksUnexported).toBe(0)
@@ -134,7 +134,7 @@ describe('computeBackupNudge (#8)', () => {
       entries: [],
       lastExportedAt: null,
       backupNudgeSnoozedUntil: null,
-      todayKey: TODAY
+      todayKey: TODAY,
     })
     expect(result.weeksUnexported).toBe(1)
     // Below threshold (2), so still hidden.

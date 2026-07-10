@@ -16,7 +16,7 @@ function buildHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-02-08T00:00:00.000Z',
     updatedAt: '2026-02-08T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -28,7 +28,7 @@ function buildCreateInput(overrides: Partial<HabitCreateInput> = {}): HabitCreat
     scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],
     reminderTime: null,
     startDate: '2026-02-08',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -41,7 +41,7 @@ function buildUpdateInput(overrides: Partial<HabitUpdateInput> = {}): HabitUpdat
     reminderTime: null,
     startDate: '2026-02-08',
     archived: false,
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -209,7 +209,7 @@ describe('habits store — deleteHabit', () => {
 
     store.deleteHabit('habit_1')
 
-    expect(store.habits.map((h) => h.id)).toEqual(['habit_2'])
+    expect(store.habits.map(h => h.id)).toEqual(['habit_2'])
   })
 
   it('is a no-op for unknown ids', () => {
@@ -232,11 +232,11 @@ describe('habits store — activeHabits / archivedHabits getters', () => {
     store.hydrate([
       buildHabit({ id: 'habit_active_1', archived: false }),
       buildHabit({ id: 'habit_archived', archived: true }),
-      buildHabit({ id: 'habit_active_2', archived: false })
+      buildHabit({ id: 'habit_active_2', archived: false }),
     ])
 
-    expect(store.activeHabits.map((h) => h.id)).toEqual(['habit_active_1', 'habit_active_2'])
-    expect(store.archivedHabits.map((h) => h.id)).toEqual(['habit_archived'])
+    expect(store.activeHabits.map(h => h.id)).toEqual(['habit_active_1', 'habit_active_2'])
+    expect(store.archivedHabits.map(h => h.id)).toEqual(['habit_archived'])
   })
 
   it('returns empty arrays when no habits match', () => {
@@ -257,18 +257,18 @@ describe('habits store — dueHabitsForDate getter', () => {
     // 2026-02-09 is a Monday (weekday 1)
     store.hydrate([
       buildHabit({ id: 'habit_mon', scheduleWeekdays: [1], startDate: '2026-02-01' }), // due Mondays
-      buildHabit({ id: 'habit_wed', scheduleWeekdays: [3], startDate: '2026-02-01' })  // due Wednesdays
+      buildHabit({ id: 'habit_wed', scheduleWeekdays: [3], startDate: '2026-02-01' }), // due Wednesdays
     ])
 
     const due = store.dueHabitsForDate('2026-02-09')
 
-    expect(due.map((h) => h.id)).toEqual(['habit_mon'])
+    expect(due.map(h => h.id)).toEqual(['habit_mon'])
   })
 
   it('does not return archived habits', () => {
     const store = useHabitsStore()
     store.hydrate([
-      buildHabit({ id: 'habit_archived', archived: true, scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-01-01' })
+      buildHabit({ id: 'habit_archived', archived: true, scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-01-01' }),
     ])
 
     const due = store.dueHabitsForDate('2026-02-09')
@@ -280,7 +280,7 @@ describe('habits store — dueHabitsForDate getter', () => {
     const store = useHabitsStore()
     // startDate is after the query date
     store.hydrate([
-      buildHabit({ id: 'habit_future', scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-02-10' })
+      buildHabit({ id: 'habit_future', scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-02-10' }),
     ])
 
     // 2026-02-09 is before startDate 2026-02-10

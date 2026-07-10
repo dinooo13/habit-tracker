@@ -14,7 +14,7 @@ function buildHabit(type: 'build' | 'break'): Habit {
     archived: false,
     pauses: [],
     createdAt: '2026-02-01T00:00:00.000Z',
-    updatedAt: '2026-02-01T00:00:00.000Z'
+    updatedAt: '2026-02-01T00:00:00.000Z',
   }
 }
 
@@ -26,7 +26,7 @@ function buildEntry(reason: HabitEntry['missReasonCode']): HabitEntry {
     status: 'missed',
     completedAt: null,
     missReasonCode: reason,
-    missReasonNote: null
+    missReasonNote: null,
   }
 }
 

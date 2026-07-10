@@ -7,21 +7,21 @@ interface SettingsState {
 
 export const useSettingsStore = defineStore('settings', {
   state: (): SettingsState => ({
-    settings: { ...DEFAULT_SETTINGS }
+    settings: { ...DEFAULT_SETTINGS },
   }),
   getters: {
-    notificationsEnabled: (state) => state.settings.notificationsEnabled,
-    dailyReviewTime: (state) => state.settings.dailyReviewTime,
-    weekStartsOn: (state) => state.settings.weekStartsOn,
-    primaryColor: (state) => state.settings.primaryColor,
-    lastExportedAt: (state) => state.settings.lastExportedAt,
-    backupNudgeSnoozedUntil: (state) => state.settings.backupNudgeSnoozedUntil
+    notificationsEnabled: state => state.settings.notificationsEnabled,
+    dailyReviewTime: state => state.settings.dailyReviewTime,
+    weekStartsOn: state => state.settings.weekStartsOn,
+    primaryColor: state => state.settings.primaryColor,
+    lastExportedAt: state => state.settings.lastExportedAt,
+    backupNudgeSnoozedUntil: state => state.settings.backupNudgeSnoozedUntil,
   },
   actions: {
     hydrate(settings: AppSettings): void {
       this.settings = {
         ...DEFAULT_SETTINGS,
-        ...settings
+        ...settings,
       }
     },
     snapshot(): AppSettings {
@@ -44,6 +44,6 @@ export const useSettingsStore = defineStore('settings', {
     },
     setBackupNudgeSnoozedUntil(value: string | null): void {
       this.settings.backupNudgeSnoozedUntil = value
-    }
-  }
+    },
+  },
 })

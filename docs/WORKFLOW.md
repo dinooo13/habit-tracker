@@ -65,14 +65,18 @@ A change is done when all of the following hold (this is also the CI gate —
 
 ## 6. Automation pipeline
 
-Triage, planning, implementation, first-pass review, acceptance QA on the PR preview
-deployment, and documentation upkeep are automated by six repo-committed agents
-(`.claude/agents/`: `triage`, `planner`, `implementer`, `reviewer`, `qa-tester`,
-`docs-auditor`) driven by thin cloud routines. New issues without a `status:` label are
+Triage, planning, implementation, branch upkeep, first-pass review, acceptance QA on
+the PR preview deployment, and documentation upkeep are automated by seven
+repo-committed agents (`.claude/agents/`: `triage`, `planner`, `implementer`,
+`rebaser`, `reviewer`, `qa-tester`, `docs-auditor`) driven by thin cloud routines. New issues without a `status:` label are
 triaged automatically (labels + dedupe) into the planner queue. Status labels form the state machine: they live on the **issue** until a PR
 exists (`needs-plan` → `needs-plan-review` → `agent-ready` → `in-progress`), then the
 build → review → QA loop is driven by the **PR** label (`in-progress` → `needs-review`
-→ `needs-qa` → `approved`, bouncing back to `in-progress` on findings). Two
+→ `needs-qa` → `approved`, bouncing back to `in-progress` on findings). After merges
+land on `main`, the `rebaser` keeps queued PRs (`needs-review` / `needs-qa` /
+`approved`) rebased when they actually conflict or their CI/QA base went stale,
+bouncing conflicts back to `status: in-progress` — operationalizing §3's "rebase on
+`main` rather than letting them drift". Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
 PR. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 

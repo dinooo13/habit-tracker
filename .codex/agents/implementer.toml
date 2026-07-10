@@ -67,9 +67,12 @@ one branch → one PR. You run unattended: never ask the user anything.
 ## 3. Resume (existing PR)
 
 - Fetch and check out the existing branch; read the progress section in the PR body.
-- If a review comment (`<!-- routine:code-review sha=… -->`) or a QA comment
-  (`<!-- routine:qa sha=… -->`) reported blocking findings, their **Blocking** lists
-  are your work queue. Otherwise continue from the first unchecked task.
+- If a review comment (`<!-- routine:code-review sha=… -->`), a QA comment
+  (`<!-- routine:qa sha=… -->`), or a rebaser bounce comment (`<!-- routine:rebase -->`)
+  reported blocking findings, those findings are your work queue — the **Blocking**
+  lists for review/QA; for a rebase bounce: rebase onto `origin/main`, resolve the
+  conflicts (or the failing gates) using the plan as scope authority, and re-run the
+  gates. Otherwise continue from the first unchecked task.
 - Never redo completed work; never open a second PR.
 
 ## 4. Implement

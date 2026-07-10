@@ -47,7 +47,7 @@ export const COLLECTION_LIMITS = {
   entries: 200_000,
   suggestions: 400_000,
   scheduleWeekdays: 7,
-  pausesPerHabit: 100
+  pausesPerHabit: 100,
 } as const
 
 /**

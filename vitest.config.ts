@@ -19,13 +19,13 @@ export default defineConfig({
           // Keep the existing convention, but never collect the Nuxt-runtime
           // subtree here so no rendered test is discovered by both projects.
           include: ['tests/**/*.test.ts'],
-          exclude: ['tests/nuxt/**']
+          exclude: ['tests/nuxt/**'],
         },
         resolve: {
           alias: {
-            '~': fileURLToPath(new URL('./app', import.meta.url))
-          }
-        }
+            '~': fileURLToPath(new URL('./app', import.meta.url)),
+          },
+        },
       },
       await defineVitestProject({
         test: {
@@ -36,11 +36,11 @@ export default defineConfig({
             nuxt: {
               // happy-dom is lighter than jsdom and sufficient for these
               // form/page tests; pin it so the DOM choice stays visible.
-              domEnvironment: 'happy-dom'
-            }
-          }
-        }
-      })
-    ]
-  }
+              domEnvironment: 'happy-dom',
+            },
+          },
+        },
+      }),
+    ],
+  },
 })

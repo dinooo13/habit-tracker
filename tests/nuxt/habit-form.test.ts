@@ -12,7 +12,7 @@ mockNuxtImport('useToast', () => () => ({
   update: vi.fn(),
   remove: vi.fn(),
   clear: vi.fn(),
-  toasts: []
+  toasts: [],
 }))
 
 function buildInitialHabit(overrides: Partial<Habit> = {}): Habit {
@@ -28,7 +28,7 @@ function buildInitialHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-02-08T00:00:00.000Z',
     updatedAt: '2026-02-08T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -41,19 +41,19 @@ describe('HabitForm — weekday validation', () => {
     // Otherwise-valid habit with an empty schedule exercises the component guard
     // directly through the real UForm/UCheckbox integration.
     const wrapper = await mountSuspended(HabitForm, {
-      props: { initial: buildInitialHabit() }
+      props: { initial: buildInitialHabit() },
     })
 
     await wrapper.find('form').trigger('submit')
     // Let UForm run its async Zod validation and the resulting render tick settle.
     await wrapper.vm.$nextTick()
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise(resolve => setTimeout(resolve, 0))
     await wrapper.vm.$nextTick()
 
     expect(toastAdd).toHaveBeenCalledWith({
       title: 'Select at least one day',
       description: 'A habit needs at least one planned weekday.',
-      color: 'warning'
+      color: 'warning',
     })
     expect(wrapper.emitted('submit')).toBeUndefined()
   })

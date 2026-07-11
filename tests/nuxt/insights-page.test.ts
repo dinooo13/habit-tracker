@@ -23,7 +23,7 @@ function buildHabit(overrides: Partial<Habit> = {}): Habit {
     pauses: [],
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -36,7 +36,7 @@ function buildEntry(overrides: Partial<HabitEntry> = {}): HabitEntry {
     completedAt: '2026-07-15T09:00:00.000Z',
     missReasonCode: null,
     missReasonNote: null,
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -67,11 +67,11 @@ describe('Insights page — completion rate', () => {
     // one due day inside the default 7-day window: two due habit-days total.
     habitsStore.hydrate([
       buildHabit({ id: 'habit_1', scheduleWeekdays: [todayWeekday] }),
-      buildHabit({ id: 'habit_2', name: 'Meditate', scheduleWeekdays: [todayWeekday] })
+      buildHabit({ id: 'habit_2', name: 'Meditate', scheduleWeekdays: [todayWeekday] }),
     ])
     // One habit is done today; the other has no entry: one of two → 50%.
     entriesStore.hydrate([
-      buildEntry({ id: 'entry_1', habitId: 'habit_1', date: today, status: 'done' })
+      buildEntry({ id: 'entry_1', habitId: 'habit_1', date: today, status: 'done' }),
     ])
     coachStore.hydrate([])
 

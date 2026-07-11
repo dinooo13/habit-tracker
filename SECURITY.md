@@ -55,7 +55,7 @@ Findings from the review that have since been mitigated within the local-first m
   date bounds already shipped; together these keep a crafted or accidental payload from
   driving unbounded work or storage. An over-limit import is rejected as a whole — never
   partially merged or truncated — and current data is left unchanged. See
-  `app/types/app-data.ts`, `app/utils/storage-schema.ts`, and `app/pages/app/settings.vue`.
+  `app/types/app-data.ts`, `app/utils/persistence/storage-schema.ts`, and `app/pages/app/settings.vue`.
 - **Session timeout (SEC-03).** The dummy-auth session now has an absolute 7-day expiry stamp;
   expired/malformed sessions read as logged-out and clear their stale keys. See
   [ADR-0011](docs/adr/0011-absolute-session-timeout-for-dummy-auth.md). *(This is hygiene, not

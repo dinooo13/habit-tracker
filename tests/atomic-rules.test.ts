@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 import type { Habit, HabitEntry } from '~/types/app-data'
 
@@ -46,5 +46,44 @@ describe('generateSuggestionsForMissedEntry', () => {
     expect(suggestions).toHaveLength(2)
     expect(suggestions[0].law).toBe('attractive')
     expect(suggestions[0].direction).toBe('decrease')
+  })
+
+  it('injects deterministic ids and timestamps once per suggestion', () => {
+    const idFactory = vi.fn((index: number) => `custom_id_${index}`)
+    const createdAtFactory = vi.fn((index: number) => `2026-02-05T21:0${index}:00.000Z`)
+
+    const suggestions = generateSuggestionsForMissedEntry(
+      buildEntry('forgot'),
+      buildHabit('build'),
+      { idFactory, createdAtFactory },
+    )
+
+    expect(suggestions).toHaveLength(2)
+    expect(suggestions.map(s => s.id)).toEqual(['custom_id_0', 'custom_id_1'])
+    expect(suggestions.map(s => s.createdAt)).toEqual([
+      '2026-02-05T21:00:00.000Z',
+      '2026-02-05T21:01:00.000Z',
+    ])
+
+    // Each factory is called exactly once per suggestion, with the zero-based index.
+    expect(idFactory).toHaveBeenCalledTimes(2)
+    expect(createdAtFactory).toHaveBeenCalledTimes(2)
+    expect(idFactory.mock.calls).toEqual([[0], [1]])
+    expect(createdAtFactory.mock.calls).toEqual([[0], [1]])
+
+    // Factories never alter rule selection or content.
+    expect(suggestions[0].law).toBe('obvious')
+    expect(suggestions[0].direction).toBe('increase')
+  })
+
+  it('defaults to createId/nowIso when no factories are supplied', () => {
+    const suggestions = generateSuggestionsForMissedEntry(buildEntry('forgot'), buildHabit('build'))
+
+    for (const suggestion of suggestions) {
+      expect(suggestion.id).toMatch(/^suggestion_/)
+      expect(suggestion.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+    }
+    // Distinct random ids per suggestion.
+    expect(new Set(suggestions.map(s => s.id)).size).toBe(suggestions.length)
   })
 })

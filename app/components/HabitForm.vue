@@ -4,6 +4,7 @@ import type { FormSubmitEvent, RadioGroupItem } from '@nuxt/ui'
 import { z } from 'zod'
 import type { Habit, HabitPause, HabitType } from '~/types/app-data'
 import { compareDateKeys, formatTimeString, isValidDateKey, MAX_DATE_KEY, MIN_DATE_KEY, parseTimeString, todayDateKey } from '~/utils/domain/date'
+import { orderedWeekdayOptions } from '~/utils/domain/weekdays'
 
 interface HabitFormPayload {
   name: string
@@ -51,15 +52,12 @@ const state = reactive<Schema & { archived: boolean }>({
   archived: props.initial?.archived ?? false,
 })
 
-const dayOptions = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
-  { value: 0, label: 'Sun' },
-]
+const settingsStore = useSettingsStore()
+
+// Weekday checkboxes render in the user's `weekStartsOn` display order (issue
+// #39). Selection state below stays keyed by canonical weekday number, so
+// reordering never toggles or reinterprets a choice.
+const dayOptions = computed(() => orderedWeekdayOptions(settingsStore.weekStartsOn))
 
 const dayState = reactive<Record<number, boolean>>({
   0: props.initial?.scheduleWeekdays.includes(0) ?? false,
@@ -107,8 +105,10 @@ const typeOptions: RadioGroupItem[] = [
 const toast = useToast()
 
 function buildScheduleWeekdays(): number[] {
-  return dayOptions
-    .map(option => option.value)
+  // Emit canonical numeric-ascending weekdays regardless of display order, so
+  // the persisted schedule never varies with the `weekStartsOn` preference.
+  return Object.keys(dayState)
+    .map(Number)
     .filter(weekday => dayState[weekday])
     .sort((left, right) => left - right)
 }
@@ -260,6 +260,7 @@ function onSubmit(event: FormSubmitEvent<Schema>) {
           :key="day.value"
           v-model="dayState[day.value]"
           :label="day.label"
+          :data-weekday="day.value"
           variant="card"
           color="neutral"
         />

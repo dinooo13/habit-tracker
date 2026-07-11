@@ -88,4 +88,31 @@ test.describe('Dashboard queue', () => {
     await page.goto('/app')
     await expect(page.getByRole('button', { name: 'Next day' })).toBeDisabled()
   })
+
+  test('date-picker calendar honors weekStartsOn', async ({ authedPage: page, seed }) => {
+    const dash = new DashboardPage(page)
+
+    async function calendarHeaders(): Promise<string[]> {
+      await dash.datePickerButton().click()
+      const cells = page.locator('[data-slot="headCell"]')
+      await expect(cells).toHaveCount(7)
+      const texts = await cells.allTextContents()
+      // Close the popover before the next capture.
+      await page.keyboard.press('Escape')
+      return texts.map(text => text.trim())
+    }
+
+    await seed(makeAppData({ habits: [dailyHabit('Meditate')], settings: { weekStartsOn: 0 } }))
+    await page.goto('/app')
+    const sundayFirst = await calendarHeaders()
+
+    await seed(makeAppData({ habits: [dailyHabit('Meditate')], settings: { weekStartsOn: 1 } }))
+    await page.goto('/app')
+    const mondayFirst = await calendarHeaders()
+
+    // Both list the same seven day headers; the week start rotates which comes
+    // first, so a Monday start is a Sunday start rotated left by one.
+    expect(mondayFirst).toEqual([...sundayFirst.slice(1), sundayFirst[0]])
+    expect(mondayFirst[0]).not.toBe(sundayFirst[0])
+  })
 })

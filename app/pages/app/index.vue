@@ -17,6 +17,7 @@ definePageMeta({ layout: 'app' })
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
+const settingsStore = useSettingsStore()
 const backupNudge = useBackupNudge()
 
 const today = todayDateKey()
@@ -332,6 +333,7 @@ function reopenHabit(habitId: string): void {
                       v-model="calendarValue"
                       :max-value="calendarMaxValue"
                       :min-value="calendarMinValue"
+                      :week-starts-on="settingsStore.weekStartsOn"
                       class="p-2"
                       @update:model-value="datePickerOpen = false"
                     />

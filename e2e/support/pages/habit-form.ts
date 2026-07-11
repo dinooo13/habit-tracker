@@ -1,13 +1,9 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
-// The form renders weekday checkboxes in this DOM order (see HabitForm.vue
-// `dayOptions`). They share the accessible name "Schedule weekdays", so target
-// them by position. Maps a weekday number (0=Sun..6=Sat) to its DOM index.
-const WEEKDAY_DOM_ORDER = [1, 2, 3, 4, 5, 6, 0] as const
-
-function weekdayDomIndex(weekday: number): number {
-  return WEEKDAY_DOM_ORDER.indexOf(weekday as (typeof WEEKDAY_DOM_ORDER)[number])
-}
+// The form renders weekday checkboxes in the user's `weekStartsOn` display
+// order (HabitForm.vue). Each checkbox carries a stable `data-weekday`
+// attribute (0=Sun..6=Sat), so tests target weekdays by identity rather than
+// DOM position and stay valid under either week-start preference.
 
 export interface HabitFormInput {
   name?: string
@@ -44,12 +40,23 @@ export class HabitFormPage {
     await this.page.getByLabel('Start date').fill(dateKey)
   }
 
+  weekdayCheckbox(weekday: number): Locator {
+    return this.page.locator(`[data-weekday="${weekday}"]`)
+  }
+
   async setWeekdays(weekdays: number[]): Promise<void> {
-    const dayCheckboxes = this.page.getByRole('checkbox', { name: 'Schedule weekdays' })
     // Normalize all seven checkboxes so the resulting selection is exactly `weekdays`.
     for (let day = 0; day < 7; day += 1) {
-      await dayCheckboxes.nth(weekdayDomIndex(day)).setChecked(weekdays.includes(day))
+      await this.weekdayCheckbox(day).setChecked(weekdays.includes(day))
     }
+  }
+
+  /** Weekday numbers in the order the checkboxes are rendered (left→right). */
+  async renderedWeekdayOrder(): Promise<number[]> {
+    const values = await this.page.locator('[data-weekday]').evaluateAll(nodes =>
+      nodes.map(node => Number(node.getAttribute('data-weekday'))),
+    )
+    return values
   }
 
   async setArchived(archived: boolean): Promise<void> {

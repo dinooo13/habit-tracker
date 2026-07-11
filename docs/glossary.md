@@ -60,7 +60,13 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
 - **Settings** — `notificationsEnabled`, `dailyReviewTime` (`HH:MM`), `weekStartsOn`
   (`0` Sunday / `1` Monday), and `primaryColor` (one of `sky`, `emerald`, `violet`, `rose`,
-  `amber`). Two optional, nullable fields back the **Backup nudge**: `lastExportedAt` (ISO
+  `amber`). `weekStartsOn` is a **display-order preference only**: it sets the first
+  weekday shown across the dashboard calendar, the habit form's weekday selector, and the
+  habit-list schedule summary. It never changes weekday *storage* — `Habit.scheduleWeekdays`
+  stays as canonical JS weekday numbers (`0=Sun … 6=Sat`), and due-date, reminder, streak,
+  and coaching logic keep using those absolute numbers regardless of the setting. The shared
+  ordering rule lives in `app/utils/domain/weekdays.ts`. Two optional, nullable fields back
+  the **Backup nudge**: `lastExportedAt` (ISO
   timestamp of the last successful export) and `backupNudgeSnoozedUntil` (date key the nudge
   is snoozed to after a dismissal).
 - **Backup nudge** — a dismissible Today-dashboard banner that warns when local data has gone

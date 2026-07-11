@@ -82,6 +82,59 @@ test.describe('Habit CRUD', () => {
     await expect(page.locator('.habit-card').filter({ hasText: 'Old name' })).toHaveCount(0)
   })
 
+  test('form weekday order honors a Sunday week start', async ({ authedPage: page, seed }) => {
+    await seed(makeAppData({ settings: { weekStartsOn: 0 } }))
+    await page.goto('/app/habits/new')
+
+    const form = new HabitFormPage(page)
+    await expect.poll(() => form.renderedWeekdayOrder()).toEqual([0, 1, 2, 3, 4, 5, 6])
+  })
+
+  test('form weekday order honors a Monday week start', async ({ authedPage: page, seed }) => {
+    await seed(makeAppData({ settings: { weekStartsOn: 1 } }))
+    await page.goto('/app/habits/new')
+
+    const form = new HabitFormPage(page)
+    await expect.poll(() => form.renderedWeekdayOrder()).toEqual([1, 2, 3, 4, 5, 6, 0])
+  })
+
+  test('form selection stays keyed by weekday number under a Sunday start', async ({ authedPage: page, seed }) => {
+    // Sunday-first display must not change which weekday numbers are stored: a
+    // Sunday+Monday selection persists (and renders) as the canonical order.
+    await seed(makeAppData({ settings: { weekStartsOn: 0 } }))
+    await page.goto('/app/habits/new')
+
+    const form = new HabitFormPage(page)
+    await form.fill({
+      type: 'build',
+      name: 'Sunday planning',
+      identityStatement: 'I plan my week deliberately.',
+      weekdays: [0, 1],
+    })
+    await form.submit()
+
+    const card = page.locator('.habit-card').filter({ hasText: 'Sunday planning' })
+    await expect(card).toContainText('Days: Sun, Mon')
+  })
+
+  test('habit-list schedule text follows weekStartsOn', async ({ authedPage: page, seed }) => {
+    const habit = makeHabit({ name: 'Weekend reset', scheduleWeekdays: [0, 1] })
+
+    // Sunday start → Sunday first.
+    await seed(makeAppData({ habits: [habit], settings: { weekStartsOn: 0 } }))
+    await page.goto('/app/habits')
+    await expect(
+      page.locator('.habit-card').filter({ hasText: 'Weekend reset' }),
+    ).toContainText('Days: Sun, Mon')
+
+    // Monday start → Monday first (Sunday moves to the end).
+    await seed(makeAppData({ habits: [habit], settings: { weekStartsOn: 1 } }))
+    await page.goto('/app/habits')
+    await expect(
+      page.locator('.habit-card').filter({ hasText: 'Weekend reset' }),
+    ).toContainText('Days: Mon, Sun')
+  })
+
   test('archiving removes a habit from the active list and the queue', async ({ authedPage: page, seed }) => {
     const habit = makeHabit({
       name: 'Evening walk',

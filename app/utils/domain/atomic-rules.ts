@@ -290,18 +290,37 @@ const BREAK_RULES: Record<MissReasonCode, AtomicTemplate[]> = {
   ],
 }
 
-export function generateSuggestionsForMissedEntry(entry: HabitEntry, habit: Habit): CoachingSuggestion[] {
+/**
+ * Optional injection seam for deterministic callers (e.g. demo data generation).
+ * Both factories receive the zero-based index of the suggestion in the selected
+ * rule table and are invoked exactly once per generated suggestion. They only
+ * supply the two nondeterministic fields — they never select, add, remove, or
+ * rewrite rules. Defaults preserve production behaviour.
+ */
+export interface GenerateSuggestionsOptions {
+  /** Returns the id for the suggestion at `index`. Defaults to `createId('suggestion')`. */
+  idFactory?: (index: number) => string
+  /** Returns the ISO `createdAt` timestamp for the suggestion at `index`. Defaults to `nowIso()`. */
+  createdAtFactory?: (index: number) => string
+}
+
+export function generateSuggestionsForMissedEntry(
+  entry: HabitEntry,
+  habit: Habit,
+  options: GenerateSuggestionsOptions = {},
+): CoachingSuggestion[] {
+  const { idFactory = () => createId('suggestion'), createdAtFactory = () => nowIso() } = options
   const reason = entry.missReasonCode ?? 'other'
   const templates = habit.type === 'build' ? BUILD_RULES[reason] : BREAK_RULES[reason]
 
-  return templates.map(template => ({
-    id: createId('suggestion'),
+  return templates.map((template, index) => ({
+    id: idFactory(index),
     entryId: entry.id,
     law: template.law,
     direction: template.direction,
     title: template.title,
     action: template.action,
     rationale: template.rationale,
-    createdAt: nowIso(),
+    createdAt: createdAtFactory(index),
   }))
 }

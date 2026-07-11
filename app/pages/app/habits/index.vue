@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Habit } from '~/types/app-data'
 import { isDateInHabitPause, todayDateKey } from '~/utils/domain/date'
+import { sortWeekdaysForDisplay, WEEKDAY_LABELS } from '~/utils/domain/weekdays'
 
 definePageMeta({ layout: 'app' })
 
@@ -16,15 +17,6 @@ function isCurrentlyPaused(habit: Habit): boolean {
 const showArchived = ref(false)
 const page = ref(1)
 const itemsPerPage = 6
-const weekdayLabels: Record<number, string> = {
-  0: 'Sun',
-  1: 'Mon',
-  2: 'Tue',
-  3: 'Wed',
-  4: 'Thu',
-  5: 'Fri',
-  6: 'Sat',
-}
 
 const filteredHabits = computed(() =>
   habitsStore.habits
@@ -78,13 +70,9 @@ function toggleArchive(habitId: string, archived: boolean): void {
 }
 
 function scheduleLabel(weekdays: number[]): string {
-  const sortedDays = [...weekdays].sort((left, right) => {
-    const leftRank = (left - settingsStore.weekStartsOn + 7) % 7
-    const rightRank = (right - settingsStore.weekStartsOn + 7) % 7
-    return leftRank - rightRank || left - right
-  })
-
-  return sortedDays.map(day => weekdayLabels[day] ?? String(day)).join(', ')
+  return sortWeekdaysForDisplay(weekdays, settingsStore.weekStartsOn)
+    .map(day => WEEKDAY_LABELS[day] ?? String(day))
+    .join(', ')
 }
 
 function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' } {

@@ -1,4 +1,5 @@
-import type { AppData, AtomicLaw, CoachingSuggestion, Habit, HabitEntry, LawDirection, MissReasonCode } from '~/types/app-data'
+import type { AppData, CoachingSuggestion, Habit, HabitEntry, MissReasonCode } from '~/types/app-data'
+import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 
 // ── date helpers ──────────────────────────────────────────────────────────────
 
@@ -208,70 +209,10 @@ const MISS_REASONS: Record<string, Array<[MissReasonCode, string]>> = {
   ],
 }
 
-// ── coaching suggestion templates (all 4 Atomic Laws × 2 directions) ──────────
-
-type LawKey = `${AtomicLaw}/${LawDirection}`
-interface SuggestionTemplate {
-  title: string
-  action: string
-  rationale: string
-}
-
-const SUGGESTION_TEMPLATES: Record<LawKey, SuggestionTemplate[]> = {
-  'obvious/increase': [
-    { title: 'Make it visible', action: 'Place your gear or materials somewhere you can\'t miss them the night before.', rationale: 'Out of sight is out of mind — a visible cue primes action automatically.' },
-    { title: 'Stack onto an existing cue', action: 'Attach this habit directly after something you already do every day.', rationale: 'Implementation intentions (\'after X, I will Y\') dramatically improve follow-through.' },
-    { title: 'Use a habit tracker', action: 'Add a visible checkbox or tally to your daily routine.', rationale: 'Tracking creates a visual streak that motivates you to maintain consistency.' },
-    { title: 'Design a cue card', action: 'Write the habit on a sticky note and put it somewhere unavoidable.', rationale: 'Environmental cues are more reliable triggers than relying on memory alone.' },
-  ],
-  'obvious/decrease': [
-    { title: 'Hide the trigger', action: 'Remove the primary cue from sight or easy reach.', rationale: 'What you see you do — removing the cue breaks the automatic response.' },
-    { title: 'Add friction at the source', action: 'Put your phone in a drawer or use an app blocker during off-hours.', rationale: 'Increasing friction reduces the automatic pull of any trigger.' },
-    { title: 'Redesign your environment', action: 'Rearrange your space so the temptation is no longer in the default path.', rationale: 'Environment design is more reliable than willpower.' },
-    { title: 'Uninstall or log out', action: 'Remove the app or sign out so there is an extra step to get back in.', rationale: 'Inconvenience before the behaviour is one of the most effective deterrents.' },
-  ],
-  'attractive/increase': [
-    { title: 'Temptation bundling', action: 'Pair this habit with something you genuinely enjoy, like a podcast or coffee.', rationale: 'Combining a \'want\' with a \'should\' makes the habit much more appealing.' },
-    { title: 'Find an accountability partner', action: 'Share your goal with someone and check in weekly.', rationale: 'We naturally adopt habits that feel expected or normal in our social circle.' },
-    { title: 'Connect to identity', action: 'Before starting, remind yourself: \'This is who I am becoming.\'', rationale: 'Linking a habit to identity makes the behaviour intrinsically motivating.' },
-    { title: 'Join a community', action: 'Find a group online or locally that shares this goal.', rationale: 'Belonging to a group that practises the same habit normalises it powerfully.' },
-  ],
-  'attractive/decrease': [
-    { title: 'Make it unattractive', action: 'List the real downsides of the behaviour and review them before urges hit.', rationale: 'Surfacing real costs reduces the pull of immediate reward.' },
-    { title: 'Find a healthier replacement', action: 'Choose an alternative that meets the same underlying need.', rationale: 'Behaviours satisfy deeper needs — address the need rather than fighting the urge.' },
-    { title: 'Reframe the reward', action: 'Notice how you feel an hour after the behaviour — is it worth it?', rationale: 'Delayed reflection erodes the perceived value of the unwanted habit.' },
-  ],
-  'easy/increase': [
-    { title: 'Reduce to 2 minutes', action: 'Commit to only a 2-minute version when motivation is low.', rationale: 'Starting is the hardest part — a tiny version almost always grows.' },
-    { title: 'Prepare everything in advance', action: 'Set up your environment the night before so nothing needs arranging.', rationale: 'Decision fatigue kills habits — removing setup removes the main point of resistance.' },
-    { title: 'Remove one friction step', action: 'Identify the most annoying setup step and eliminate it permanently.', rationale: 'Each friction point is an exit ramp — remove as many as you can.' },
-    { title: 'Schedule it like a meeting', action: 'Block time on your calendar and treat it as non-negotiable.', rationale: 'What gets scheduled gets done — ambiguity is the enemy of consistency.' },
-  ],
-  'easy/decrease': [
-    { title: 'Add a 10-minute delay', action: 'Commit to waiting 10 minutes before acting on the urge.', rationale: 'Urges are short-lived — a brief pause is often enough to let them pass.' },
-    { title: 'Increase the friction', action: 'Add a concrete extra step between yourself and the behaviour.', rationale: 'Making something slightly harder naturally reduces how often it happens.' },
-    { title: 'Use a commitment device', action: 'Set up a rule, timer, or app blocker in advance while your resolve is strong.', rationale: 'Binding your future self removes the need for in-the-moment willpower.' },
-    { title: 'Make the default hard', action: 'Change the default state so the easy path is the abstinent path.', rationale: 'Default settings govern behaviour — optimise them in your favour.' },
-  ],
-  'satisfying/increase': [
-    { title: 'Reward completion immediately', action: 'Give yourself a small treat right after completing the habit.', rationale: 'Immediate rewards wire the brain to associate the habit with pleasure.' },
-    { title: 'Track your streak visually', action: 'Mark every successful day on a calendar — never break the chain.', rationale: 'Visual progress creates satisfaction that motivates continuation.' },
-    { title: 'Celebrate with a small gesture', action: 'Say \'yes!\' or do a fist pump when done — however small it feels.', rationale: 'Positive emotion immediately after a behaviour strengthens the neural loop.' },
-    { title: 'Log a wins note', action: 'Write one sentence about how the habit made you feel today.', rationale: 'Recording progress creates a tangible sense of growth that is rewarding to revisit.' },
-  ],
-  'satisfying/decrease': [
-    { title: 'Make the cost visible', action: 'Log every slip with a brief note on how it made you feel afterwards.', rationale: 'Writing it down creates accountability and reduces unconscious repetition.' },
-    { title: 'Introduce a competing pleasure', action: 'Find a satisfying alternative for the same moment of temptation.', rationale: 'Competing pleasures can crowd out unwanted habits when the timing overlaps.' },
-    { title: 'Use social accountability', action: 'Tell someone your goal so that breaking it carries a real social cost.', rationale: 'Social accountability makes non-compliance uncomfortable — a powerful deterrent.' },
-    { title: 'Create a personal consequence', action: 'Set a small, self-imposed penalty for each slip.', rationale: 'Attaching a mild cost to slips shifts the satisfaction calculus against the behaviour.' },
-  ],
-}
-
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const SKIP_RATE = 0.18
 const MISS_REASON_RATE = 0.78
-const LAWS: AtomicLaw[] = ['obvious', 'attractive', 'easy', 'satisfying']
 
 // Phase boundaries in days from periodStart.
 // Phase 0 (weeks 1–6): struggling to form habits
@@ -328,6 +269,8 @@ export function generateDemoData(today = new Date()): AppData {
     }
   })
 
+  const habitsById = new Map(habits.map(habit => [habit.id, habit]))
+
   const entries: HabitEntry[] = []
   const suggestions: CoachingSuggestion[] = []
 
@@ -379,29 +322,18 @@ export function generateDemoData(today = new Date()): AppData {
         entry.missReasonCode = code
         entry.missReasonNote = note
 
-        const direction: LawDirection = def.type === 'build' ? 'increase' : 'decrease'
-
-        // Pick two distinct laws for coaching suggestions
-        const lawIndexA = Math.floor(rng() * LAWS.length)
-        const lawIndexB = (lawIndexA + 1 + Math.floor(rng() * (LAWS.length - 1))) % LAWS.length
-        const chosenLaws = [LAWS[lawIndexA], LAWS[lawIndexB]] as AtomicLaw[]
-
-        chosenLaws.forEach((law, i) => {
-          const key: LawKey = `${law}/${direction}`
-          const templates = SUGGESTION_TEMPLATES[key] ?? []
-          const tmpl = templates[Math.floor(rng() * templates.length)]
-          if (!tmpl) return
-          suggestions.push({
-            id: `suggestion_${entryId}_${i + 1}`,
-            entryId,
-            law,
-            direction,
-            title: tmpl.title,
-            action: tmpl.action,
-            rationale: tmpl.rationale,
-            createdAt: dateToIso(cursor, `21:0${i}:00.000`),
-          })
-        })
+        // Coaching comes straight from the real engine so demo data can never
+        // drift from what the app actually suggests (issue #38, ADR-0005).
+        // Deterministic factories preserve the historical demo IDs/timestamps.
+        const habit = habitsById.get(def.id)
+        if (habit) {
+          suggestions.push(
+            ...generateSuggestionsForMissedEntry(entry, habit, {
+              idFactory: index => `suggestion_${entryId}_${index + 1}`,
+              createdAtFactory: index => dateToIso(cursor, `21:0${index}:00.000`),
+            }),
+          )
+        }
       }
 
       entries.push(entry)

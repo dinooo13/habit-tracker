@@ -121,6 +121,9 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 9. [Persistence adapter interface](docs/adr/0009-persistence-adapter-interface.md)
 10. [AppDataV2 — flexible schedules & pause ranges](docs/adr/0010-appdatav2-flexible-schedules-pause-ranges.md)
 11. [Absolute session timeout for dummy auth](docs/adr/0011-absolute-session-timeout-for-dummy-auth.md)
+12. [Dual Vitest projects for Node and Nuxt runtime tests](docs/adr/0012-dual-vitest-projects-for-node-and-nuxt-runtime-tests.md)
+13. [Nuxt ESLint flat config](docs/adr/0013-nuxt-eslint-flat-config.md)
+14. [Intent-revealing utility taxonomy with explicit imports](docs/adr/0014-intent-revealing-utility-taxonomy.md)
 
 ## Contributing & workflow
 
@@ -131,10 +134,11 @@ done are documented in [`docs/WORKFLOW.md`](docs/WORKFLOW.md). Issue and PR temp
 
 ## Testing
 
-Tests run on **Vitest** (`node` environment) with `fake-indexeddb` for storage. They live in
-`tests/` and cover the stores, utilities, schema validation, and Dexie round-trips, with
-fixtures in `tests/fixtures/`. Run `npm run test`. See [`docs/TESTING.md`](docs/TESTING.md)
-for conventions.
+Tests run on **Vitest** across two projects (ADR-0012) — a fast `node` `unit` project and a
+Nuxt-runtime `nuxt` project (happy-dom) for rendered components/pages — with `fake-indexeddb`
+for storage. They live in `tests/` (rendered tests under `tests/nuxt/`) and cover the stores,
+utilities, schema validation, and Dexie round-trips, with fixtures in `tests/fixtures/`. Run
+`npm run test`. See [`docs/TESTING.md`](docs/TESTING.md) for conventions.
 
 ## Security
 

@@ -84,9 +84,9 @@ Tests live in `tests/`:
   "plain, proxy-free" guarantee across all four persisted stores: `snapshot()` returns
   a structured-clonable deep clone, roots/records/nested arrays are not Vue proxies, and
   snapshots stay detached from live store state in both mutation directions.
-- **Utilities** — `date.test.ts`, `atomic-rules.test.ts`, `route-mapping.test.ts`,
-  `dummy-auth.test.ts`, `id.test.ts`, `safe-json.test.ts`, `security-log.test.ts`,
-  `storage-health.test.ts`.
+- **Utilities** — `date.test.ts`, `weekdays.test.ts`, `atomic-rules.test.ts`,
+  `route-mapping.test.ts`, `dummy-auth.test.ts`, `id.test.ts`, `demo-data-generator.test.ts`,
+  `safe-json.test.ts`, `security-log.test.ts`, `storage-health.test.ts`.
 - **Schema & validation** — `storage-schema.test.ts`.
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
   `fake-indexeddb`, exercised through the `PersistenceAdapter` interface) and

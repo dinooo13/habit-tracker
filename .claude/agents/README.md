@@ -24,10 +24,11 @@ PR:     in-progress (draft) ──implementer: gates green──▶ needs-review
          until a human puts the PR back to in-progress)
 
 PR (stale vs main):
-        needs-review ──rebaser: clean rebase──▶ needs-review (new head; reviewer re-runs per SHA marker)
-        needs-qa     ──rebaser: clean rebase──▶ needs-qa     (preview redeploys; qa re-runs per SHA marker)
-        approved     ──rebaser: clean rebase──▶ needs-qa
-        any of the three ──rebaser: conflict / red gates──▶ in-progress (marker comment = implementer queue)
+        needs-review ──rebaser: clean OR self-resolved small conflict──▶ needs-review (new head; reviewer re-runs per SHA marker; audit comment on self-resolve)
+        needs-qa     ──rebaser: clean OR self-resolved small conflict──▶ needs-qa     (preview redeploys; qa re-runs per SHA marker; audit comment on self-resolve)
+        approved     ──rebaser: clean OR confident self-resolve──▶ approved (stays merge-ready; audit comment on self-resolve)
+        approved     ──rebaser: self-resolve, fresh pass warranted──▶ needs-qa (audit comment)
+        any of the three ──rebaser: big conflict / red gates──▶ in-progress (marker comment = implementer queue)
 ```
 
 Queues:
@@ -63,9 +64,9 @@ Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue
 is unavailable in the routine toolset, PR bodies are editable via
 `update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
 `<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit -->`
-(docs-audit PR body), `<!-- routine:rebase -->` (rebaser bounce / demotion comment on
-the PR — no per-SHA variant: rebaser idempotency is structural, a rebased branch is no
-longer behind).
+(docs-audit PR body), `<!-- routine:rebase -->` (rebaser bounce, demotion, **or
+self-resolution audit** comment on the PR — no per-SHA variant: rebaser idempotency is
+structural, a rebased branch is no longer behind).
 
 A rebaser force-push intentionally invalidates the per-SHA review/QA markers: the code
 sits on a new base, so re-review/re-QA at the new head is correct, not waste — and the
@@ -120,9 +121,10 @@ agent files, not the routine.
 > spawn one fresh `rebaser` agent (subagent_type: "rebaser") with isolation:
 > "worktree" — "Rebase PR #{P}" — one agent per PR, never reused; agents may run in
 > parallel (branches are independent). Collect only each outcome. Finish with a
-> summary: rebased (label kept / demoted to needs-qa), bounced to in-progress
-> (conflict or red gates), skipped (current / docs-only drift / draft). Never resolve
-> conflicts, review, merge, or push to main yourself.
+> summary: rebased (clean / self-resolved, label kept / self-resolved, demoted to
+> needs-qa), bounced to in-progress (big conflict or red gates), skipped (current /
+> docs-only drift / draft). Never resolve conflicts you are not confident about, and
+> never review, merge, or push to main yourself.
 
 The routine passes every candidate; the *agent* performs the cheap behind/need check in
 git — keeping the routine thin per the rule above. Run it once per cycle, after the

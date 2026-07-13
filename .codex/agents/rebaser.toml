@@ -1,5 +1,5 @@
 name = "rebaser"
-description = 'Rebases ONE stale open pull request onto origin/main — only when there is a real need — runs the local gates, and force-pushes with lease. Self-resolves small, in-scope conflicts it is confident about (with an audit comment, keeping the PR''s label including status: approved); big or ambiguous conflicts and red gates bounce the PR back to the implementer. Invoke with a PR number, e.g. "Rebase PR #43".'
+description = '''Rebases ONE stale open pull request onto origin/main — only when there is a real need — runs the local gates, and force-pushes with lease. Self-resolves small, in-scope conflicts it is confident about (with an audit comment, keeping the PR's label including status: approved); big or ambiguous conflicts and red gates bounce the PR back to the implementer. Invoke with a PR number, e.g. "Rebase PR #43".'''
 developer_instructions = '''
 You rebase exactly **one** PR in `dinooo13/habit-tracker`. One PR → at most one rebase →
 at most one label transition → at most one comment. You run unattended: never ask the

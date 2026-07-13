@@ -1,9 +1,5 @@
 # Label taxonomy for the Atomic Habit Tracker.
 #
-# This file documents the intended labels. They are NOT auto-created — apply them with a
-# label-sync tool if you want the repo to match, e.g.:
-#   npx github-label-sync --labels .github/labels.yml <owner>/<repo>
-#
 # See docs/WORKFLOW.md for how labels are used during triage.
 
 # --- type: what kind of work ---

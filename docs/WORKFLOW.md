@@ -28,11 +28,13 @@ When an issue comes in, label it. Every issue should get at least a **type** and
 | **status** | `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review`, `status: needs-qa`, `status: approved` (PRs) | Where it stands. Issues: `needs-plan-review` = plan awaits human approval. PRs: `needs-review` → `needs-qa` → `approved` (ready for human merge). |
 | **area** | `area: persistence`, `area: coaching`, `area: ui`, `area: pwa`, `area: auth`, `area: analytics` | Part of the app affected. |
 
-The legacy `enhancement` and `security` labels still exist; prefer the namespaced
-`type: enhancement` / `type: security` going forward.
+Use the namespaced `type: enhancement` / `type: security` labels; the bare legacy
+`enhancement` / `security` labels are not part of the taxonomy and no longer exist on the repo.
 
-> Note: `labels.yml` documents the intended set. Labels are **not** auto-created — apply them
-> with a label-sync tool/action (e.g. `github-label-sync`) if you want the repo to match.
+> Note: `labels.yml` is the single source of truth and is synced automatically. The
+> [`label-sync` workflow](../.github/workflows/label-sync.yml) runs `github-label-sync` on
+> pushes to `main` that touch `.github/labels.yml` (and on manual dispatch): it creates and
+> updates every label listed in the file **and deletes any repo label that is not listed**.
 
 ## 3. Branching
 

@@ -75,8 +75,10 @@ build → review → QA loop is driven by the **PR** label (`in-progress` → `n
 → `needs-qa` → `approved`, bouncing back to `in-progress` on findings). After merges
 land on `main`, the `rebaser` keeps queued PRs (`needs-review` / `needs-qa` /
 `approved`) rebased when they actually conflict or their CI/QA base went stale,
-bouncing conflicts back to `status: in-progress` — operationalizing §3's "rebase on
-`main` rather than letting them drift". Two
+self-resolving small conflicts it is confident about (with an audit comment, keeping
+their label including `approved`) and bouncing big or ambiguous conflicts or red gates
+back to `status: in-progress` — operationalizing §3's "rebase on `main` rather than
+letting them drift". Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
 PR. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 

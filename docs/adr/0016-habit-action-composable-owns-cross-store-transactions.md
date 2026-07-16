@@ -1,4 +1,4 @@
-# 15. Habit-action composable owns cross-store entry/suggestion transactions
+# 16. Habit-action composable owns cross-store entry/suggestion transactions
 
 - **Status:** Accepted
 - **Date:** 2026-07-16

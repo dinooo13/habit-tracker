@@ -16,7 +16,7 @@ function isReflectedMiss(entry: HabitEntry): boolean {
 /**
  * Owns every cross-store entry↔suggestion transaction so pages never wire the
  * side-effects by hand. It composes the existing single-store primitives and is
- * the single enforcer of the entry↔suggestion invariant (ADR-0015). It holds no
+ * the single enforcer of the entry↔suggestion invariant (ADR-0016). It holds no
  * state of its own; stores are imported explicitly so unit tests run in the fast
  * Node Vitest project (ADR-0012) without booting Nuxt.
  */

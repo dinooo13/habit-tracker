@@ -240,7 +240,7 @@ describe('store integration with pauses', () => {
   })
 
   // Pause cleanup moved out of the habits store into useHabitActions().reconcilePauseCleanup
-  // (ADR-0015); its parity test now lives in tests/habit-actions.test.ts.
+  // (ADR-0016); its parity test now lives in tests/habit-actions.test.ts.
 
   it('completionRateForHabit ignores paused days in the denominator', () => {
     const entriesStore = useEntriesStore()

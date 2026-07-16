@@ -1,4 +1,5 @@
 import type { AppData, CoachingSuggestion, Habit, HabitEntry, MissReasonCode } from '~/types/app-data'
+import { APP_DATA_SCHEMA_VERSION } from '~/types/app-data'
 import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 
 // ── date helpers ──────────────────────────────────────────────────────────────
@@ -343,7 +344,7 @@ export function generateDemoData(today = new Date()): AppData {
   }
 
   return {
-    schemaVersion: 2,
+    schemaVersion: APP_DATA_SCHEMA_VERSION,
     habits,
     entries,
     suggestions,

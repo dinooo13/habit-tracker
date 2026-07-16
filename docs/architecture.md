@@ -104,6 +104,13 @@ structured-clonable — so the [adapter](adr/0009-persistence-adapter-interface.
 straight to its backend without stripping Vue proxies. Reactive tracking is a bootstrap
 concern; serialization is a store concern.
 
+The load → hydrate → apply-palette, reconcile, and snapshot steps above are not open-coded in
+bootstrap. They are the `replaceAppData()`, `reconcileDerivedState()`, and `snapshotAppData()`
+functions of `useAppDataLifecycle()` (`app/composables/use-app-data-lifecycle.ts`), the single
+lifecycle seam shared by bootstrap, settings import/delete-all, and demo hydration. The composable
+is state-only; UI side effects and `persistence.save()` stay at each call site
+(see [adr/0015](adr/0015-app-data-lifecycle-composable.md)).
+
 The persisted envelope is **`AppDataV2`** (`{ schemaVersion: 2, habits, entries, suggestions,
 settings }`). Each `Habit` carries a `pauses: HabitPause[]` list of inclusive `YYYY-MM-DD`
 ranges; days inside a pause are never *due*. Stored V1 payloads and legacy `localStorage`

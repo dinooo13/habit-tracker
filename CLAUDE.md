@@ -41,7 +41,7 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
+| `app/composables/` | `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
 | `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `weekdays.ts`), `persistence/` (`persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
@@ -88,13 +88,20 @@ See `docs/glossary.md` for the domain vocabulary.
 
 ## Persistence flow
 
+The four-store lifecycle — build the persist envelope, replace all app data, and reconcile
+derived state — is defined once in `useAppDataLifecycle()`
+(`app/composables/use-app-data-lifecycle.ts`, ADR-0015): `snapshotAppData()`,
+`replaceAppData(data)`, and `reconcileDerivedState(dateKey?)`. Bootstrap, settings
+import/delete-all, and demo hydration all compose these; UI side effects and `persistence.save()`
+stay at the call sites.
+
 `app/plugins/bootstrap.client.ts` on startup:
 1. `usePersistence().load()` reads from IndexedDB (Dexie), migrating any legacy
    `localStorage` payload on first run.
-2. Hydrates the four stores; applies the primary color.
-3. Runs `entriesStore.ensureMissedEntries(...)` and `coachStore.reconcileMissingSuggestions(...)`.
-4. Deep-`watch`es a combined snapshot and persists it **debounced at 800ms**, flushing
-   immediately on `pagehide` and on `visibilitychange → hidden`.
+2. `replaceAppData(loaded)` hydrates the four stores and applies the primary color.
+3. `reconcileDerivedState(todayDateKey())` backfills missed entries then reconciles suggestions.
+4. Deep-`watch`es a combined snapshot (`snapshotAppData()`) and persists it **debounced at 800ms**,
+   flushing immediately on `pagehide` and on `visibilitychange → hidden`.
 
 ## Guardrails / gotchas
 

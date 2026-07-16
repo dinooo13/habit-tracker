@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
-import type { Habit, PrimaryColor } from '~/types/app-data'
+import type { AppData, Habit, PrimaryColor } from '~/types/app-data'
 import { FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
 import { assertRawHabitLimits, createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/persistence/storage-schema'
 import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/domain/date'
@@ -13,11 +13,10 @@ definePageMeta({ layout: 'app' })
 
 const settingsStore = useSettingsStore()
 const habitsStore = useHabitsStore()
-const entriesStore = useEntriesStore()
-const coachStore = useCoachStore()
 
 const reminderEngine = useReminderEngine()
 const persistence = usePersistence()
+const lifecycle = useAppDataLifecycle()
 const toast = useToast()
 const demoData = useDemoData()
 const storageHealth = useStorageHealth()
@@ -134,17 +133,7 @@ async function requestPermission(): Promise<void> {
   })
 }
 
-function buildCurrentPayload() {
-  return {
-    schemaVersion: 2 as const,
-    habits: habitsStore.snapshot(),
-    entries: entriesStore.snapshot(),
-    suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot(),
-  }
-}
-
-function downloadBackup(payload: ReturnType<typeof buildCurrentPayload>): void {
+function downloadBackup(payload: AppData): void {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -155,7 +144,7 @@ function downloadBackup(payload: ReturnType<typeof buildCurrentPayload>): void {
 }
 
 function exportJson(): void {
-  const payload = buildCurrentPayload()
+  const payload = lifecycle.snapshotAppData()
   downloadBackup(payload)
 
   logSecurityEvent('data.export', 'info', `${payload.habits.length} habits exported`)
@@ -261,16 +250,6 @@ function extractHabitsFromImportPayload(payload: unknown): Habit[] {
   return rawHabits
     .map(item => normalizeImportedHabit(item))
     .filter((item): item is Habit => Boolean(item))
-}
-
-async function persistCurrentState(): Promise<void> {
-  await persistence.save({
-    schemaVersion: 2,
-    habits: habitsStore.snapshot(),
-    entries: entriesStore.snapshot(),
-    suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot(),
-  })
 }
 
 function pluralize(value: number, singular: string, plural = `${singular}s`): string {
@@ -526,7 +505,7 @@ async function confirmImport(): Promise<void> {
 
       const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(importedHabits)
       habitsStore.hydrate(mergedHabits)
-      await persistCurrentState()
+      await persistence.save(lifecycle.snapshotAppData())
       void storageHealth.checkQuota()
 
       logSecurityEvent('data.import', 'info', `habits-only: ${addedCount} added, ${updatedCount} updated`)
@@ -539,18 +518,10 @@ async function confirmImport(): Promise<void> {
     else {
       const parsed = parseAppData(payload)
 
-      habitsStore.hydrate(parsed.habits)
-      entriesStore.hydrate(parsed.entries)
-      coachStore.hydrate(parsed.suggestions)
-      settingsStore.hydrate(parsed.settings)
-      entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
-      coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
+      lifecycle.replaceAppData(parsed)
+      lifecycle.reconcileDerivedState()
 
-      await persistence.save({
-        ...parsed,
-        entries: entriesStore.snapshot(),
-        suggestions: coachStore.snapshot(),
-      })
+      await persistence.save(lifecycle.snapshotAppData())
       void storageHealth.checkQuota()
 
       syncDailyReviewTimeFromSettings()
@@ -579,21 +550,17 @@ async function confirmImport(): Promise<void> {
 
 async function deleteAllData(withBackup: boolean): Promise<void> {
   if (withBackup) {
-    downloadBackup(buildCurrentPayload())
+    downloadBackup(lifecycle.snapshotAppData())
   }
 
-  const empty = createEmptyAppData()
-  habitsStore.hydrate(empty.habits)
-  entriesStore.hydrate(empty.entries)
-  coachStore.hydrate(empty.suggestions)
-  settingsStore.hydrate(empty.settings)
+  lifecycle.replaceAppData(createEmptyAppData())
   // "Download backup and delete all" counts as an export — record it (issue #8) so a
   // later re-import doesn't immediately re-nudge.
   if (withBackup) {
     backupNudge.markExported()
   }
   syncDailyReviewTimeFromSettings()
-  await persistence.save({ ...empty, settings: settingsStore.snapshot() })
+  await persistence.save(lifecycle.snapshotAppData())
   void storageHealth.checkQuota()
   notificationPermission.value = reminderEngine.currentPermission()
   deleteAllModalOpen.value = false

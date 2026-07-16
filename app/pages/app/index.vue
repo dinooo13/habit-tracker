@@ -16,9 +16,9 @@ definePageMeta({ layout: 'app' })
 
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
-const coachStore = useCoachStore()
 const settingsStore = useSettingsStore()
 const backupNudge = useBackupNudge()
+const habitActions = useHabitActions()
 
 const today = todayDateKey()
 const selectedDateKey = ref(today)
@@ -259,7 +259,7 @@ function typeMeta(type: HabitType): { label: string, color: 'primary' | 'warning
 const toast = useToast()
 
 function setHabitStatus(habitId: string, status: 'done' | 'missed' | 'skipped'): void {
-  entriesStore.setStatus(habitId, dateKey.value, status)
+  habitActions.recordHabitStatus(habitId, dateKey.value, status)
 
   const title
     = status === 'done'
@@ -287,12 +287,11 @@ function reminderLabel(reminderTime: string | null): string {
 }
 
 function reopenHabit(habitId: string): void {
-  const removedEntry = entriesStore.clearStatus(habitId, dateKey.value)
+  const removedEntry = habitActions.reopenEntry(habitId, dateKey.value)
   if (!removedEntry) {
     return
   }
 
-  coachStore.removeForEntry(removedEntry.id)
   toast.add({ title: 'Moved back to open', color: 'neutral' })
 }
 </script>

@@ -129,20 +129,26 @@ no network and no persistence.
 ## Coaching flow
 
 Missing a habit and recording *why* deterministically produces suggestions — no LLM, no
-network (see [ADR-0005](adr/0005-deterministic-atomic-habits-coaching-engine.md)).
+network (see [ADR-0005](adr/0005-deterministic-atomic-habits-coaching-engine.md)). Pages never
+combine store mutators by hand: every cross-store entry↔suggestion transaction goes through
+`useHabitActions()`, the single owner of the invariant "a suggestion exists iff its entry is a
+reflected miss" (see [ADR-0015](adr/0015-habit-action-composable-owns-cross-store-transactions.md)).
 
 ```mermaid
 flowchart LR
   miss["Habit marked 'missed'<br/>(today's queue / ensureMissedEntries)"]
   review["Review page · ReflectionModal"]
-  reason["setMissReason(entryId, code, note)"]
-  gen["coach.generateForEntry()"]
+  svc["useHabitActions().recordReflection()<br/>setMissReason → generateForEntry"]
   rules["atomic-rules:<br/>BUILD_RULES / BREAK_RULES<br/>by habit type + reason"]
   out["CoachingSuggestion[]<br/>(law + direction + action)"]
   show["Surfaced in Review & Insights"]
 
-  miss --> review --> reason --> gen --> rules --> out --> show
+  miss --> review --> svc --> rules --> out --> show
 ```
+
+Status changes (`recordHabitStatus`), reopen (`reopenEntry`), pause cleanup
+(`reconcilePauseCleanup`), and cascade delete (`deleteHabitCascade`) flow through the same
+service, which drops any suggestions whose entry is no longer a reflected miss.
 
 ## Routing
 

@@ -238,40 +238,8 @@ describe('store integration with pauses', () => {
     expect(dates).toContain('2026-03-06')
   })
 
-  it('pruneMissedEntriesInPauses removes unreflected misses but preserves the rest', () => {
-    const habitsStore = useHabitsStore()
-    const entriesStore = useEntriesStore()
-    const coachStore = useCoachStore()
-
-    habitsStore.hydrate([buildHabit({ pauses: [{ start: '2026-03-03', end: '2026-03-05' }] })])
-
-    entriesStore.hydrate([
-      buildEntry({ id: 'e_unreflected', date: '2026-03-04', status: 'missed', missReasonCode: null }),
-      buildEntry({ id: 'e_reflected', date: '2026-03-04', status: 'missed', missReasonCode: 'forgot' }),
-      buildEntry({ id: 'e_done', date: '2026-03-05', status: 'done', completedAt: '2026-03-05T08:00:00.000Z' }),
-      buildEntry({ id: 'e_skipped', date: '2026-03-03', status: 'skipped' }),
-      buildEntry({ id: 'e_outside', date: '2026-03-09', status: 'missed', missReasonCode: null }),
-    ])
-    coachStore.hydrate([
-      {
-        id: 'sug_1',
-        entryId: 'e_unreflected',
-        law: 'obvious',
-        direction: 'increase',
-        title: 't',
-        action: 'a',
-        rationale: 'r',
-        createdAt: '2026-03-04T00:00:00.000Z',
-      },
-    ])
-
-    const removed = habitsStore.pruneMissedEntriesInPauses('habit_1')
-
-    expect(removed).toBe(1)
-    const ids = entriesStore.entries.map(entry => entry.id).sort()
-    expect(ids).toEqual(['e_done', 'e_outside', 'e_reflected', 'e_skipped'])
-    expect(coachStore.suggestions).toHaveLength(0) // suggestion for removed entry is cleaned up
-  })
+  // Pause cleanup moved out of the habits store into useHabitActions().reconcilePauseCleanup
+  // (ADR-0015); its parity test now lives in tests/habit-actions.test.ts.
 
   it('completionRateForHabit ignores paused days in the denominator', () => {
     const entriesStore = useEntriesStore()

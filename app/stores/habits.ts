@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import type { Habit, HabitCreateInput, HabitPause, HabitUpdateInput } from '~/types/app-data'
-import { compareDateKeys, isDateInHabitPause, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/domain/date'
+import { compareDateKeys, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/domain/date'
 import { createId } from '~/utils/domain/id'
-import { useEntriesStore } from '~/stores/entries'
-import { useCoachStore } from '~/stores/coach'
 
 interface HabitsState {
   habits: Habit[]
@@ -86,38 +84,6 @@ export const useHabitsStore = defineStore('habits', {
 
       return habit
     },
-    /**
-     * Retroactively clean up after a pause is added or extended: remove any
-     * auto-generated `missed` entry that now falls inside a pause range. Only
-     * *unreflected* misses (`status: 'missed'` && `missReasonCode === null`) are
-     * removed — `done`/`skipped` and reflected misses are preserved (ADR-0010).
-     *
-     * @returns the number of entries removed.
-     */
-    pruneMissedEntriesInPauses(id: string): number {
-      const habit = this.habitById(id)
-      if (!habit || !habit.pauses.length) {
-        return 0
-      }
-
-      const entriesStore = useEntriesStore()
-      const coachStore = useCoachStore()
-
-      const toRemove = entriesStore.entries.filter(
-        entry =>
-          entry.habitId === habit.id
-          && entry.status === 'missed'
-          && entry.missReasonCode === null
-          && isDateInHabitPause(habit, entry.date),
-      )
-
-      for (const entry of toRemove) {
-        coachStore.removeForEntry(entry.id)
-        entriesStore.removeEntry(entry.id)
-      }
-
-      return toRemove.length
-    },
     archiveHabit(id: string): void {
       const habit = this.habitById(id)
       if (!habit) {
@@ -136,6 +102,11 @@ export const useHabitsStore = defineStore('habits', {
       habit.archived = false
       habit.updatedAt = nowIso()
     },
+    /**
+     * Single-store removal primitive: drop the habit by id. Cross-store cleanup
+     * of its entries and suggestions is orchestrated by `deleteHabitCascade` in
+     * `useHabitActions` (ADR-0015) — callers should prefer the cascade.
+     */
     deleteHabit(id: string): void {
       this.habits = this.habits.filter(habit => habit.id !== id)
     },

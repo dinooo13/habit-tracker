@@ -18,14 +18,18 @@ diagrams and `docs/adr/` for the recorded design decisions.
 | `npm run dev` | Start the dev server with HMR. |
 | `npm run test` | Run the Vitest suite once (`vitest run`). |
 | `npm run test:watch` | Run Vitest in watch mode. |
+| `npm run lint` | Lint all code with ESLint (read-only check; fails on any violation). |
+| `npm run lint:fix` | Apply safe ESLint/Stylistic autofixes, then re-check. |
 | `npm run typecheck` | Type-check with `nuxt typecheck` (`vue-tsc`). |
 | `npm run build` | Production build. |
 | `npm run preview` | Serve the built output locally. |
 
-CI (`.github/workflows/ci.yml`, Node 22) runs **`npm test` + `npm run typecheck`** (test
-job) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
-treat `npm run test`, `npm run typecheck`, and `npm run build` as the definition of done —
-run `npm run test` and `npm run typecheck` before considering work complete.
+CI (`.github/workflows/ci.yml`, Node 22) runs **`npm run lint` + `npm test` +
+`npm run typecheck`** (test job — lint runs first so cheap static failures stop the job
+early) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
+treat `npm run lint`, `npm run test`, `npm run typecheck`, and `npm run build` as the
+definition of done — run them before considering work complete. Linting/formatting is owned
+by `@nuxt/eslint` (flat config + ESLint Stylistic); see ADR-0013.
 
 ## Architecture map
 
@@ -37,8 +41,8 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
-| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`), `persistence/` (`persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
+| `app/composables/` | `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
+| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `weekdays.ts`), `persistence/` (`persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |

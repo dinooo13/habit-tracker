@@ -108,7 +108,11 @@ export const useHabitsStore = defineStore('habits', {
      * `useHabitActions` (ADR-0016) — callers should prefer the cascade.
      */
     deleteHabit(id: string): void {
-      this.habits = this.habits.filter(habit => habit.id !== id)
+      // Filter over `toRaw(...)` so survivors stay plain objects: filtering the
+      // reactive array reads elements through Vue's proxy and would repopulate
+      // state with reactive proxies that make `snapshot()`'s `structuredClone`
+      // throw `DataCloneError`, silently breaking persistence.
+      this.habits = toRaw(this.habits).filter(habit => habit.id !== id)
     },
   },
 })

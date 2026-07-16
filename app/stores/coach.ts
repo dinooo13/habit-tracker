@@ -29,11 +29,17 @@ export const useCoachStore = defineStore('coach', {
     },
     removeForEntry(entryId: string): number {
       const before = this.suggestions.length
-      this.suggestions = this.suggestions.filter(suggestion => suggestion.entryId !== entryId)
+      // Filter over `toRaw(...)` so the retained elements stay plain objects.
+      // Filtering the reactive array reads each element through Vue's proxy and
+      // would repopulate state with reactive proxies, which then make the
+      // `structuredClone` in `snapshot()` throw `DataCloneError` and silently
+      // break persistence (the outer `toRaw` only unwraps the array root).
+      this.suggestions = toRaw(this.suggestions).filter(suggestion => suggestion.entryId !== entryId)
       return before - this.suggestions.length
     },
     generateForEntry(entry: HabitEntry, habit: Habit): CoachingSuggestion[] {
-      this.suggestions = this.suggestions.filter(suggestion => suggestion.entryId !== entry.id)
+      // See `removeForEntry`: filter over the raw array to keep survivors plain.
+      this.suggestions = toRaw(this.suggestions).filter(suggestion => suggestion.entryId !== entry.id)
       const generated = generateSuggestionsForMissedEntry(entry, habit)
       this.suggestions.push(...generated)
       return generated

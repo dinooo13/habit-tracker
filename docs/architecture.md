@@ -132,7 +132,7 @@ Missing a habit and recording *why* deterministically produces suggestions — n
 network (see [ADR-0005](adr/0005-deterministic-atomic-habits-coaching-engine.md)). Pages never
 combine store mutators by hand: every cross-store entry↔suggestion transaction goes through
 `useHabitActions()`, the single owner of the invariant "a suggestion exists iff its entry is a
-reflected miss" (see [ADR-0015](adr/0015-habit-action-composable-owns-cross-store-transactions.md)).
+reflected miss" (see [ADR-0016](adr/0016-habit-action-composable-owns-cross-store-transactions.md)).
 
 ```mermaid
 flowchart LR

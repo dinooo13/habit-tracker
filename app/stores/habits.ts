@@ -105,7 +105,7 @@ export const useHabitsStore = defineStore('habits', {
     /**
      * Single-store removal primitive: drop the habit by id. Cross-store cleanup
      * of its entries and suggestions is orchestrated by `deleteHabitCascade` in
-     * `useHabitActions` (ADR-0015) — callers should prefer the cascade.
+     * `useHabitActions` (ADR-0016) — callers should prefer the cascade.
      */
     deleteHabit(id: string): void {
       this.habits = this.habits.filter(habit => habit.id !== id)

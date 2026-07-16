@@ -222,7 +222,7 @@ describe('habits store — deleteHabit', () => {
   })
 })
 
-describe('habits store — no cross-store orchestration (ADR-0015)', () => {
+describe('habits store — no cross-store orchestration (ADR-0016)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })

@@ -1,7 +1,5 @@
 import type { AppData } from '~/types/app-data'
-import { todayDateKey } from '~/utils/domain/date'
 import { generateDemoData } from '~/utils/domain/demo-data-generator'
-import { applyPrimaryColorPalette } from '~/utils/ui/primary-color'
 import { parseAppData } from '~/utils/persistence/storage-schema'
 
 const DEMO_FIXTURE_URL = '/fixtures/habit-tracker-demo.json'
@@ -16,40 +14,26 @@ export async function fetchDemoPayload(fetchImpl: typeof fetch, fixtureUrl = DEM
   return parseAppData(await response.json())
 }
 
-interface DemoHydrateDependencies {
-  habitsStore: ReturnType<typeof useHabitsStore>
-  entriesStore: ReturnType<typeof useEntriesStore>
-  coachStore: ReturnType<typeof useCoachStore>
-  settingsStore: ReturnType<typeof useSettingsStore>
-  persistence: ReturnType<typeof usePersistence>
-}
+/**
+ * Loads a demo/fixture payload as a whole-envelope replacement: hydrate all
+ * stores + apply palette (`replaceAppData`), reconcile derived state, then
+ * persist the normalized snapshot. All lifecycle sequencing lives in the shared
+ * composable (ADR-0015).
+ */
+export async function hydrateDemoPayload(payload: AppData): Promise<void> {
+  const lifecycle = useAppDataLifecycle()
+  const persistence = usePersistence()
 
-export async function hydrateDemoPayload(payload: AppData, dependencies: DemoHydrateDependencies): Promise<void> {
-  const { habitsStore, entriesStore, coachStore, settingsStore, persistence } = dependencies
+  lifecycle.replaceAppData(payload)
+  lifecycle.reconcileDerivedState()
 
-  habitsStore.hydrate(payload.habits)
-  entriesStore.hydrate(payload.entries)
-  coachStore.hydrate(payload.suggestions)
-  settingsStore.hydrate(payload.settings)
-
-  entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
-  coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
-  applyPrimaryColorPalette(settingsStore.primaryColor)
-
-  await persistence.save({
-    ...payload,
-    entries: entriesStore.snapshot(),
-    suggestions: coachStore.snapshot(),
-    settings: settingsStore.snapshot(),
-  })
+  await persistence.save(lifecycle.snapshotAppData())
 }
 
 export function useDemoData() {
   const habitsStore = useHabitsStore()
   const entriesStore = useEntriesStore()
   const coachStore = useCoachStore()
-  const settingsStore = useSettingsStore()
-  const persistence = usePersistence()
 
   const isLoading = ref(false)
   const hasExistingData = computed(
@@ -67,13 +51,7 @@ export function useDemoData() {
 
     try {
       const payload = generateDemoData()
-      await hydrateDemoPayload(payload, {
-        habitsStore,
-        entriesStore,
-        coachStore,
-        settingsStore,
-        persistence,
-      })
+      await hydrateDemoPayload(payload)
 
       return { loaded: true }
     }

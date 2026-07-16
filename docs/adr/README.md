@@ -41,4 +41,5 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0012](0012-dual-vitest-projects-for-node-and-nuxt-runtime-tests.md) | Dual Vitest projects for Node and Nuxt runtime tests | Accepted |
 | [0013](0013-nuxt-eslint-flat-config.md) | Nuxt ESLint flat config — repository-wide linting & formatting standard | Accepted |
 | [0014](0014-intent-revealing-utility-taxonomy.md) | Intent-revealing utility taxonomy with explicit imports | Accepted |
+| [0015](0015-app-data-lifecycle-composable.md) | App-data lifecycle composable for snapshot/replace/reconcile | Accepted |
 | [0016](0016-habit-action-composable-owns-cross-store-transactions.md) | Habit-action composable owns cross-store entry/suggestion transactions | Accepted |

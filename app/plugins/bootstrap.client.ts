@@ -27,16 +27,11 @@ export default defineNuxtPlugin(async () => {
   const entriesStore = useEntriesStore()
   const coachStore = useCoachStore()
   const settingsStore = useSettingsStore()
+  const lifecycle = useAppDataLifecycle()
 
   const loaded = await persistence.load()
-  habitsStore.hydrate(loaded.habits)
-  entriesStore.hydrate(loaded.entries)
-  coachStore.hydrate(loaded.suggestions)
-  settingsStore.hydrate(loaded.settings)
-  applyPrimaryColorPalette(settingsStore.primaryColor)
-
-  entriesStore.ensureMissedEntries(habitsStore.activeHabits, todayDateKey())
-  coachStore.reconcileMissingSuggestions(habitsStore.activeHabits, entriesStore.entries)
+  lifecycle.replaceAppData(loaded)
+  lifecycle.reconcileDerivedState(todayDateKey())
 
   watch(
     () => settingsStore.primaryColor,
@@ -82,13 +77,7 @@ export default defineNuxtPlugin(async () => {
   watch(
     () => [habitsStore.habits, entriesStore.entries, coachStore.suggestions, settingsStore.settings],
     () => {
-      pendingPayload = {
-        schemaVersion: loaded.schemaVersion,
-        habits: habitsStore.snapshot(),
-        entries: entriesStore.snapshot(),
-        suggestions: coachStore.snapshot(),
-        settings: settingsStore.snapshot(),
-      }
+      pendingPayload = lifecycle.snapshotAppData()
       if (saveTimer) {
         clearTimeout(saveTimer)
       }

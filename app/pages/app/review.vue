@@ -8,6 +8,7 @@ definePageMeta({ layout: 'app' })
 const habitsStore = useHabitsStore()
 const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
+const habitActions = useHabitActions()
 const toast = useToast()
 
 const pendingModels = computed(() =>
@@ -222,12 +223,11 @@ function submitReflection(payload: { reason: MissReasonCode, note: string | null
       ? pendingModels.value.find(model => model.entry.id !== currentEntryId)?.entry.id ?? null
       : null
 
-  const entry = entriesStore.setMissReason(model.entry.id, payload.reason, payload.note)
-  if (!entry) {
+  const result = habitActions.recordReflection(model.entry.id, payload.reason, payload.note)
+  if (!result) {
     return
   }
 
-  coachStore.generateForEntry(entry, model.habit)
   const remaining = pendingModels.value.length
   toast.add({
     title: 'Reflection saved',

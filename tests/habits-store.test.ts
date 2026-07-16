@@ -222,6 +222,24 @@ describe('habits store — deleteHabit', () => {
   })
 })
 
+describe('habits store — no cross-store orchestration (ADR-0015)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('no longer exposes pruneMissedEntriesInPauses (moved to useHabitActions)', () => {
+    const store = useHabitsStore()
+
+    expect((store as unknown as Record<string, unknown>).pruneMissedEntriesInPauses).toBeUndefined()
+  })
+
+  it('keeps deleteHabit as a pure single-store primitive', () => {
+    const store = useHabitsStore()
+
+    expect(typeof store.deleteHabit).toBe('function')
+  })
+})
+
 describe('habits store — activeHabits / archivedHabits getters', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

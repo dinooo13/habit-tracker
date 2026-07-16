@@ -6,6 +6,7 @@ definePageMeta({ layout: 'app' })
 const route = useRoute()
 const router = useRouter()
 const habitsStore = useHabitsStore()
+const habitActions = useHabitActions()
 const toast = useToast()
 
 const habitId = computed(() => String(route.params.id))
@@ -42,7 +43,7 @@ function onSubmit(payload: {
   }
 
   // Drop auto-generated, unreflected misses that now fall inside a pause (ADR-0010).
-  habitsStore.pruneMissedEntriesInPauses(updated.id)
+  habitActions.reconcilePauseCleanup(updated.id)
 
   toast.add({
     title: 'Habit updated',

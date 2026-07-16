@@ -27,8 +27,6 @@ export const useEntriesStore = defineStore('entries', {
     entryByHabitAndDate(): (habitId: string, date: string) => HabitEntry | undefined {
       return (habitId, date) => this.entryLookup.get(entryLookupKey(habitId, date))
     },
-    entriesForDate: state => (date: string): HabitEntry[] =>
-      state.entries.filter(entry => entry.date === date),
     pendingReflectionEntries: (state): HabitEntry[] =>
       state.entries
         .filter(entry => entry.status === 'missed' && entry.missReasonCode === null)
@@ -148,55 +146,6 @@ export const useEntriesStore = defineStore('entries', {
       }
 
       return createdCount
-    },
-    streakForHabit(habitId: string): number {
-      const entries = this.entriesByHabit(habitId)
-      if (!entries.length) {
-        return 0
-      }
-
-      let streak = 0
-      for (let index = entries.length - 1; index >= 0; index -= 1) {
-        const entry = entries[index]
-        if (!entry) {
-          continue
-        }
-
-        if (entry.status === 'done') {
-          streak += 1
-          continue
-        }
-
-        if (streak > 0) {
-          break
-        }
-      }
-
-      return streak
-    },
-    completionRateForHabit(habit: Habit, fromDate: string, toDate: string): number {
-      const dates = dateKeyRange(fromDate, toDate)
-      const dueDates = dates.filter(date => isHabitDueOnDate(habit, date))
-
-      if (!dueDates.length) {
-        return 0
-      }
-
-      const doneCount = dueDates.filter(date => this.entryByHabitAndDate(habit.id, date)?.status === 'done').length
-      return Math.round((doneCount / dueDates.length) * 100)
-    },
-    reasonDistribution(): Record<string, number> {
-      const distribution: Record<string, number> = {}
-
-      for (const entry of this.entries) {
-        if (!entry.missReasonCode) {
-          continue
-        }
-
-        distribution[entry.missReasonCode] = (distribution[entry.missReasonCode] ?? 0) + 1
-      }
-
-      return distribution
     },
   },
 })

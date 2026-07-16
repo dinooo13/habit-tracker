@@ -6,6 +6,7 @@ import { useHabitsStore } from '~/stores/habits'
 import { useEntriesStore } from '~/stores/entries'
 import { useCoachStore } from '~/stores/coach'
 import { isDateInHabitPause, isHabitDueOnDate } from '~/utils/domain/date'
+import { completionRateForHabit } from '~/utils/domain/stats'
 import {
   AppDataV2Schema,
   createEmptyAppData,
@@ -288,7 +289,7 @@ describe('store integration with pauses', () => {
     ])
 
     // 2 done out of 3 due days = 67%
-    expect(entriesStore.completionRateForHabit(habit, '2026-03-01', '2026-03-06')).toBe(67)
+    expect(completionRateForHabit(habit, entriesStore.entries, '2026-03-01', '2026-03-06')).toBe(67)
   })
 
   it('no coaching is reconciled during a pause (no entries exist)', () => {

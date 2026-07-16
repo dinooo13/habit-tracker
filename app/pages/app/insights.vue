@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, isHabitDueOnDate, todayDateKey } from '~/utils/domain/date'
+import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, todayDateKey } from '~/utils/domain/date'
 import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
+import * as stats from '~/utils/domain/stats'
 
 definePageMeta({ layout: 'app' })
 
@@ -64,42 +65,11 @@ const showAllHabits = ref(false)
 const showAllReasons = ref(false)
 
 function overallCompletionRate(fromDate: string, toDate: string): number {
-  let dueCount = 0
-  let doneCount = 0
-
-  const dates = dateKeyRange(fromDate, toDate)
-  for (const date of dates) {
-    for (const habit of activeHabits.value) {
-      if (!isHabitDueOnDate(habit, date)) {
-        continue
-      }
-
-      dueCount += 1
-      if (entriesStore.entryByHabitAndDate(habit.id, date)?.status === 'done') {
-        doneCount += 1
-      }
-    }
-  }
-
-  return dueCount === 0 ? 0 : Math.round((doneCount / dueCount) * 100)
+  return stats.overallCompletionRate(activeHabits.value, entriesStore.entries, fromDate, toDate)
 }
 
 function dailyCompletionRate(date: string): number {
-  let dueCount = 0
-  let doneCount = 0
-
-  for (const habit of activeHabits.value) {
-    if (!isHabitDueOnDate(habit, date)) {
-      continue
-    }
-
-    dueCount += 1
-    if (entriesStore.entryByHabitAndDate(habit.id, date)?.status === 'done') {
-      doneCount += 1
-    }
-  }
-
-  return dueCount === 0 ? 0 : Math.round((doneCount / dueCount) * 100)
+  return stats.dailyCompletionRate(activeHabits.value, entriesStore.entries, date)
 }
 
 const selectedCompletionRate = computed(() =>
@@ -156,8 +126,8 @@ const habitInsights = computed(() =>
   activeHabits.value
     .map(habit => ({
       habit,
-      streak: entriesStore.streakForHabit(habit.id),
-      rate: entriesStore.completionRateForHabit(habit, selectedWindowStart.value, today.value),
+      streak: stats.streakForHabit(entriesStore.entries, habit.id),
+      rate: stats.completionRateForHabit(habit, entriesStore.entries, selectedWindowStart.value, today.value),
     }))
     .sort((left, right) =>
       right.rate - left.rate
@@ -203,32 +173,13 @@ function completionRateColor(rate: number): 'success' | 'warning' | 'error' {
   return 'error'
 }
 
-const reasonDistribution = computed(() => {
-  const distribution = new Map<string, number>()
-
-  for (const entry of entriesStore.entries) {
-    if (entry.status !== 'missed' || !entry.missReasonCode) {
-      continue
-    }
-
-    if (compareDateKeys(entry.date, selectedWindowStart.value) < 0 || compareDateKeys(entry.date, today.value) > 0) {
-      continue
-    }
-
-    distribution.set(entry.missReasonCode, (distribution.get(entry.missReasonCode) ?? 0) + 1)
-  }
-
-  const total = [...distribution.values()].reduce((sum, count) => sum + count, 0)
-
-  return [...distribution.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .map(([code, count]) => ({
-      code,
-      label: MISS_REASON_LABELS[code as keyof typeof MISS_REASON_LABELS],
-      count,
-      percent: total ? Math.round((count / total) * 100) : 0,
-    }))
-})
+const reasonDistribution = computed(() =>
+  stats.reasonDistribution(entriesStore.entries, selectedWindowStart.value, today.value)
+    .map(item => ({
+      ...item,
+      label: MISS_REASON_LABELS[item.code],
+    })),
+)
 
 const visibleReasonDistribution = computed(() =>
   showAllReasons.value ? reasonDistribution.value : reasonDistribution.value.slice(0, 3),
@@ -315,58 +266,15 @@ function completionChartYPercent(y: number): string {
   return `${(y / completionChartViewHeight) * 100}%`
 }
 
-const inferredCoachUptake = computed(() => {
-  const suggestionsWithEntries = coachStore.suggestions
-    .map(suggestion => ({
-      suggestion,
-      entry: entriesStore.entries.find(candidate => candidate.id === suggestion.entryId),
-    }))
-    .filter((item): item is { suggestion: typeof coachStore.suggestions[number], entry: typeof entriesStore.entries[number] } => {
-      if (!item.entry) {
-        return false
-      }
-
-      return (
-        compareDateKeys(item.entry.date, selectedWindowStart.value) >= 0
-        && compareDateKeys(item.entry.date, today.value) <= 0
-      )
-    })
-
-  if (!suggestionsWithEntries.length) {
-    return 0
-  }
-
-  let observableCount = 0
-  let improvedCount = 0
-
-  for (const item of suggestionsWithEntries) {
-    const observationStart = addDays(item.entry.date, 1)
-    const proposedEnd = completionWindow.value === 'all'
-      ? today.value
-      : addDays(item.entry.date, selectedCompletionDays.value!)
-    const observationEnd = compareDateKeys(proposedEnd, today.value) > 0 ? today.value : proposedEnd
-
-    if (compareDateKeys(observationStart, observationEnd) > 0) {
-      continue
-    }
-
-    observableCount += 1
-
-    const improved = dateKeyRange(observationStart, observationEnd).some(
-      date => entriesStore.entryByHabitAndDate(item.entry.habitId, date)?.status === 'done',
-    )
-
-    if (improved) {
-      improvedCount += 1
-    }
-  }
-
-  if (!observableCount) {
-    return 0
-  }
-
-  return Math.round((improvedCount / observableCount) * 100)
-})
+const inferredCoachUptake = computed(() =>
+  stats.coachUptake(
+    coachStore.suggestions,
+    entriesStore.entries,
+    selectedWindowStart.value,
+    today.value,
+    selectedCompletionDays.value,
+  ),
+)
 </script>
 
 <template>

@@ -174,6 +174,55 @@ describe('store snapshots — ADR-0004 plain-data contract', () => {
     expect(settingsStore.settings.primaryColor).toBe(DEFAULT_SETTINGS.primaryColor)
   })
 
+  it('keeps coach snapshots proxy-free after removeForEntry (persistence regression)', () => {
+    const coachStore = useCoachStore()
+    coachStore.hydrate([
+      buildSuggestion({ id: 'sugg_1', entryId: 'entry_1' }),
+      buildSuggestion({ id: 'sugg_2', entryId: 'entry_2' }),
+    ])
+
+    coachStore.removeForEntry('entry_1')
+
+    const suggestions = coachStore.snapshot()
+    expect(isProxy(suggestions)).toBe(false)
+    expect(isProxy(suggestions[0])).toBe(false)
+    expect(() => structuredClone(coachStore.snapshot())).not.toThrow()
+    expect(suggestions).toHaveLength(1)
+    expect(suggestions[0]?.entryId).toBe('entry_2')
+  })
+
+  it('keeps coach snapshots proxy-free after generateForEntry (persistence regression)', () => {
+    const coachStore = useCoachStore()
+    // A suggestion for an unrelated entry must survive the internal filter as a
+    // plain (non-proxy) element, mirroring the deployed reflection flow.
+    coachStore.hydrate([
+      buildSuggestion({ id: 'sugg_1', entryId: 'entry_1' }),
+      buildSuggestion({ id: 'sugg_2', entryId: 'entry_2' }),
+    ])
+
+    coachStore.generateForEntry(buildEntry({ id: 'entry_1' }), buildHabit())
+
+    const suggestions = coachStore.snapshot()
+    expect(suggestions.every(suggestion => !isProxy(suggestion))).toBe(true)
+    expect(() => structuredClone(coachStore.snapshot())).not.toThrow()
+  })
+
+  it('keeps habit snapshots proxy-free after deleteHabit (persistence regression)', () => {
+    const habitsStore = useHabitsStore()
+    habitsStore.hydrate([
+      buildHabit({ id: 'habit_1' }),
+      buildHabit({ id: 'habit_2' }),
+    ])
+
+    habitsStore.deleteHabit('habit_1')
+
+    const habits = habitsStore.snapshot()
+    expect(isProxy(habits[0])).toBe(false)
+    expect(() => structuredClone(habitsStore.snapshot())).not.toThrow()
+    expect(habits).toHaveLength(1)
+    expect(habits[0]?.id).toBe('habit_2')
+  })
+
   it('returns valid proxy-free empty/default snapshots for fresh stores', () => {
     const habitsStore = useHabitsStore()
     const entriesStore = useEntriesStore()

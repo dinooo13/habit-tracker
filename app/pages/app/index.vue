@@ -11,6 +11,7 @@ import {
   relativeDayLabel,
   todayDateKey,
 } from '~/utils/domain/date'
+import * as stats from '~/utils/domain/stats'
 
 definePageMeta({ layout: 'app' })
 
@@ -145,7 +146,7 @@ const activeHabitStreaks = computed(() =>
       id: habit.id,
       name: habit.name,
       type: habit.type,
-      streak: entriesStore.streakForHabit(habit.id),
+      streak: stats.streakForHabit(entriesStore.entries, habit.id),
     }))
     .sort((left, right) => right.streak - left.streak || left.name.localeCompare(right.name)),
 )

@@ -32,7 +32,7 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   entry is generated for them.
 - **Date key** — dates are stored as local `YYYY-MM-DD` strings (not `Date` objects) to avoid
   timezone drift (`app/utils/domain/date.ts`).
-- **Streak** — consecutive completed due-days for a habit (`entries.streakForHabit`).
+- **Streak** — consecutive completed due-days for a habit (`streakForHabit` in `app/utils/domain/stats.ts`).
 - **Completion rate** — share of due days completed within a window (7d / 30d / all-time).
 
 ## Reflection & coaching

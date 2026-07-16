@@ -36,6 +36,7 @@ flowchart TD
     subgraph UDomain["domain/"]
       rules["atomic-rules"]
       date["date"]
+      stats["stats (pure analytics)"]
     end
     subgraph UPersist["persistence/"]
       schema["storage-schema (Zod)"]

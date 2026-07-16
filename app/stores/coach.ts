@@ -14,10 +14,6 @@ export const useCoachStore = defineStore('coach', {
   getters: {
     suggestionsForEntry: state => (entryId: string): CoachingSuggestion[] =>
       state.suggestions.filter(suggestion => suggestion.entryId === entryId),
-    suggestionsByHabit: state => (habitId: string, entries: HabitEntry[]): CoachingSuggestion[] => {
-      const entryIds = new Set(entries.filter(entry => entry.habitId === habitId).map(entry => entry.id))
-      return state.suggestions.filter(suggestion => entryIds.has(suggestion.entryId))
-    },
   },
   actions: {
     hydrate(suggestions: CoachingSuggestion[]): void {

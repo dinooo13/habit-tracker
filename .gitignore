@@ -18,6 +18,9 @@ logs
 .fleet
 .idea
 
+# Claude Code agent worktrees (local scratch, not repo content)
+.claude/worktrees/
+
 # Playwright E2E
 playwright-report
 test-results

@@ -39,8 +39,8 @@ Use the namespaced `type: enhancement` / `type: security` labels; the bare legac
 ### Dependency-blocked issues
 
 If an issue cannot be started until another GitHub issue is completed, it must not enter the
-planner queue. Triage should add `status: blocked` and leave a comment identifying the
-dependency, using the convention `Blocked by #N — {why}`. This is for a real prerequisite,
+planner queue. Triage should add `status: blocked` without adding a comment. The dependency
+should already be clear from the issue's existing context. This is for a real prerequisite,
 not merely a related issue; uncertain or optional relationships should be mentioned as
 context and the issue can still be planned.
 

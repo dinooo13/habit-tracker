@@ -16,7 +16,9 @@ const storageHealth = useStorageHealth()
 const toast = useToast()
 
 watch(storageHealth.lastError, (message) => {
-  if (!message) {
+  // Suppress the transient "could not save" toast while the persistent recovery
+  // banner is showing, so a terminal failure isn't announced twice (issue #65).
+  if (!message || storageHealth.status.value === 'unavailable') {
     return
   }
 
@@ -72,6 +74,9 @@ async function handleLogout(): Promise<void> {
         { label: 'Later', color: 'neutral', variant: 'ghost', onClick: () => pwaUpdate.dismiss() },
       ]"
     />
+
+    <!-- SEC-18 / issue #65: quiet last-saved indicator + persistent recovery banner. -->
+    <PersistenceStatusIndicator />
 
     <header class="sticky top-0 z-40 border-b border-default/60 bg-default/70 shadow-sm backdrop-blur-xl">
       <UContainer class="flex flex-wrap items-center justify-between gap-3 py-3">

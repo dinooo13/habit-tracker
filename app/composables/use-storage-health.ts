@@ -1,30 +1,57 @@
 import type { Ref } from 'vue'
+import { nowIso } from '~/utils/domain/date'
+import type { PersistenceStatus } from '~/utils/observability/storage-health'
 import { describeWriteFailure, isQuotaExceededError, isQuotaLowFromEstimate } from '~/utils/observability/storage-health'
 
 const STORAGE_HEALTH_LAST_ERROR_KEY = 'storage-health:last-error'
 const STORAGE_HEALTH_QUOTA_LOW_KEY = 'storage-health:is-quota-low'
 const STORAGE_HEALTH_WARNED_QUOTA_KEY = 'storage-health:warned-quota'
+const STORAGE_HEALTH_STATUS_KEY = 'storage-health:status'
+const STORAGE_HEALTH_LAST_SAVED_KEY = 'storage-health:last-saved-at'
+const STORAGE_HEALTH_RETRY_TOKEN_KEY = 'storage-health:retry-token'
 
 export interface StorageHealth {
   lastError: Ref<string | null>
   isQuotaLow: Ref<boolean>
+  /** Persistence lifecycle state (issue #65, ADR-0017). */
+  status: Ref<PersistenceStatus>
+  /** ISO timestamp of the last successful save; `null` until the first write. In-memory only. */
+  lastSavedAt: Ref<string | null>
+  /** Bumped by {@link requestRetry}; the bootstrap save path watches it to re-save on demand. */
+  retryToken: Ref<number>
   /** Best-effort quota pre-check; returns true when usage is high. Never throws. */
   checkQuota: () => Promise<boolean>
-  /** Record a persistence write failure (esp. QuotaExceededError). */
+  /** Record a persistence write failure (esp. QuotaExceededError). Transitions to `failed`. */
   reportWriteFailure: (error: unknown) => void
+  /** A save is in flight → `saving`. */
+  markSaving: () => void
+  /** A save succeeded → `ok`, stamp `lastSavedAt`, clear the last error, log recovery if degraded. */
+  markSaved: () => void
+  /** Enter terminal degraded mode → `unavailable`; logs `storage.unavailable` once per episode. */
+  markUnavailable: (reason?: string) => void
+  /** Request an on-demand save (the "Retry now" recovery action). */
+  requestRetry: () => void
 }
 
 /**
- * SEC-18: reactive storage-health state surfaced to the user via toasts. Tracks
- * the last write failure and whether the storage quota is running low. All
- * browser-only APIs (`navigator.storage.estimate`) are guarded and degrade to
- * no-ops when unavailable, so this is safe to call anywhere and never throws.
- * The decision logic lives in `~/utils/observability/storage-health` so it can be unit-tested.
+ * SEC-18 + issue #65: reactive storage-health state surfaced to the user via
+ * toasts and the app-shell persistence indicator. Tracks the last write failure,
+ * whether the storage quota is running low, and the persistence lifecycle
+ * (`ok | saving | failed | unavailable`) plus the last successful-save time.
+ *
+ * All browser-only APIs (`navigator.storage.estimate`) are guarded and degrade to
+ * no-ops when unavailable, so this is safe to call anywhere and never throws. The
+ * decision logic and the retry/backoff schedule live in
+ * `~/utils/observability/storage-health` so they can be unit-tested; the
+ * retry/backoff *orchestration* lives in the bootstrap save path (ADR-0015).
  */
 export function useStorageHealth(): StorageHealth {
   const lastError = useState<string | null>(STORAGE_HEALTH_LAST_ERROR_KEY, () => null)
   const isQuotaLow = useState<boolean>(STORAGE_HEALTH_QUOTA_LOW_KEY, () => false)
   const warnedQuota = useState<boolean>(STORAGE_HEALTH_WARNED_QUOTA_KEY, () => false)
+  const status = useState<PersistenceStatus>(STORAGE_HEALTH_STATUS_KEY, () => 'ok')
+  const lastSavedAt = useState<string | null>(STORAGE_HEALTH_LAST_SAVED_KEY, () => null)
+  const retryToken = useState<number>(STORAGE_HEALTH_RETRY_TOKEN_KEY, () => 0)
   const { logSecurityEvent } = useSecurityLog()
 
   async function checkQuota(): Promise<boolean> {
@@ -57,6 +84,10 @@ export function useStorageHealth(): StorageHealth {
 
   function reportWriteFailure(error: unknown): void {
     lastError.value = describeWriteFailure(error)
+    // Transient: a retry is (usually) scheduled by the save path. Escalation to
+    // `unavailable` is a separate, explicit call once retries are exhausted or a
+    // quota error short-circuits.
+    status.value = 'failed'
     logSecurityEvent('storage.write_failed', 'error', error instanceof Error ? error.message : String(error))
 
     if (isQuotaExceededError(error)) {
@@ -64,5 +95,44 @@ export function useStorageHealth(): StorageHealth {
     }
   }
 
-  return { lastError, isQuotaLow, checkQuota, reportWriteFailure }
+  function markSaving(): void {
+    status.value = 'saving'
+  }
+
+  function markSaved(): void {
+    const wasDegraded = status.value === 'failed' || status.value === 'unavailable'
+    status.value = 'ok'
+    lastSavedAt.value = nowIso()
+    lastError.value = null
+
+    if (wasDegraded) {
+      logSecurityEvent('storage.recovered', 'info', 'Persistence recovered after a failed save')
+    }
+  }
+
+  function markUnavailable(reason?: string): void {
+    // Log at most once per degraded episode so a stuck save can't spam the log.
+    if (status.value !== 'unavailable') {
+      logSecurityEvent('storage.unavailable', 'error', reason ? `Persistence unavailable: ${reason}` : 'Persistence unavailable')
+    }
+    status.value = 'unavailable'
+  }
+
+  function requestRetry(): void {
+    retryToken.value += 1
+  }
+
+  return {
+    lastError,
+    isQuotaLow,
+    status,
+    lastSavedAt,
+    retryToken,
+    checkQuota,
+    reportWriteFailure,
+    markSaving,
+    markSaved,
+    markUnavailable,
+    requestRetry,
+  }
 }

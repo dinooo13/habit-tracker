@@ -191,6 +191,41 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
+/**
+ * A short, human-friendly "time ago" label for an ISO timestamp — e.g.
+ * `just now`, `5m ago`, `2h ago`, `yesterday`, `3d ago`. Used by the quiet
+ * persistence-status indicator (issue #65). Returns an empty string for a
+ * missing/unparseable value. `now` is injectable for deterministic tests.
+ */
+export function shortRelativeTime(iso: string | null, now: Date = new Date()): string {
+  if (!iso) {
+    return ''
+  }
+
+  const then = new Date(iso)
+  if (Number.isNaN(then.getTime())) {
+    return ''
+  }
+
+  const diffSeconds = Math.floor((now.getTime() - then.getTime()) / 1000)
+  if (diffSeconds < 45) {
+    return 'just now'
+  }
+
+  const diffMinutes = Math.floor(diffSeconds / 60)
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) {
+    return `${diffHours}h ago`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+  return diffDays === 1 ? 'yesterday' : `${diffDays}d ago`
+}
+
 export function parseTimeString(value: string | null): { hour: number, minute: number } | null {
   if (!value) {
     return null

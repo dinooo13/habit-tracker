@@ -135,10 +135,18 @@ toasts) at the call sites.
 
 Two cross-cutting, client-only flows guard the local-first model:
 
-- **Storage health (SEC-18).** The debounced `save()` in `bootstrap.client.ts` routes write
-  failures (especially `QuotaExceededError`) and a best-effort `navigator.storage.estimate()`
-  pre-check through `useStorageHealth()`. `app/layouts/app.vue` watches its reactive
-  `lastError` / `isQuotaLow` and raises a `useToast()` warning so the user can export and prune.
+- **Storage health & persistence lifecycle (SEC-18, issue #65).** `useStorageHealth()` tracks a
+  `navigator.storage.estimate()` low-quota pre-check plus a first-class persistence lifecycle:
+  `ok | saving | failed | unavailable`, with a last-successful-save time. The debounced `save()` in
+  `bootstrap.client.ts` drives a framework-free retry/backoff loop
+  (`app/utils/persistence/persistence-saver.ts`): a transient write failure retries with exponential
+  backoff (base 1s, cap 8s, max 3, ±20% jitter); a `QuotaExceededError` or exhausted retries enter
+  the terminal `unavailable` state; a blocked database at startup falls back to empty state
+  (`loadAppDataSafely`) rather than white-screening. `PersistenceStatusIndicator.vue` in the app
+  shell shows a quiet "Saved · {time}" pill on the happy path and a persistent recovery banner —
+  **Export backup** / **Retry now** — when `unavailable`; the transient `lastError` toast is
+  suppressed while that banner shows. Entry/exit of degraded mode emit `storage.unavailable` /
+  `storage.recovered` security events. See [ADR-0017](adr/0017-persistence-status-lifecycle-retry-backoff.md).
 - **Service-worker update prompt (SEC-14).** With `registerType: 'prompt'`, a new worker is
   precached but held; `usePwaUpdate()` (wrapping `$pwa.needRefresh`) drives a reload banner in
   the app layout and applies the waiting worker only on user confirmation.

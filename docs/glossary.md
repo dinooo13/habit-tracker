@@ -73,3 +73,11 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   unexported for too long (`≥ 2` weeks). It tracks export recency via `lastExportedAt`, links
   to the existing export flow, and snoozes for 7 days on dismissal. Logic lives in
   `app/composables/use-backup-nudge.ts`.
+- **Persistence status** — the runtime lifecycle of the local save path (issue #65, ADR-0017),
+  one of `ok | saving | failed | unavailable`, tracked (with a last-successful-save time) by
+  `useStorageHealth()`. A failed write retries with exponential backoff; a quota error or
+  exhausted retries enter the terminal **degraded (unavailable) mode**. It is runtime-only — never
+  persisted, so it resets on reload.
+- **Degraded (unavailable) mode** — the terminal persistence state where writes are failing and
+  cannot be recovered automatically. The app shell shows a standing recovery banner offering an
+  **Export backup** and a **Retry now**, so the user can get their data out before it is lost.

@@ -9,6 +9,7 @@ import {
   MAX_DATE_RANGE_DAYS,
   parseTimeString,
   relativeDayLabel,
+  shortRelativeTime,
 } from '~/utils/domain/date'
 import type { Habit } from '~/types/app-data'
 
@@ -115,5 +116,28 @@ describe('date safety bounds (SEC-09)', () => {
     expect(range[0]).toBe('2020-01-01')
     expect(range[range.length - 1]).toBe('2026-06-14')
     expect(range.length).toBeLessThan(MAX_DATE_RANGE_DAYS)
+  })
+})
+
+describe('shortRelativeTime (#65)', () => {
+  const now = new Date('2026-08-24T12:00:00.000Z')
+
+  it('returns an empty string for missing or unparseable input', () => {
+    expect(shortRelativeTime(null, now)).toBe('')
+    expect(shortRelativeTime('not-a-date', now)).toBe('')
+  })
+
+  it('says "just now" for very recent timestamps', () => {
+    expect(shortRelativeTime('2026-08-24T11:59:30.000Z', now)).toBe('just now')
+  })
+
+  it('renders minutes, hours, and days', () => {
+    expect(shortRelativeTime('2026-08-24T11:55:00.000Z', now)).toBe('5m ago')
+    expect(shortRelativeTime('2026-08-24T09:00:00.000Z', now)).toBe('3h ago')
+    expect(shortRelativeTime('2026-08-21T12:00:00.000Z', now)).toBe('3d ago')
+  })
+
+  it('renders "yesterday" for a one-day gap', () => {
+    expect(shortRelativeTime('2026-08-23T12:00:00.000Z', now)).toBe('yesterday')
   })
 })

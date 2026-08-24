@@ -30,6 +30,7 @@ flowchart TD
     auth["use-dummy-auth"]
     demo["use-demo-data"]
     backup["use-backup-nudge"]
+    clipboard["use-clipboard"]
   end
 
   subgraph Utils["Utilities (app/utils, by intent — ADR-0014)"]
@@ -37,9 +38,11 @@ flowchart TD
       rules["atomic-rules"]
       date["date"]
       stats["stats (pure analytics)"]
+      prompts["ai-prompts (pure prompt builders)"]
     end
     subgraph UPersist["persistence/"]
-      schema["storage-schema (Zod)"]
+      schema["storage-schema (Zod: strict + lenient import)"]
+      backupmod["backup (pure import/export/merge)"]
       adapter["persistence-adapter (interface)"]
       dexie["dexie-persistence-adapter (Dexie)"]
     end
@@ -117,6 +120,16 @@ ranges; days inside a pause are never *due*. Stored V1 payloads and legacy `loca
 migrate up via a one-way `migrateToV2` inside `parseAppData`
 (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md) and
 [adr/0006](adr/0006-zod-validated-versioned-data-schema.md)).
+
+The **backup import/export** flow on the settings page is presentation only: the pure,
+framework-free `app/utils/persistence/backup.ts` owns `extractImportedHabits`,
+`mergeHabitsForImport`, `serializeBackup`, and `backupFilename`, and the AI prompt builders
+live in `app/utils/domain/ai-prompts.ts`. A **full** import validates through `parseAppData`
+and replaces all state via `useAppDataLifecycle()`; a **habits-only** import maps each raw item
+through `LenientHabitImportSchema` — a forgiving Zod counterpart to the strict `HabitSchema`,
+key-anchored to it so no future `Habit` field is silently dropped — then merges by id. The page
+keeps the UI-boundary side effects (file-size gate, security logging, quota check, backup-nudge,
+toasts) at the call sites.
 
 ## Resilience & update flows
 

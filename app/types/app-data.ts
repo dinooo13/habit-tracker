@@ -18,9 +18,9 @@ export const MISS_REASON_CODES = [
 
 export type MissReasonCode = (typeof MISS_REASON_CODES)[number]
 
-// Maximum lengths for user-controlled string fields. Enforced by the Zod schema
-// (storage-schema.ts) and the lenient import normalizer (settings.vue) to keep a
-// crafted import from exhausting storage or degrading the UI (issue #1, SEC-06).
+// Maximum lengths for user-controlled string fields. Enforced by both the strict
+// and lenient import Zod schemas (storage-schema.ts) to keep a crafted import from
+// exhausting storage or degrading the UI (issue #1, SEC-06).
 export const FIELD_LIMITS = {
   id: 100,
   name: 200,

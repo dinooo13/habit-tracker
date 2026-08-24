@@ -36,6 +36,20 @@ Use the namespaced `type: enhancement` / `type: security` labels; the bare legac
 > pushes to `main` that touch `.github/labels.yml` (and on manual dispatch): it creates and
 > updates every label listed in the file **and deletes any repo label that is not listed**.
 
+### Dependency-blocked issues
+
+If an issue cannot be started until another GitHub issue is completed, it must not enter the
+planner queue. Triage should add `status: blocked` and leave a comment identifying the
+dependency, using the convention `Blocked by #N — {why}`. This is for a real prerequisite,
+not merely a related issue; uncertain or optional relationships should be mentioned as
+context and the issue can still be planned.
+
+There is no automatic dependency watcher. After all referenced blocker issues are complete, a
+human verifies that the dependency is actually resolved and changes the issue to
+`status: needs-plan`. Issues blocked after implementation follow the existing PR resume path
+described in [the agent pipeline](../.claude/agents/README.md): the human puts the blocked PR
+back to `status: in-progress`.
+
 ## 3. Branching
 
 - Branch off `main`. One logical change per branch.

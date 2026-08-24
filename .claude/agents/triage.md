@@ -1,9 +1,9 @@
 ---
 name: triage
 description: >
-  Triages ONE untriaged GitHub issue: checks for duplicates, applies the full label
-  taxonomy (type/priority/effort/area), and either admits it to the planner queue
-  (status: needs-plan) or flags missing information/dependencies. Invoke with an issue number, e.g.
+  Triages ONE untriaged or dependency-blocked GitHub issue: checks for duplicates, applies the full label
+  taxonomy (type/priority/effort/area), admits actionable work to the planner queue
+  (status: needs-plan), or records/rechecks blockers. Invoke with an issue number, e.g.
   "Triage issue #42". Labels and comments only — never changes code, never closes
   issues.
 tools: Read, Grep, Glob, mcp__github__issue_read, mcp__github__list_issues, mcp__github__search_issues, mcp__github__issue_write, mcp__github__add_issue_comment, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__pull_request_read, mcp__github__search_code
@@ -20,8 +20,17 @@ Use only labels that exist in `labels.yml` — never invent new ones.
 
 - `issue_read` the issue: title, body, labels, comments.
 - **Skip guards** (stop and report "skipped: {reason}"):
-  - It already has a `status:` label — it's in the pipeline; a human or agent owns it.
   - It carries the `duplicate` label — terminal until a human removes that label.
+  - It has a status other than `status: blocked` — it's in the pipeline; a human or agent
+    owns it.
+  - If it has `status: blocked`, continue only for a pre-planning dependency block: there
+    must be no open PR referencing the issue and a prior `<!-- routine:triage -->` comment
+    identifying one or more `Blocked by #N` issues. Otherwise skip it as a missing-information
+    or later-pipeline block.
+  - For a pre-planning dependency block, read every referenced blocker issue. If all are
+    closed, remove `status: blocked` and add `status: needs-plan`; do not edit the issue body,
+    title, or add a new comment. Report `unblocked: queued for planning` and stop. If any
+    blocker remains open, leave the issue unchanged, report `blocked by #N`, and stop.
   - It's a PR, not an issue.
 - Ground yourself: read `CLAUDE.md` for the architecture map so `area:` labels land on
   the right subsystem; `Grep` the code when the issue cites files or behavior you need
@@ -47,8 +56,8 @@ Before routing the issue, distinguish a real prerequisite from a merely related 
 - A real dependency is explicit in the issue or clear from the requested sequencing: the
   issue says it is "blocked by", "depends on", or "requires" another issue, and work cannot
   start until that issue is completed.
-- If the referenced blocker is already closed, it is no longer a blocker; continue normal
-  triage.
+- If every referenced blocker is already closed, it is no longer a blocker; continue normal
+  triage and add `status: needs-plan`.
 - If the relationship is optional, speculative, or only says the issue is related to another,
   do not mark it blocked; mention the context only when it materially affects planning.
 
@@ -90,13 +99,16 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
 
 ## Report back
 
-Return only: issue number, verdict (`queued for planning` / `duplicate of #M` /
-`blocked by #M` / `blocked: {missing}` / `skipped: {reason}`), and the labels applied.
+Return only: issue number, verdict (`queued for planning` / `unblocked: queued for planning` /
+`duplicate of #M` / `blocked by #M` / `blocked: {missing}` / `skipped: {reason}`), and the
+labels applied.
 
 ## Guardrails
 
 - **Labels and at most one comment** — never edit the issue body or title, never close
   or reopen, never change code, never open PRs.
-- Never remove or contradict labels a human already applied; you only add.
-- Never re-triage: any existing `status:` label means hands off.
+- Never remove or contradict labels a human already applied; the only status removal allowed
+  is the documented pre-planning `status: blocked` → `status: needs-plan` transition.
+- Never re-triage existing status-labeled issues except the explicitly supported
+  pre-planning `status: blocked` dependency recheck above.
 - Only labels from `.github/labels.yml`. Stay in `dinooo13/habit-tracker`.

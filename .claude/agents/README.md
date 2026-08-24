@@ -15,7 +15,8 @@ source of stuck items.
 
 ```
 ISSUE:  (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
-                   └─▶ duplicate (no status) / blocked (missing info or dependency)          (stays in-progress; blocked ⇢ status: blocked)
+                   └─▶ duplicate (no status) / blocked (missing info or dependency)
+                                             └─ dependency blockers all closed → needs-plan
 
 PR:     in-progress (draft) ──implementer: gates green──▶ needs-review ──reviewer: approve──▶ needs-qa ──qa: pass──▶ approved ──▶ human merges
                     ▲                                          │                                 │
@@ -33,7 +34,9 @@ PR (stale vs main):
 
 Queues:
 
-- **triage routine** → open issues with **no** `status:` label and no `duplicate` label
+- **triage routine** → open issues with **no** `status:` label and no `duplicate` label,
+  plus pre-planning `status: blocked` issues with a `Blocked by #N` triage marker and no open
+  PR; the latter are rechecked for closed dependencies
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
@@ -49,12 +52,12 @@ Queues:
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
 
-Dependency-blocked issues are deliberately absent from every queue. Triage records the
-dependency in its comment as `Blocked by #N — {why}` and does not assign `status: needs-plan`.
-There is no automatic unblocking when #N closes; a human changes the issue to
-`status: needs-plan` after verifying the dependency is resolved. A blocker discovered after
-an issue has a PR uses the PR/issue `status: blocked` path above and resumes through the PR's
-`status: in-progress` label.
+Dependency-blocked issues stay out of the planner queue while any referenced blocker is open.
+Triage records the dependency in its comment as `Blocked by #N — {why}`. On a later triage run,
+if every referenced blocker is closed, triage removes `status: blocked` and adds
+`status: needs-plan`; it does not edit the issue body or add a new comment. Missing-information
+blocks and blockers discovered after an issue has a PR remain human-owned and are not requeued
+by triage.
 
 Review and QA are **sequenced**, each the sole consumer of its own label: the reviewer
 reads the diff (`needs-review`), then the qa-tester drives the deployed preview
@@ -87,15 +90,19 @@ agent files, not the routine.
 
 ### Triage routine (e.g. nightly, before planner)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> issue that has no `status:` label and no `duplicate` label (`search_issues`:
+> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Build the queue from
+> two searches: (1) every open issue that has no `status:` label and no `duplicate` label
+> (`search_issues`:
 > `repo:dinooo13/habit-tracker is:issue is:open -label:"status: needs-plan"
 > -label:"status: needs-plan-review" -label:"status: agent-ready"
 > -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked"
-> -label:duplicate`). If none, report "nothing to triage" and stop. For each, spawn one
+> -label:duplicate`); and (2) every open issue labeled `status: blocked`. For the second
+> result set, inspect comments and retain only issues with `<!-- routine:triage -->` and
+> `Blocked by #N`, with no open PR referencing them. If both searches are empty, report
+> "nothing to triage" and stop. For each, spawn one
 > fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
 > issue, never reused. Collect only each verdict. Finish with a summary: queued for
-> planning, duplicates, blocked (missing information or dependency), skipped. Never label, plan, or change
+> planning, unblocked, duplicates, blocked (missing information or dependency), skipped. Never label, plan, or change
 > anything yourself.
 
 ### Planner routine (e.g. nightly)

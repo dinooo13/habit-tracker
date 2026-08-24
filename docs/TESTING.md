@@ -78,8 +78,13 @@ full end-to-end flows; the `nuxt` project is not a replacement for it.
 Tests live in `tests/`:
 
 - **Stores** — `habits-store.test.ts`, `entries-store.test.ts` (status transitions,
-  `ensureMissedEntries`, streaks, completion rates), `coach-store.test.ts`,
+  `setMissReason`, `ensureMissedEntries`, `pendingReflectionEntries`), `coach-store.test.ts`,
   `settings-store.test.ts`.
+- **Analytics** — `stats.test.ts` (pure, pause-aware derivations: `streakForHabit`,
+  `completionRateForHabit`, `overallCompletionRate`, `dailyCompletionRate`,
+  `reasonDistribution`, `coachUptake`).
+- **Cross-store transactions** — `habit-actions.test.ts` (`useHabitActions` — the ADR-0016
+  entry↔suggestion invariant across the habits/entries/coach stores).
 - **Store snapshot contract** — `store-snapshots.test.ts` asserts the ADR-0004
   "plain, proxy-free" guarantee across all four persisted stores: `snapshot()` returns
   a structured-clonable deep clone, roots/records/nested arrays are not Vue proxies, and
@@ -100,6 +105,8 @@ Rendered tests live in `tests/nuxt/` (the `nuxt` project):
 - **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`).
 - **Pages** — `insights-page.test.ts` (two due habit-days with one completion render a 50%
   seven-day completion rate).
+- **Lifecycle** — `app-data-lifecycle.test.ts` (`useAppDataLifecycle` snapshot/replace/reconcile
+  over the Nuxt-provided Pinia stores, ADR-0015).
 
 Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and
 `public/fixtures/` (the demo payload).

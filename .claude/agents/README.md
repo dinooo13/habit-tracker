@@ -15,7 +15,7 @@ source of stuck items.
 
 ```
 ISSUE:  (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
-                   └─▶ duplicate (no status) / blocked          (stays in-progress; blocked ⇢ status: blocked)
+                   └─▶ duplicate (no status) / blocked (missing info or dependency)          (stays in-progress; blocked ⇢ status: blocked)
 
 PR:     in-progress (draft) ──implementer: gates green──▶ needs-review ──reviewer: approve──▶ needs-qa ──qa: pass──▶ approved ──▶ human merges
                     ▲                                          │                                 │
@@ -48,6 +48,13 @@ Queues:
   `status: approved` directly — QA not applicable.
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
+
+Dependency-blocked issues are deliberately absent from every queue. Triage records the
+dependency in its comment as `Blocked by #N — {why}` and does not assign `status: needs-plan`.
+There is no automatic unblocking when #N closes; a human changes the issue to
+`status: needs-plan` after verifying the dependency is resolved. A blocker discovered after
+an issue has a PR uses the PR/issue `status: blocked` path above and resumes through the PR's
+`status: in-progress` label.
 
 Review and QA are **sequenced**, each the sole consumer of its own label: the reviewer
 reads the diff (`needs-review`), then the qa-tester drives the deployed preview
@@ -88,7 +95,7 @@ agent files, not the routine.
 > -label:duplicate`). If none, report "nothing to triage" and stop. For each, spawn one
 > fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
 > issue, never reused. Collect only each verdict. Finish with a summary: queued for
-> planning, duplicates, blocked (what's missing), skipped. Never label, plan, or change
+> planning, duplicates, blocked (missing information or dependency), skipped. Never label, plan, or change
 > anything yourself.
 
 ### Planner routine (e.g. nightly)

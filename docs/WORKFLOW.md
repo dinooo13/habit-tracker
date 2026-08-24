@@ -44,11 +44,12 @@ dependency, using the convention `Blocked by #N — {why}`. This is for a real p
 not merely a related issue; uncertain or optional relationships should be mentioned as
 context and the issue can still be planned.
 
-There is no automatic dependency watcher. After all referenced blocker issues are complete, a
-human verifies that the dependency is actually resolved and changes the issue to
-`status: needs-plan`. Issues blocked after implementation follow the existing PR resume path
-described in [the agent pipeline](../.claude/agents/README.md): the human puts the blocked PR
-back to `status: in-progress`.
+Triage rechecks dependency-blocked issues on later runs. When all referenced blocker issues
+are closed, it removes `status: blocked` and adds `status: needs-plan`; no issue-body edit or
+new comment is required. While any blocker remains open, the issue stays `status: blocked`.
+Missing-information blocks and issues blocked after implementation remain human-owned. The
+latter follow the existing PR resume path described in [the agent pipeline](../.claude/agents/README.md):
+the human puts the blocked PR back to `status: in-progress`.
 
 ## 3. Branching
 

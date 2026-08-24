@@ -35,8 +35,8 @@ PR (stale vs main):
 Queues:
 
 - **triage routine** → open issues with **no** `status:` label and no `duplicate` label,
-  plus pre-planning `status: blocked` issues with an explicit dependency in their existing
-  context and no open PR; the latter are rechecked for closed dependencies
+  plus open issues labeled `status: blocked`; the triage agent decides whether a blocked
+  issue is eligible for dependency rechecking
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
@@ -52,12 +52,11 @@ Queues:
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
 
-Dependency-blocked issues stay out of the planner queue while any referenced blocker is open.
-Triage records the dependency with `status: blocked` only. On a later triage run, if every
-referenced blocker in the issue's existing context is closed, triage removes `status: blocked`
-and adds `status: needs-plan`; it does not edit the issue body or add a comment.
-Missing-information blocks and blockers discovered after an issue has a PR remain human-owned
-and are not requeued by triage.
+Dependency blocks are label-only: triage sets `status: blocked` while any explicit prerequisite
+is open and, on a later run, replaces it with `status: needs-plan` once every prerequisite is
+closed. The agent rechecks only issues whose body or existing human comments name the
+prerequisites and which have no open PR; missing-information and later-pipeline blocks remain
+human-owned.
 
 Review and QA are **sequenced**, each the sole consumer of its own label: the reviewer
 reads the diff (`needs-review`), then the qa-tester drives the deployed preview
@@ -97,13 +96,12 @@ agent files, not the routine.
 > -label:"status: needs-plan-review" -label:"status: agent-ready"
 > -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked"
 > -label:duplicate`); and (2) every open issue labeled `status: blocked`. For the second
-> result set, inspect the issue body and existing human context for an explicit prerequisite,
-> with no open PR referencing it. If both searches are empty, report "nothing to triage" and
-> stop. For each, spawn one
+> result set, let the triage agent determine whether dependency rechecking applies. If both
+> searches are empty, report "nothing to triage" and stop. For each, spawn one
 > fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
 > issue, never reused. Collect only each verdict. Finish with a summary: queued for
-> planning, unblocked, duplicates, blocked (missing information or dependency), skipped. Never label, plan, or change
-> anything yourself.
+> planning, unblocked, duplicates, blocked (missing information or dependency), skipped.
+> Never label, plan, or change anything yourself.
 
 ### Planner routine (e.g. nightly)
 

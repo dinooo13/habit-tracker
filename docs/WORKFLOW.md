@@ -38,18 +38,15 @@ Use the namespaced `type: enhancement` / `type: security` labels; the bare legac
 
 ### Dependency-blocked issues
 
-If an issue cannot be started until another GitHub issue is completed, it must not enter the
-planner queue. Triage should add `status: blocked` without adding a comment. The dependency
-should already be clear from the issue's existing context. This is for a real prerequisite,
-not merely a related issue; uncertain or optional relationships should be mentioned as
-context and the issue can still be planned.
+When an issue body or existing human comment names an explicit prerequisite that is still
+open, triage applies `status: blocked` without commenting. Closed, optional, speculative, and
+merely related issues do not block planning.
 
-Triage rechecks dependency-blocked issues on later runs. When all referenced blocker issues
-are closed, it removes `status: blocked` and adds `status: needs-plan`; no issue-body edit or
-new comment is required. While any blocker remains open, the issue stays `status: blocked`.
-Missing-information blocks and issues blocked after implementation remain human-owned. The
-latter follow the existing PR resume path described in [the agent pipeline](../.claude/agents/README.md):
-the human puts the blocked PR back to `status: in-progress`.
+Later triage runs recheck blocked issues. When every named prerequisite is closed and no open
+PR references the issue, the agent changes only its status label from `status: blocked` to
+`status: needs-plan`; otherwise it makes no change. Missing-information and later-pipeline
+blocks remain human-owned, with blocked PRs following the resume path in
+[the agent pipeline](../.claude/agents/README.md).
 
 ## 3. Branching
 

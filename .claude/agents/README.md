@@ -35,8 +35,8 @@ PR (stale vs main):
 Queues:
 
 - **triage routine** → open issues with **no** `status:` label and no `duplicate` label,
-  plus pre-planning `status: blocked` issues with a `Blocked by #N` triage marker and no open
-  PR; the latter are rechecked for closed dependencies
+  plus pre-planning `status: blocked` issues with an explicit dependency in their existing
+  context and no open PR; the latter are rechecked for closed dependencies
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
@@ -53,11 +53,11 @@ Queues:
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
 
 Dependency-blocked issues stay out of the planner queue while any referenced blocker is open.
-Triage records the dependency in its comment as `Blocked by #N — {why}`. On a later triage run,
-if every referenced blocker is closed, triage removes `status: blocked` and adds
-`status: needs-plan`; it does not edit the issue body or add a new comment. Missing-information
-blocks and blockers discovered after an issue has a PR remain human-owned and are not requeued
-by triage.
+Triage records the dependency with `status: blocked` only. On a later triage run, if every
+referenced blocker in the issue's existing context is closed, triage removes `status: blocked`
+and adds `status: needs-plan`; it does not edit the issue body or add a comment.
+Missing-information blocks and blockers discovered after an issue has a PR remain human-owned
+and are not requeued by triage.
 
 Review and QA are **sequenced**, each the sole consumer of its own label: the reviewer
 reads the diff (`needs-review`), then the qa-tester drives the deployed preview
@@ -69,7 +69,7 @@ the PR has left every agent queue. One label, one writer at a time: no race, and
 nightly no-op runs on PRs that are just waiting for a human.
 
 Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue),
-`<!-- routine:triage -->` (triage comment, only on duplicates/blocked),
+`<!-- routine:triage -->` (triage comment, only on duplicates or missing-information blocks),
 `<!-- routine:dev-progress -->` (progress section **in the PR body** — comment editing
 is unavailable in the routine toolset, PR bodies are editable via
 `update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
@@ -97,9 +97,9 @@ agent files, not the routine.
 > -label:"status: needs-plan-review" -label:"status: agent-ready"
 > -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked"
 > -label:duplicate`); and (2) every open issue labeled `status: blocked`. For the second
-> result set, inspect comments and retain only issues with `<!-- routine:triage -->` and
-> `Blocked by #N`, with no open PR referencing them. If both searches are empty, report
-> "nothing to triage" and stop. For each, spawn one
+> result set, inspect the issue body and existing human context for an explicit prerequisite,
+> with no open PR referencing it. If both searches are empty, report "nothing to triage" and
+> stop. For each, spawn one
 > fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
 > issue, never reused. Collect only each verdict. Finish with a summary: queued for
 > planning, unblocked, duplicates, blocked (missing information or dependency), skipped. Never label, plan, or change

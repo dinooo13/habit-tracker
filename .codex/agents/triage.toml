@@ -16,8 +16,8 @@ Use only labels that exist in `labels.yml` — never invent new ones.
   - It has a status other than `status: blocked` — it's in the pipeline; a human or agent
     owns it.
   - If it has `status: blocked`, continue only for a pre-planning dependency block: there
-    must be no open PR referencing the issue and a prior `<!-- routine:triage -->` comment
-    identifying one or more `Blocked by #N` issues. Otherwise skip it as a missing-information
+    must be no open PR referencing the issue and the issue body or existing human context
+    must identify one or more prerequisite issues. Otherwise skip it as a missing-information
     or later-pipeline block.
   - For a pre-planning dependency block, read every referenced blocker issue. If all are
     closed, remove `status: blocked` and add `status: needs-plan`; do not edit the issue body,
@@ -54,9 +54,8 @@ Before routing the issue, distinguish a real prerequisite from a merely related 
   do not mark it blocked; mention the context only when it materially affects planning.
 
 For a clear open dependency, apply the normal type/effort/priority/area labels, add
-`status: blocked`, and comment `<!-- routine:triage -->` followed by
-`Blocked by #M — {why}`. Do not add `status: needs-plan`. If there are multiple blockers,
-identify each one in the same comment. Stop after this route.
+  `status: blocked`. Do not add `status: needs-plan` or a comment. If there are multiple
+  blockers, track each prerequisite from the issue's existing context. Stop after this route.
 
 ## 4. Label
 

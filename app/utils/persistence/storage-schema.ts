@@ -9,12 +9,19 @@ import {
   type AppDataV2,
   type Habit,
 } from '~/types/app-data'
-import { compareDateKeys, isValidDateKey } from '~/utils/domain/date'
+import { compareDateKeys, isValidDateKey, nowIso, todayDateKey } from '~/utils/domain/date'
+import { createId } from '~/utils/domain/id'
 
 // A real YYYY-MM-DD date within sane calendar bounds. Replaces a bare regex so a
 // crafted import can't smuggle in an out-of-range date that drives unbounded
 // date-range generation (issue #1, SEC-09).
 const dateKeySchema = z.string().refine(isValidDateKey, 'Invalid or out-of-range date')
+
+// The single source of truth for a valid `HH:mm` 24-hour time string. Shared by the
+// strict habit/settings schemas and the lenient import schema so a crafted import
+// can't get past a divergent copy (this replaced a hand-rolled duplicate that lived
+// in settings.vue — issue #69).
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/
 
 // An inclusive pause range. `end >= start` is enforced so a reversed range can't
 // silently widen — invalid pauses fail validation and the payload falls back to
@@ -40,7 +47,7 @@ const HabitV1Schema = z.object({
   scheduleWeekdays: z.array(z.number().int().min(0).max(6)).min(1).max(COLLECTION_LIMITS.scheduleWeekdays),
   reminderTime: z
     .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .regex(TIME_REGEX)
     .nullable(),
   startDate: dateKeySchema,
   archived: z.boolean(),
@@ -53,6 +60,78 @@ const HabitV1Schema = z.object({
 const HabitSchema = HabitV1Schema.extend({
   pauses: z.array(HabitPauseSchema).max(COLLECTION_LIMITS.pausesPerHabit),
 })
+
+// ── Lenient habit import schema (issue #69) ──────────────────────────────────
+// A forgiving counterpart to the strict `HabitSchema`, used only by the
+// habits-only import path (AI-generated / hand-edited habit lists). It replaces
+// the ~65-line hand-rolled `normalizeImportedHabit()` that used to live in
+// `settings.vue` — a shadow validator that re-implemented the Habit shape (and
+// carried its own copy of the time regex), and so would have silently dropped any
+// field added to `Habit` later.
+//
+// Contract, matching the old normalizer exactly:
+//   - The four fields a habit cannot be reconstructed without — `name`, `type`,
+//     `identityStatement`, `scheduleWeekdays` — have NO fallback: a bad value
+//     fails the item, so `parseLenientHabit` returns null and the caller drops it
+//     (the old `return null`).
+//   - Every other field is coerced/`.catch()`-ed to a safe default rather than
+//     failing the whole item, so a partial habit still imports.
+//   - `scheduleWeekdays` keeps the old lenient behavior: filter to valid 0–6
+//     integers, dedupe, and sort, then require at least one (drop the item if none
+//     survive) and cap at the schedule limit.
+//   - `pauses` reuses `HabitPauseSchema` and falls back to `[]` (the raw preflight
+//     `assertRawHabitLimits` still rejects an over-cap pauses array as a unit
+//     upstream — issue #35), replacing the separate `normalizeHabitPauses` path.
+const LenientHabitImportSchema = z.object({
+  id: z.string().min(1).max(FIELD_LIMITS.id).catch(() => createId('habit')),
+  name: z.string().trim().min(1).max(FIELD_LIMITS.name),
+  type: z.enum(['build', 'break']),
+  identityStatement: z.string().trim().min(1).max(FIELD_LIMITS.identity),
+  scheduleWeekdays: z.preprocess(
+    value =>
+      Array.isArray(value)
+        ? [...new Set(value.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort(
+            (left, right) => left - right,
+          )
+        : value,
+    z.array(z.number().int().min(0).max(6)).min(1).max(COLLECTION_LIMITS.scheduleWeekdays),
+  ),
+  reminderTime: z.string().regex(TIME_REGEX).nullable().catch(null),
+  startDate: dateKeySchema.catch(() => todayDateKey()),
+  archived: z.boolean().catch(false),
+  pauses: z.array(HabitPauseSchema).max(COLLECTION_LIMITS.pausesPerHabit).catch([]),
+  createdAt: z.string().min(1).max(FIELD_LIMITS.timestamp).catch(() => nowIso()),
+  updatedAt: z.string().min(1).max(FIELD_LIMITS.timestamp).catch(() => nowIso()),
+}) satisfies z.ZodType<Habit>
+
+// Compile-time anchor: the lenient schema must cover exactly the strict habit
+// keys. If a field is ever added to `HabitSchema` (and thus `Habit`) without a
+// matching lenient rule here, this assignment fails to type-check — forcing a
+// deliberate lenient decision rather than a silent drop (the exact failure mode
+// issue #69 set out to kill).
+type StrictHabitKeys = keyof typeof HabitSchema.shape
+type LenientHabitKeys = keyof typeof LenientHabitImportSchema.shape
+type AssertSameKeys<A extends string, B extends string> = [A] extends [B]
+  ? [B] extends [A]
+      ? true
+      : never
+  : never
+const _lenientHabitKeyCoverage: AssertSameKeys<StrictHabitKeys, LenientHabitKeys> = true
+void _lenientHabitKeyCoverage
+
+export { LenientHabitImportSchema }
+
+/**
+ * Validate a single raw, untrusted habit-like value from a habits-only import
+ * through {@link LenientHabitImportSchema}. Returns a clean {@link Habit} on
+ * success, or `null` when a required field is missing/invalid (so the caller
+ * drops the item). Never throws — the pause/schedule caps are enforced by the
+ * raw preflight (`assertRawHabitLimits`) before this runs.
+ */
+export function parseLenientHabit(raw: unknown): Habit | null {
+  const result = LenientHabitImportSchema.safeParse(raw)
+  return result.success ? result.data : null
+}
 
 const HabitEntrySchema = z.object({
   id: z.string().min(1).max(FIELD_LIMITS.id),
@@ -79,7 +158,7 @@ const SettingsSchema = z.object({
   notificationsEnabled: z.boolean(),
   dailyReviewTime: z
     .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .regex(TIME_REGEX)
     .nullable(),
   weekStartsOn: z.union([z.literal(0), z.literal(1)]),
   primaryColor: z.enum(PRIMARY_COLOR_OPTIONS).default(DEFAULT_SETTINGS.primaryColor),

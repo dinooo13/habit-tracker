@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
-import type { AppData, Habit, PrimaryColor } from '~/types/app-data'
-import { FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
-import { assertRawHabitLimits, createEmptyAppData, normalizeHabitPauses, parseAppData } from '~/utils/persistence/storage-schema'
-import { formatTimeString, isValidDateKey, nowIso, parseTimeString, todayDateKey } from '~/utils/domain/date'
-import { createId } from '~/utils/domain/id'
+import type { AppData, PrimaryColor } from '~/types/app-data'
+import { MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
+import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
+import { backupFilename, extractImportedHabits, mergeHabitsForImport, serializeBackup } from '~/utils/persistence/backup'
+import { buildCurrentHabitsPrompt, buildGettingStartedPrompt } from '~/utils/domain/ai-prompts'
+import { formatTimeString, parseTimeString, todayDateKey } from '~/utils/domain/date'
 import { safeJsonParse } from '~/utils/persistence/safe-json'
 import { PRIMARY_COLOR_LABELS } from '~/utils/ui/primary-color'
 
@@ -22,6 +23,7 @@ const demoData = useDemoData()
 const storageHealth = useStorageHealth()
 const { logSecurityEvent } = useSecurityLog()
 const backupNudge = useBackupNudge()
+const { copyText } = useClipboard()
 
 const notificationEnabled = computed({
   get: () => settingsStore.notificationsEnabled,
@@ -134,11 +136,11 @@ async function requestPermission(): Promise<void> {
 }
 
 function downloadBackup(payload: AppData): void {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const blob = new Blob([serializeBackup(payload)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = `habit-tracker-${todayDateKey()}.json`
+  anchor.download = backupFilename(todayDateKey())
   anchor.click()
   URL.revokeObjectURL(url)
 }
@@ -155,272 +157,13 @@ function exportJson(): void {
   toast.add({ title: 'Export complete', color: 'success' })
 }
 
-const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/
-
-function normalizeImportedHabit(payload: unknown): Habit | null {
-  if (!payload || typeof payload !== 'object') {
-    return null
-  }
-
-  const candidate = payload as Record<string, unknown>
-  const name = typeof candidate.name === 'string' ? candidate.name.trim() : ''
-  const type = candidate.type === 'build' || candidate.type === 'break' ? candidate.type : null
-  const identityStatement = typeof candidate.identityStatement === 'string' ? candidate.identityStatement.trim() : ''
-  const weekdayValues = Array.isArray(candidate.scheduleWeekdays)
-    ? [...new Set(candidate.scheduleWeekdays.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort()
-    : []
-  const startDate
-    = typeof candidate.startDate === 'string' && isValidDateKey(candidate.startDate)
-      ? candidate.startDate
-      : todayDateKey()
-  const reminderTime = typeof candidate.reminderTime === 'string' && TIME_REGEX.test(candidate.reminderTime)
-    ? candidate.reminderTime
-    : null
-
-  // Reject rather than trust over-long fields so a crafted import can't exhaust
-  // storage or degrade rendering (issue #1, SEC-06).
-  if (
-    !name
-    || !type
-    || !identityStatement
-    || !weekdayValues.length
-    || name.length > FIELD_LIMITS.name
-    || identityStatement.length > FIELD_LIMITS.identity
-  ) {
-    return null
-  }
-
-  const now = nowIso()
-  const id
-    = typeof candidate.id === 'string' && candidate.id.trim() && candidate.id.length <= FIELD_LIMITS.id
-      ? candidate.id
-      : createId('habit')
-  const createdAt
-    = typeof candidate.createdAt === 'string'
-      && candidate.createdAt.trim()
-      && candidate.createdAt.length <= FIELD_LIMITS.timestamp
-      ? candidate.createdAt
-      : now
-  const updatedAt
-    = typeof candidate.updatedAt === 'string'
-      && candidate.updatedAt.trim()
-      && candidate.updatedAt.length <= FIELD_LIMITS.timestamp
-      ? candidate.updatedAt
-      : now
-
-  return {
-    id,
-    name,
-    type,
-    identityStatement,
-    scheduleWeekdays: weekdayValues,
-    reminderTime,
-    startDate,
-    archived: typeof candidate.archived === 'boolean' ? candidate.archived : false,
-    pauses: normalizeHabitPauses(candidate.pauses),
-    createdAt,
-    updatedAt,
-  }
-}
-
-function extractHabitsFromImportPayload(payload: unknown): Habit[] {
-  try {
-    return parseAppData(payload).habits
-  }
-  catch {
-    // Continue with habits-only payload formats.
-  }
-
-  const rawHabits = Array.isArray(payload)
-    ? payload
-    : payload && typeof payload === 'object' && Array.isArray((payload as { habits?: unknown }).habits)
-      ? (payload as { habits: unknown[] }).habits
-      : null
-
-  if (!rawHabits) {
-    return []
-  }
-
-  // Enforce the same raw habit / nested-array caps as the strict path before any
-  // mapping, deduplication, or filtering, so the lenient fallback can't become a
-  // bypass for an oversized payload (issue #35). Throws on overflow, which
-  // confirmImport() surfaces through its normal import-error catch.
-  assertRawHabitLimits(rawHabits)
-
-  return rawHabits
-    .map(item => normalizeImportedHabit(item))
-    .filter((item): item is Habit => Boolean(item))
-}
-
 function pluralize(value: number, singular: string, plural = `${singular}s`): string {
   return value === 1 ? singular : plural
 }
 
-function mergeHabitsForImport(importedHabits: Habit[]): { mergedHabits: Habit[], addedCount: number, updatedCount: number } {
-  const existingHabits = habitsStore.snapshot()
-  const existingHabitsById = new Map(existingHabits.map(habit => [habit.id, habit]))
-  const dedupedImported = [...new Map(importedHabits.map(habit => [habit.id, habit])).values()]
-  const mergedHabits: Habit[] = []
-  const importedIds = new Set<string>()
-  let addedCount = 0
-  let updatedCount = 0
-
-  for (const importedHabit of dedupedImported) {
-    const existingHabit = existingHabitsById.get(importedHabit.id)
-
-    if (existingHabit) {
-      mergedHabits.push({
-        ...existingHabit,
-        ...importedHabit,
-        id: existingHabit.id,
-        createdAt: existingHabit.createdAt,
-        updatedAt: nowIso(),
-      })
-      updatedCount += 1
-    }
-    else {
-      mergedHabits.push(importedHabit)
-      addedCount += 1
-    }
-
-    importedIds.add(importedHabit.id)
-  }
-
-  for (const existingHabit of existingHabits) {
-    if (!importedIds.has(existingHabit.id)) {
-      mergedHabits.push(existingHabit)
-    }
-  }
-
-  return { mergedHabits, addedCount, updatedCount }
-}
-
-function buildGettingStartedPrompt(): string {
-  const today = todayDateKey()
-
-  return `You are my habit setup assistant for a habit-tracker app.
-
-Goal:
-- Ask me short, practical questions to design a starter habit list.
-- Ask one question at a time and wait for my answer.
-- Keep going until you have enough data for each habit.
-
-Required fields for each habit:
-- name: short habit title
-- type: "build" or "break"
-- identityStatement: identity-based statement in first person
-- scheduleWeekdays: array of weekday numbers (0=Sun, 1=Mon, ... 6=Sat)
-- reminderTime: "HH:mm" 24-hour string or null
-- startDate: "YYYY-MM-DD" (default to ${today} if I do not specify)
-- archived: boolean (default false)
-- pauses: array of { "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" } ranges when the habit is paused (default [])
-
-Constraints:
-- Only return habits that are specific and realistic.
-- Prefer 3 to 7 habits unless I ask for more.
-- Keep naming concise.
-- If any detail is missing, ask me before generating output.
-
-Output format:
-- After questions are complete, generate a downloadable file named "habits-import.json".
-- The file content must be ONLY valid JSON.
-- If file download is not possible in this chat, then show ONLY valid JSON in one code block as fallback.
-- JSON shape must be:
-{
-  "habits": [
-    {
-      "name": "string",
-      "type": "build|break",
-      "identityStatement": "string",
-      "scheduleWeekdays": [1,2,3],
-      "reminderTime": "HH:mm or null",
-      "startDate": "YYYY-MM-DD",
-      "archived": false,
-      "pauses": [{ "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" }]
-    }
-  ]
-}`.trim()
-}
-
-function buildCurrentHabitsPrompt(): string {
-  const currentHabitsJson = JSON.stringify(
-    {
-      habits: habitsStore.snapshot().map(habit => ({
-        id: habit.id,
-        name: habit.name,
-        type: habit.type,
-        identityStatement: habit.identityStatement,
-        scheduleWeekdays: habit.scheduleWeekdays,
-        reminderTime: habit.reminderTime,
-        startDate: habit.startDate,
-        archived: habit.archived,
-        pauses: habit.pauses,
-      })),
-    },
-    null,
-    2,
-  )
-
-  return `You are helping me refine my existing habits for a habit-tracker app.
-
-Instructions:
-- Review the current habits JSON I provide below.
-- Ask clarifying questions before making changes.
-- Propose better habit wording, schedules, and reminders if useful.
-- Keep existing ids so the app can update matching habits.
-- You may add new habits with new ids when needed.
-- Final output should be a downloadable file named "habits-import.json".
-- The file content must be only valid JSON in the same shape.
-- If file download is not possible in this chat, then return only valid JSON in one code block.
-
-Output format:
-{
-  "habits": [
-    {
-      "id": "existing-or-new-id",
-      "name": "string",
-      "type": "build|break",
-      "identityStatement": "string",
-      "scheduleWeekdays": [1,2,3],
-      "reminderTime": "HH:mm or null",
-      "startDate": "YYYY-MM-DD",
-      "archived": false,
-      "pauses": [{ "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" }]
-    }
-  ]
-}
-
-Current habits JSON:
-\`\`\`json
-${currentHabitsJson}
-\`\`\`
-`.trim()
-}
-
-async function copyToClipboard(text: string): Promise<void> {
-  if (!import.meta.client) {
-    return
-  }
-
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text)
-    return
-  }
-
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.setAttribute('readonly', '')
-  textarea.style.position = 'fixed'
-  textarea.style.left = '-9999px'
-  document.body.appendChild(textarea)
-  textarea.select()
-  document.execCommand('copy')
-  document.body.removeChild(textarea)
-}
-
 async function copyGettingStartedPrompt(): Promise<void> {
   try {
-    await copyToClipboard(buildGettingStartedPrompt())
+    await copyText(buildGettingStartedPrompt(todayDateKey()))
     toast.add({
       title: 'Prompt copied',
       description: 'Getting-started AI prompt copied to clipboard.',
@@ -438,7 +181,7 @@ async function copyGettingStartedPrompt(): Promise<void> {
 
 async function copyCurrentHabitsPrompt(): Promise<void> {
   try {
-    await copyToClipboard(buildCurrentHabitsPrompt())
+    await copyText(buildCurrentHabitsPrompt(habitsStore.snapshot()))
     toast.add({
       title: 'Prompt copied',
       description: 'Current-habits AI prompt copied to clipboard.',
@@ -493,7 +236,7 @@ async function confirmImport(): Promise<void> {
     const payload = safeJsonParse(text)
 
     if (importHabitsOnly.value) {
-      const importedHabits = extractHabitsFromImportPayload(payload)
+      const importedHabits = extractImportedHabits(payload)
       if (!importedHabits.length) {
         toast.add({
           title: 'Import failed',
@@ -503,7 +246,7 @@ async function confirmImport(): Promise<void> {
         return
       }
 
-      const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(importedHabits)
+      const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(habitsStore.snapshot(), importedHabits)
       habitsStore.hydrate(mergedHabits)
       await persistence.save(lifecycle.snapshotAppData())
       void storageHealth.checkQuota()

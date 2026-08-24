@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Habit, HabitPause } from '~/types/app-data'
 import { COLLECTION_LIMITS, FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
-import { addDays } from '~/utils/domain/date'
+import { addDays, todayDateKey } from '~/utils/domain/date'
 import {
   assertRawHabitLimits,
   createEmptyAppData,
   normalizeHabitPauses,
   parseAppData,
+  parseLenientHabit,
 } from '~/utils/persistence/storage-schema'
 
 // Build N valid, distinct single-day pause ranges within the allowed calendar
@@ -222,5 +223,98 @@ describe('import collection limits (#35)', () => {
   it('normalizeHabitPauses defensively throws on an over-limit array', () => {
     expect(() => normalizeHabitPauses(new Array(COLLECTION_LIMITS.pausesPerHabit + 1))).toThrow()
     expect(() => normalizeHabitPauses(validPauses(COLLECTION_LIMITS.pausesPerHabit))).not.toThrow()
+  })
+})
+
+describe('parseLenientHabit (#69)', () => {
+  // A fully-specified, already-clean raw habit — the lenient path should pass it
+  // through unchanged (a superset of the fields required to round-trip).
+  const cleanRaw = {
+    id: 'habit_keep',
+    name: 'Read',
+    type: 'build',
+    identityStatement: 'I am a reader',
+    scheduleWeekdays: [1, 3, 5],
+    reminderTime: '08:00',
+    startDate: '2026-02-01',
+    archived: true,
+    pauses: [{ start: '2026-03-01', end: '2026-03-02' }],
+    createdAt: '2026-02-01T00:00:00.000Z',
+    updatedAt: '2026-02-02T00:00:00.000Z',
+  }
+
+  it('returns a clean habit for a fully-specified raw item, preserving id/timestamps', () => {
+    const habit = parseLenientHabit(cleanRaw)
+    expect(habit).toEqual(cleanRaw)
+  })
+
+  it('returns null for non-object input', () => {
+    for (const bad of [null, undefined, 42, 'x', []]) {
+      expect(parseLenientHabit(bad)).toBeNull()
+    }
+  })
+
+  it('drops the item (null) when a required field is missing or invalid', () => {
+    expect(parseLenientHabit({ ...cleanRaw, name: '   ' }), 'blank name').toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, name: 42 }), 'non-string name').toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, type: 'other' }), 'bad type').toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, identityStatement: '' }), 'blank identity').toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, scheduleWeekdays: [] }), 'empty schedule').toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, scheduleWeekdays: 'nope' }), 'non-array schedule').toBeNull()
+  })
+
+  it('drops the item when a required string field exceeds its length cap (SEC-06)', () => {
+    expect(parseLenientHabit({ ...cleanRaw, name: 'a'.repeat(FIELD_LIMITS.name + 1) })).toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, identityStatement: 'a'.repeat(FIELD_LIMITS.identity + 1) })).toBeNull()
+  })
+
+  it('trims name and identityStatement', () => {
+    const habit = parseLenientHabit({ ...cleanRaw, name: '  Read  ', identityStatement: '  I am a reader  ' })
+    expect(habit?.name).toBe('Read')
+    expect(habit?.identityStatement).toBe('I am a reader')
+  })
+
+  it('filters invalid weekdays, dedupes, and sorts', () => {
+    const habit = parseLenientHabit({ ...cleanRaw, scheduleWeekdays: [5, 1, 1, 7, -1, 3.5, 3] })
+    expect(habit?.scheduleWeekdays).toEqual([1, 3, 5])
+  })
+
+  it('defaults an invalid startDate to today', () => {
+    expect(parseLenientHabit({ ...cleanRaw, startDate: 'not-a-date' })?.startDate).toBe(todayDateKey())
+    expect(parseLenientHabit({ ...cleanRaw, startDate: '9999-12-31' })?.startDate).toBe(todayDateKey())
+  })
+
+  it('coerces an invalid reminderTime to null and keeps a valid one', () => {
+    expect(parseLenientHabit({ ...cleanRaw, reminderTime: '99:99' })?.reminderTime).toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, reminderTime: 123 })?.reminderTime).toBeNull()
+    expect(parseLenientHabit({ ...cleanRaw, reminderTime: '23:45' })?.reminderTime).toBe('23:45')
+  })
+
+  it('coerces a non-boolean archived to false', () => {
+    expect(parseLenientHabit({ ...cleanRaw, archived: 'yes' })?.archived).toBe(false)
+    expect(parseLenientHabit({ ...cleanRaw, archived: undefined })?.archived).toBe(false)
+  })
+
+  it('generates an id when missing or invalid', () => {
+    const noId = parseLenientHabit({ ...cleanRaw, id: undefined })
+    expect(noId?.id).toMatch(/^habit_/)
+    const badId = parseLenientHabit({ ...cleanRaw, id: 'a'.repeat(FIELD_LIMITS.id + 1) })
+    expect(badId?.id).toMatch(/^habit_/)
+  })
+
+  it('defaults missing createdAt/updatedAt to an ISO timestamp', () => {
+    const habit = parseLenientHabit({ ...cleanRaw, createdAt: undefined, updatedAt: undefined })
+    expect(habit?.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(habit?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('falls back to empty pauses when the pauses array is invalid, and keeps valid ones', () => {
+    expect(parseLenientHabit({ ...cleanRaw, pauses: 'nope' })?.pauses).toEqual([])
+    // A reversed (invalid) range fails HabitPauseSchema, so the whole array falls
+    // back to [] — the deliberate lenient-schema unification (#69).
+    expect(parseLenientHabit({ ...cleanRaw, pauses: [{ start: '2026-03-05', end: '2026-03-01' }] })?.pauses).toEqual([])
+    expect(parseLenientHabit({ ...cleanRaw, pauses: [{ start: '2026-03-01', end: '2026-03-02' }] })?.pauses).toEqual([
+      { start: '2026-03-01', end: '2026-03-02' },
+    ])
   })
 })

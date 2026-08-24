@@ -20,6 +20,8 @@ export type SecurityEventType
     | 'data.validation_failed'
     | 'storage.quota_low'
     | 'storage.write_failed'
+    | 'storage.unavailable'
+    | 'storage.recovered'
     | 'pwa.update.available'
     | 'pwa.update.applied'
 

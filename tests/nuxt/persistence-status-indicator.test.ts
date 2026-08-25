@@ -53,6 +53,42 @@ describe('PersistenceStatusIndicator (#65)', () => {
     expect(failedWrapper.text()).not.toContain('Export backup')
   })
 
+  it('auto-hides the "Saved" pill 10s after settling on ok, and brings it back on the next save', async () => {
+    vi.useFakeTimers()
+    try {
+      const health = useStorageHealth()
+      health.status.value = 'ok'
+      health.lastSavedAt.value = nowIso()
+
+      const wrapper = await mountSuspended(PersistenceStatusIndicator)
+      expect(wrapper.text()).toContain('Saved')
+
+      // Just before 10s it is still visible.
+      vi.advanceTimersByTime(9_000)
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).toContain('Saved')
+
+      // At 10s the quiet pill disappears.
+      vi.advanceTimersByTime(1_000)
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).not.toContain('Saved')
+
+      // A subsequent save reappears the pill and restarts the timer.
+      health.status.value = 'saving'
+      health.status.value = 'ok'
+      health.lastSavedAt.value = nowIso()
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).toContain('Saved')
+
+      vi.advanceTimersByTime(10_000)
+      await wrapper.vm.$nextTick()
+      expect(wrapper.text()).not.toContain('Saved')
+    }
+    finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('shows the recovery banner with Export/Retry actions when unavailable', async () => {
     const health = useStorageHealth()
     health.status.value = 'unavailable'

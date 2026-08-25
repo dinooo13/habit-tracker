@@ -81,7 +81,7 @@ app/
 ├── layouts/               # default (public) + app (authenticated shell)
 ├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo
 ├── stores/                # Pinia: habits, entries, coach, settings
-├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health
+├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-clipboard
 ├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)

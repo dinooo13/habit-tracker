@@ -96,6 +96,10 @@ Tests live in `tests/`:
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
   `fake-indexeddb`, exercised through the `PersistenceAdapter` interface) and
   `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration).
+- **Backup & AI prompts** — `backup.test.ts` (pure `extractImportedHabits` /
+  `mergeHabitsForImport` / `serializeBackup` / `backupFilename` from
+  `app/utils/persistence/backup.ts`) and `ai-prompts.test.ts` (the deterministic prompt
+  builders in `app/utils/domain/ai-prompts.ts`).
 - **Features** — `pause-mode.test.ts` (pause ranges: due/streak/coaching exclusion) and
   `backup-nudge.test.ts` (`computeBackupNudge` thresholds and snooze).
 - **Fixtures** — `fixture-data.test.ts`, `demo-data-loader.test.ts` validate the sample data.
@@ -107,6 +111,8 @@ Rendered tests live in `tests/nuxt/` (the `nuxt` project):
   seven-day completion rate).
 - **Lifecycle** — `app-data-lifecycle.test.ts` (`useAppDataLifecycle` snapshot/replace/reconcile
   over the Nuxt-provided Pinia stores, ADR-0015).
+- **Composables** — `use-clipboard.test.ts` (the `useClipboard` copy helper used by the
+  settings AI-prompt actions).
 
 Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and
 `public/fixtures/` (the demo payload).

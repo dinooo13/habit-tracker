@@ -9,6 +9,7 @@ const STORAGE_HEALTH_WARNED_QUOTA_KEY = 'storage-health:warned-quota'
 const STORAGE_HEALTH_STATUS_KEY = 'storage-health:status'
 const STORAGE_HEALTH_LAST_SAVED_KEY = 'storage-health:last-saved-at'
 const STORAGE_HEALTH_RETRY_TOKEN_KEY = 'storage-health:retry-token'
+const STORAGE_HEALTH_DEGRADED_KEY = 'storage-health:degraded-since-ok'
 
 export interface StorageHealth {
   lastError: Ref<string | null>
@@ -52,6 +53,11 @@ export function useStorageHealth(): StorageHealth {
   const status = useState<PersistenceStatus>(STORAGE_HEALTH_STATUS_KEY, () => 'ok')
   const lastSavedAt = useState<string | null>(STORAGE_HEALTH_LAST_SAVED_KEY, () => null)
   const retryToken = useState<number>(STORAGE_HEALTH_RETRY_TOKEN_KEY, () => 0)
+  // Sticky "have we been degraded since the last successful save?" flag. Tracked
+  // independently of `status` because the save path flips `status` to the
+  // transient `saving` before every attempt (including the recovering one), so
+  // `status` alone can't tell `markSaved` whether it is exiting a degraded episode.
+  const degradedSinceOk = useState<boolean>(STORAGE_HEALTH_DEGRADED_KEY, () => false)
   const { logSecurityEvent } = useSecurityLog()
 
   async function checkQuota(): Promise<boolean> {
@@ -88,6 +94,7 @@ export function useStorageHealth(): StorageHealth {
     // `unavailable` is a separate, explicit call once retries are exhausted or a
     // quota error short-circuits.
     status.value = 'failed'
+    degradedSinceOk.value = true
     logSecurityEvent('storage.write_failed', 'error', error instanceof Error ? error.message : String(error))
 
     if (isQuotaExceededError(error)) {
@@ -100,8 +107,12 @@ export function useStorageHealth(): StorageHealth {
   }
 
   function markSaved(): void {
-    const wasDegraded = status.value === 'failed' || status.value === 'unavailable'
+    // Read the sticky degraded flag, not `status`: the save path sets `status` to
+    // `saving` before the recovering attempt, so it is never `failed`/`unavailable`
+    // here in the wired flow (issue #65 QA fix).
+    const wasDegraded = degradedSinceOk.value
     status.value = 'ok'
+    degradedSinceOk.value = false
     lastSavedAt.value = nowIso()
     lastError.value = null
 
@@ -116,6 +127,7 @@ export function useStorageHealth(): StorageHealth {
       logSecurityEvent('storage.unavailable', 'error', reason ? `Persistence unavailable: ${reason}` : 'Persistence unavailable')
     }
     status.value = 'unavailable'
+    degradedSinceOk.value = true
   }
 
   function requestRetry(): void {

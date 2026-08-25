@@ -9,10 +9,14 @@ describe('useStorageHealth lifecycle (#65)', () => {
   beforeEach(() => {
     clearSecurityLog()
     // Reset the shared useState so each test starts from a known `ok` baseline.
+    // markSaved() clears the sticky "degraded since ok" flag through the public
+    // API; clear the log again afterwards to drop any recovery event it logged.
     const health = useStorageHealth()
+    health.markSaved()
     health.status.value = 'ok'
     health.lastSavedAt.value = null
     health.lastError.value = null
+    clearSecurityLog()
   })
 
   it('markSaved sets the timestamp, clears the error, and logs recovery when previously degraded', () => {
@@ -26,6 +30,37 @@ describe('useStorageHealth lifecycle (#65)', () => {
     expect(health.status.value).toBe('ok')
     expect(health.lastSavedAt.value).not.toBeNull()
     expect(health.lastError.value).toBeNull()
+    const recovered = recentSecurityEvents().filter(event => event.type === 'storage.recovered')
+    expect(recovered).toHaveLength(1)
+  })
+
+  it('logs recovery through the real save sequence: reportWriteFailure → markSaving → markSaved', () => {
+    // Regression for the QA finding: the save path calls markSaving() (status →
+    // `saving`) before the recovering attempt resolves, so markSaved must not
+    // rely on `status` still reading `failed`/`unavailable` to detect recovery.
+    const health = useStorageHealth()
+    health.reportWriteFailure(new Error('locked'))
+    expect(health.status.value).toBe('failed')
+    health.markSaving()
+    expect(health.status.value).toBe('saving')
+
+    clearSecurityLog()
+    health.markSaved()
+
+    expect(health.status.value).toBe('ok')
+    const recovered = recentSecurityEvents().filter(event => event.type === 'storage.recovered')
+    expect(recovered).toHaveLength(1)
+  })
+
+  it('logs recovery after exiting unavailable via markSaving → markSaved', () => {
+    const health = useStorageHealth()
+    health.markUnavailable('quota')
+    health.markSaving()
+
+    clearSecurityLog()
+    health.markSaved()
+
+    expect(health.status.value).toBe('ok')
     const recovered = recentSecurityEvents().filter(event => event.type === 'storage.recovered')
     expect(recovered).toHaveLength(1)
   })

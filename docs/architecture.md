@@ -31,6 +31,7 @@ flowchart TD
     demo["use-demo-data"]
     backup["use-backup-nudge"]
     clipboard["use-clipboard"]
+    clock["use-clock"]
   end
 
   subgraph Utils["Utilities (app/utils, by intent — ADR-0014)"]
@@ -113,6 +114,21 @@ functions of `useAppDataLifecycle()` (`app/composables/use-app-data-lifecycle.ts
 lifecycle seam shared by bootstrap, settings import/delete-all, and demo hydration. The composable
 is state-only; UI side effects and `persistence.save()` stay at each call site
 (see [adr/0015](adr/0015-app-data-lifecycle-composable.md)).
+
+### Day rollover
+
+`ensureMissedEntries`/`reconcileMissingSuggestions` above run at startup, but an installed PWA
+can stay open across local midnight. The central day-clock service `useClock()`
+(`app/composables/use-clock.ts`) owns rollover: a module-singleton reactive `todayKey` advanced
+by a `setTimeout` armed to the next local midnight, re-armed on each fire, plus a
+`visibilitychange`/`focus` re-check that catches a rollover missed while the tab was suspended.
+Bootstrap starts the clock **after** the snapshot watch and registers
+`onRollover((key) => reconcileDerivedState(key))`, so a midnight rollover backfills the previous
+day's missed entries + coaching and the resulting mutations reach the same debounced save. Every
+long-lived, day-scoped consumer — the dashboard, habits list, Insights, the Review 7-day cutoff,
+the backup nudge, and the reminder engine — reads the reactive `todayKey` rather than sampling
+`todayDateKey()` once, so the whole day-scoped UI rolls over automatically
+(see [adr/0018](adr/0018-central-reactive-day-clock-service.md)).
 
 The persisted envelope is **`AppDataV2`** (`{ schemaVersion: 2, habits, entries, suggestions,
 settings }`). Each `Habit` carries a `pauses: HabitPause[]` list of inclusive `YYYY-MM-DD`

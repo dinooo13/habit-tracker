@@ -134,6 +134,18 @@ export default defineNuxtPlugin(async () => {
     }
   })
 
+  // Central day clock (issue #70, ADR-0018). Registered *after* the snapshot
+  // watch above so a rollover detected during startup — or later, while the PWA
+  // is left open past local midnight — reconciles missed entries/coaching and
+  // the resulting mutations reach the debounced save. `start()` runs `syncNow()`
+  // before arming its timer, catching any rollover that elapsed during
+  // `persistence.load()`.
+  const clock = useClock()
+  clock.onRollover((key) => {
+    lifecycle.reconcileDerivedState(key)
+  })
+  clock.start()
+
   const reminderEngine = useReminderEngine()
   reminderEngine.start()
 })

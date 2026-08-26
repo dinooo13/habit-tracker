@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Habit } from '~/types/app-data'
-import { isDateInHabitPause, todayDateKey } from '~/utils/domain/date'
+import { isDateInHabitPause } from '~/utils/domain/date'
 import { sortWeekdaysForDisplay, WEEKDAY_LABELS } from '~/utils/domain/weekdays'
 
 definePageMeta({ layout: 'app' })
@@ -8,10 +8,12 @@ definePageMeta({ layout: 'app' })
 const habitsStore = useHabitsStore()
 const settingsStore = useSettingsStore()
 
-const today = todayDateKey()
+// Reactive today from the central day clock so "Paused" badges re-evaluate at
+// local midnight when the PWA is left open (issue #70).
+const clock = useClock()
 
 function isCurrentlyPaused(habit: Habit): boolean {
-  return isDateInHabitPause(habit, today)
+  return isDateInHabitPause(habit, clock.todayKey.value)
 }
 
 const showArchived = ref(false)

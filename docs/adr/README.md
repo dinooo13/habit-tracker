@@ -44,3 +44,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0015](0015-app-data-lifecycle-composable.md) | App-data lifecycle composable for snapshot/replace/reconcile | Accepted |
 | [0016](0016-habit-action-composable-owns-cross-store-transactions.md) | Habit-action composable owns cross-store entry/suggestion transactions | Accepted |
 | [0017](0017-persistence-status-lifecycle-retry-backoff.md) | Persistence status lifecycle with retry and backoff | Accepted |
+| [0018](0018-central-reactive-day-clock-service.md) | Central reactive day-clock service for midnight rollover | Accepted |

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CoachingSuggestion, MissReasonCode } from '~/types/app-data'
 import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
-import { addDays, compareDateKeys, todayDateKey } from '~/utils/domain/date'
+import { addDays, compareDateKeys } from '~/utils/domain/date'
 
 definePageMeta({ layout: 'app' })
 
@@ -10,6 +10,10 @@ const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
 const habitActions = useHabitActions()
 const toast = useToast()
+
+// Reactive today from the central day clock so the 7-day suggestion cutoff
+// shifts at local midnight while the PWA is left open (issue #70).
+const clock = useClock()
 
 const pendingModels = computed(() =>
   entriesStore.pendingReflectionEntries
@@ -82,7 +86,7 @@ interface SuggestionGroup {
   missedCount: number
 }
 
-const suggestionsCutoffDate = computed(() => addDays(todayDateKey(), -6))
+const suggestionsCutoffDate = computed(() => addDays(clock.todayKey.value, -6))
 const suggestionGroups = computed<SuggestionGroup[]>(() => {
   const sorted = [...coachStore.suggestions].sort((left, right) => right.createdAt.localeCompare(left.createdAt))
   const entriesById = new Map(entriesStore.entries.map(entry => [entry.id, entry]))

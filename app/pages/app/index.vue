@@ -9,7 +9,6 @@ import {
   formatTimeString,
   isDateInHabitPause,
   relativeDayLabel,
-  todayDateKey,
 } from '~/utils/domain/date'
 import * as stats from '~/utils/domain/stats'
 
@@ -21,11 +20,23 @@ const settingsStore = useSettingsStore()
 const backupNudge = useBackupNudge()
 const habitActions = useHabitActions()
 
-const today = todayDateKey()
-const selectedDateKey = ref(today)
+// Sourced from the central day clock so the whole day-scoped view (header,
+// calendar bounds, "Today" label) rolls over automatically at local midnight
+// while the PWA is left open (issue #70).
+const clock = useClock()
+const today = computed(() => clock.todayKey.value)
+const selectedDateKey = ref(today.value)
 const dateKey = computed(() => selectedDateKey.value)
-const isToday = computed(() => selectedDateKey.value === today)
-const isViewingPast = computed(() => compareDateKeys(selectedDateKey.value, today) < 0)
+const isToday = computed(() => selectedDateKey.value === today.value)
+const isViewingPast = computed(() => compareDateKeys(selectedDateKey.value, today.value) < 0)
+
+// On rollover, follow the new day only when the user was already viewing the
+// old "today"; an intentional past-day review is left untouched (least surprise).
+watch(today, (newToday, oldToday) => {
+  if (selectedDateKey.value === oldToday) {
+    selectedDateKey.value = newToday
+  }
+})
 
 const requestHeaders = useRequestHeaders(['accept-language'])
 const dateLocale = computed(() => {
@@ -43,7 +54,7 @@ const displayDate = computed(() =>
   }),
 )
 const relativeLabel = computed(() =>
-  relativeDayLabel(selectedDateKey.value, today, dateLocale.value),
+  relativeDayLabel(selectedDateKey.value, today.value, dateLocale.value),
 )
 
 // Earliest date a habit could have an entry, used to bound the calendar.
@@ -64,7 +75,7 @@ const calendarValue = computed({
     }
   },
 })
-const calendarMaxValue = computed(() => dateKeyToCalendarDate(today) ?? undefined)
+const calendarMaxValue = computed(() => dateKeyToCalendarDate(today.value) ?? undefined)
 const calendarMinValue = computed(() =>
   earliestHabitStart.value ? dateKeyToCalendarDate(earliestHabitStart.value) ?? undefined : undefined,
 )
@@ -77,7 +88,7 @@ const datePickerOpen = ref(false)
 
 function selectDate(nextDateKey: string): void {
   // Never allow time-travelling into the future — those days can't be reviewed yet.
-  if (compareDateKeys(nextDateKey, today) > 0) {
+  if (compareDateKeys(nextDateKey, today.value) > 0) {
     return
   }
 
@@ -97,7 +108,7 @@ function goToNextDay(): void {
 }
 
 function goToToday(): void {
-  selectDate(today)
+  selectDate(today.value)
 }
 
 const dueHabits = computed(() => habitsStore.dueHabitsForDate(dateKey.value))

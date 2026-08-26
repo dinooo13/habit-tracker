@@ -41,7 +41,7 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`. |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-persistence.ts`, `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings). |
+| `app/composables/` | `use-persistence.ts`, `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings), `use-clock.ts` (central reactive day-clock: `todayKey` + `onRollover` for midnight rollover, ADR-0018). |
 | `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `weekdays.ts`), `persistence/` (`persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
@@ -78,7 +78,8 @@ See `docs/glossary.md` for the domain vocabulary.
 - **Vue**: `<script setup>` + Composition API everywhere. Components are auto-imported.
 - **Stores**: every store exposes `hydrate(data)` (load persisted state) and `snapshot()`
   (plain, proxy-free copy for persistence). Getters are descriptive (`activeHabits`,
-  `dueHabitsForDate`, `todayDueHabits`); query helpers use cached `Map`s where hot.
+  `dueHabitsForDate`); query helpers use cached `Map`s where hot. Day-scoped UI reads the
+  reactive `todayKey` from `useClock()` (ADR-0018), not a one-shot `todayDateKey()`.
 - **Composables** use the `use*` naming convention.
 - **Date keys** are local `YYYY-MM-DD` strings, never `Date` objects, to dodge timezone bugs
   (`app/utils/domain/date.ts`). Times are `HH:MM` strings.
@@ -102,6 +103,9 @@ stay at the call sites.
 3. `reconcileDerivedState(todayDateKey())` backfills missed entries then reconciles suggestions.
 4. Deep-`watch`es a combined snapshot (`snapshotAppData()`) and persists it **debounced at 800ms**,
    flushing immediately on `pagehide` and on `visibilitychange → hidden`.
+5. Starts `useClock()` (after the snapshot watch) and registers
+   `onRollover((key) => reconcileDerivedState(key))`, so a local-midnight rollover while the app
+   is open backfills missed entries + coaching and the mutations reach the debounced save (ADR-0018).
 
 ## Guardrails / gotchas
 

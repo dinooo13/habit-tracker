@@ -1,7 +1,8 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Habit, HabitEntry } from '~/types/app-data'
 import { BACKUP_NUDGE_SNOOZE_DAYS, BACKUP_NUDGE_THRESHOLD_WEEKS } from '~/types/app-data'
-import { addDays, compareDateKeys, daysBetween, nowIso, todayDateKey, toDateKeyLocal } from '~/utils/domain/date'
+import { addDays, compareDateKeys, daysBetween, nowIso, toDateKeyLocal } from '~/utils/domain/date'
+import { useClock } from '~/composables/use-clock'
 
 interface BackupNudgeInputs {
   habits: Habit[]
@@ -96,6 +97,9 @@ export function useBackupNudge(): UseBackupNudge {
   const habitsStore = useHabitsStore()
   const entriesStore = useEntriesStore()
   const settingsStore = useSettingsStore()
+  // Reactive today from the central day clock so the nudge decision recomputes
+  // at local midnight while the PWA is left open (issue #70).
+  const clock = useClock()
 
   const result = computed(() =>
     computeBackupNudge({
@@ -103,7 +107,7 @@ export function useBackupNudge(): UseBackupNudge {
       entries: entriesStore.entries,
       lastExportedAt: settingsStore.lastExportedAt,
       backupNudgeSnoozedUntil: settingsStore.backupNudgeSnoozedUntil,
-      todayKey: todayDateKey(),
+      todayKey: clock.todayKey.value,
     }),
   )
 
@@ -118,7 +122,7 @@ export function useBackupNudge(): UseBackupNudge {
   // Snooze the nudge for the configured window after a dismissal. Persistence is automatic
   // via the bootstrap watch on settingsStore.snapshot().
   function dismiss(): void {
-    settingsStore.setBackupNudgeSnoozedUntil(addDays(todayDateKey(), BACKUP_NUDGE_SNOOZE_DAYS))
+    settingsStore.setBackupNudgeSnoozedUntil(addDays(clock.todayKey.value, BACKUP_NUDGE_SNOOZE_DAYS))
   }
 
   // Record a successful export and clear any active snooze so recency drives the next nudge.

@@ -32,6 +32,14 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   entry is generated for them.
 - **Date key** — dates are stored as local `YYYY-MM-DD` strings (not `Date` objects) to avoid
   timezone drift (`app/utils/domain/date.ts`).
+- **Day clock** — the central reactive current-day service, `useClock()`
+  (`app/composables/use-clock.ts`). It exposes a singleton reactive `todayKey` and an
+  `onRollover` hook so every long-lived, day-scoped view stays fresh without each one sampling
+  the date itself (ADR-0018).
+- **Day rollover** — the moment the local date advances (local midnight). The day clock detects
+  it with a midnight timer plus a `visibilitychange`/`focus` re-check and, via bootstrap,
+  backfills the previous day's missed entries + coaching so an always-open PWA rolls over
+  automatically.
 - **Streak** — consecutive completed due-days for a habit (`streakForHabit` in `app/utils/domain/stats.ts`).
 - **Completion rate** — share of due days completed within a window (7d / 30d / all-time).
 

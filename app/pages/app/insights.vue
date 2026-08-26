@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale, todayDateKey } from '~/utils/domain/date'
+import { addDays, compareDateKeys, dateKeyRange, formatDateKeyForLocale } from '~/utils/domain/date'
 import { MISS_REASON_LABELS } from '~/utils/domain/atomic-rules'
 import * as stats from '~/utils/domain/stats'
 
@@ -10,7 +10,11 @@ const entriesStore = useEntriesStore()
 const coachStore = useCoachStore()
 const requestHeaders = useRequestHeaders(['accept-language'])
 
-const today = computed(() => todayDateKey())
+// Reactive today from the central day clock so all today-anchored windows and
+// stats recompute at local midnight (issue #70) — the previous
+// `computed(() => todayDateKey())` never re-evaluated.
+const clock = useClock()
+const today = clock.todayKey
 const activeHabits = computed(() => habitsStore.activeHabits)
 
 const completionWindow = ref<'7d' | '30d' | 'all'>('7d')

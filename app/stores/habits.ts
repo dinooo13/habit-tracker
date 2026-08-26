@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import type { Habit, HabitCreateInput, HabitPause, HabitUpdateInput } from '~/types/app-data'
-import { compareDateKeys, nowIso, todayDateKey, isHabitDueOnDate } from '~/utils/domain/date'
+import { compareDateKeys, nowIso, isHabitDueOnDate } from '~/utils/domain/date'
 import { createId } from '~/utils/domain/id'
 
 interface HabitsState {
@@ -30,9 +30,6 @@ export const useHabitsStore = defineStore('habits', {
     habitById: state => (id: string): Habit | undefined => state.habits.find(habit => habit.id === id),
     dueHabitsForDate: state => (dateKey: string): Habit[] =>
       state.habits.filter(habit => isHabitDueOnDate(habit, dateKey)),
-    todayDueHabits(): Habit[] {
-      return this.dueHabitsForDate(todayDateKey())
-    },
   },
   actions: {
     hydrate(habits: Habit[]): void {

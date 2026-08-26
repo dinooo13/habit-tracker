@@ -1,10 +1,15 @@
-import { parseTimeString, todayDateKey } from '~/utils/domain/date'
+import { parseTimeString } from '~/utils/domain/date'
+import { useClock } from '~/composables/use-clock'
 
 let reminderInterval: ReturnType<typeof setInterval> | null = null
 const notifiedKeys = new Set<string>()
-// Tracks the day the keys in `notifiedKeys` belong to, so the set can be cleared
-// when the date rolls over instead of growing unbounded (issue #1, SEC-17).
-let notifiedKeysDateKey: string | null = null
+// The `notifiedKeys` set is cleared when the day rolls over (instead of growing
+// unbounded — issue #1, SEC-17). Rollover detection is now owned by the central
+// day clock (issue #70, ADR-0018): `start()` registers one `onRollover` that
+// clears the set and stores its unregister function here.
+let unregisterRollover: (() => void) | null = null
+let focusHandler: (() => void) | null = null
+let visibilityHandler: (() => void) | null = null
 
 function safeNotify(title: string, body: string): void {
   if (!import.meta.client || typeof Notification === 'undefined') {
@@ -32,6 +37,7 @@ export function useReminderEngine() {
   const habitsStore = useHabitsStore()
   const entriesStore = useEntriesStore()
   const settingsStore = useSettingsStore()
+  const clock = useClock()
 
   function requestPermission(): Promise<NotificationPermission> {
     if (!import.meta.client || typeof Notification === 'undefined') {
@@ -58,13 +64,12 @@ export function useReminderEngine() {
       return
     }
 
-    const dateKey = todayDateKey()
+    // Re-check the day before reading it (the 30s safety net for a suspended
+    // tab whose midnight timer was throttled). A detected rollover fires the
+    // clock's `onRollover`, which clears `notifiedKeys` for the new day.
+    clock.syncNow()
+    const dateKey = clock.todayKey.value
     const minute = nowMinuteKey()
-
-    if (dateKey !== notifiedKeysDateKey) {
-      notifiedKeys.clear()
-      notifiedKeysDateKey = dateKey
-    }
 
     for (const habit of habitsStore.dueHabitsForDate(dateKey)) {
       const configured = parseTimeString(habit.reminderTime)
@@ -109,27 +114,51 @@ export function useReminderEngine() {
       return
     }
 
+    // Exactly one rollover subscription per engine lifetime — the composable is
+    // module-global with multiple callers, so registering on construction would
+    // duplicate. Clearing `notifiedKeys` on rollover replaces the old inline
+    // date-change self-check (issue #70).
+    unregisterRollover = clock.onRollover(() => {
+      notifiedKeys.clear()
+    })
+
     tick()
 
     reminderInterval = setInterval(() => {
       tick()
     }, 30_000)
 
-    window.addEventListener('focus', tick)
-    document.addEventListener('visibilitychange', () => {
+    focusHandler = () => tick()
+    visibilityHandler = () => {
       if (document.visibilityState === 'visible') {
         tick()
       }
-    })
+    }
+    window.addEventListener('focus', focusHandler)
+    document.addEventListener('visibilitychange', visibilityHandler)
   }
 
   function stop(): void {
-    if (!reminderInterval) {
-      return
+    if (reminderInterval) {
+      clearInterval(reminderInterval)
+      reminderInterval = null
     }
 
-    clearInterval(reminderInterval)
-    reminderInterval = null
+    if (unregisterRollover) {
+      unregisterRollover()
+      unregisterRollover = null
+    }
+
+    // Remove the focus/visibility listeners too (the previous `stop()` cleared
+    // only the interval, leaking these — flagged in the #70 plan review).
+    if (focusHandler) {
+      window.removeEventListener('focus', focusHandler)
+      focusHandler = null
+    }
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
+    }
   }
 
   return {

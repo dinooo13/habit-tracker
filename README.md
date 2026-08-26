@@ -79,7 +79,7 @@ app/
 │       ├── settings.vue   # Preferences + export/import
 │       └── habits/        # List, new, [id] edit
 ├── layouts/               # default (public) + app (authenticated shell)
-├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo
+├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo, PersistenceStatusIndicator
 ├── stores/                # Pinia: habits, entries, coach, settings
 ├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-clipboard
 ├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
@@ -126,6 +126,7 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 14. [Intent-revealing utility taxonomy with explicit imports](docs/adr/0014-intent-revealing-utility-taxonomy.md)
 15. [App-data lifecycle composable for snapshot/replace/reconcile](docs/adr/0015-app-data-lifecycle-composable.md)
 16. [Habit-action composable owns cross-store entry/suggestion transactions](docs/adr/0016-habit-action-composable-owns-cross-store-transactions.md)
+17. [Persistence status lifecycle with retry and backoff](docs/adr/0017-persistence-status-lifecycle-retry-backoff.md)
 
 ## Contributing & workflow
 

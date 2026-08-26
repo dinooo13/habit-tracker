@@ -94,8 +94,11 @@ Tests live in `tests/`:
   `safe-json.test.ts`, `security-log.test.ts`, `storage-health.test.ts`.
 - **Schema & validation** — `storage-schema.test.ts`.
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
-  `fake-indexeddb`, exercised through the `PersistenceAdapter` interface) and
-  `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration).
+  `fake-indexeddb`, exercised through the `PersistenceAdapter` interface),
+  `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration), and
+  `persistence-saver.test.ts` (the framework-free retry/backoff save loop and
+  `loadAppDataSafely` empty-state fallback from
+  `app/utils/persistence/persistence-saver.ts`, ADR-0017).
 - **Backup & AI prompts** — `backup.test.ts` (pure `extractImportedHabits` /
   `mergeHabitsForImport` / `serializeBackup` / `backupFilename` from
   `app/utils/persistence/backup.ts`) and `ai-prompts.test.ts` (the deterministic prompt
@@ -106,13 +109,18 @@ Tests live in `tests/`:
 
 Rendered tests live in `tests/nuxt/` (the `nuxt` project):
 
-- **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`).
+- **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`)
+  and `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill and
+  degraded-mode recovery banner, ADR-0017).
 - **Pages** — `insights-page.test.ts` (two due habit-days with one completion render a 50%
   seven-day completion rate).
 - **Lifecycle** — `app-data-lifecycle.test.ts` (`useAppDataLifecycle` snapshot/replace/reconcile
   over the Nuxt-provided Pinia stores, ADR-0015).
 - **Composables** — `use-clipboard.test.ts` (the `useClipboard` copy helper used by the
-  settings AI-prompt actions).
+  settings AI-prompt actions) and `use-storage-health.test.ts` (the `useStorageHealth`
+  persistence-status lifecycle transitions and their security-log events, ADR-0017).
+- **Persistence (browser APIs)** — `export-backup.test.ts` (`downloadBackup`, which runs in
+  the `nuxt` project because it touches `Blob`/`URL`/anchor download).
 
 Fixtures live in `tests/fixtures/` (e.g. `habit-tracker-6-weeks.json`) and
 `public/fixtures/` (the demo payload).

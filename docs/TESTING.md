@@ -105,9 +105,12 @@ Tests live in `tests/`:
   builders in `app/utils/domain/ai-prompts.ts`).
 - **Features** — `pause-mode.test.ts` (pause ranges: due/streak/coaching exclusion) and
   `backup-nudge.test.ts` (`computeBackupNudge` thresholds and snooze).
-- **Fixtures** — `fixture-data.test.ts`, `demo-data-loader.test.ts` validate the sample data.
+- **Fixtures** — `fixture-data.test.ts` validates the sample data.
 
 Rendered tests live in `tests/nuxt/` (the `nuxt` project):
+
+- **Demo data** — `demo-data-loader.test.ts` (`fetchDemoPayload` / `hydrateDemoPayload`
+  from `use-demo-data` loading the `tests/fixtures/` sample into the Nuxt-provided stores).
 
 - **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`)
   and `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill and

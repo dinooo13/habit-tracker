@@ -1,0 +1,217 @@
+# Agent factory manifest (ADR-0021).
+#
+# A DESCRIPTIVE, machine-checked map of the seven-stage agent pipeline as it
+# exists today — no runner, no scheduler, no behavior change. `.claude/agents/*.md`
+# hold the per-item behavior; `.claude/agents/README.md` holds the architecture and
+# label state machine; the claude.ai routine configuration holds the live schedules,
+# models, and enabled state. This file records all of it in one place so nothing has
+# to be compared by eye, and `tests/factory-contract.test.ts` checks it against itself
+# and the repo. See `.factory/README.md` for the sync convention and the deferred
+# authoritative-sync script.
+#
+# The manifest is DESCRIPTIVE: it records what is true on 2026-08-28, including three
+# known drifts (issue #85 §1) — the rebaser's absent model pin, the docs-auditor's
+# daily (not weekly) cron, and `idempotency.kind: none` where a stage has no guard.
+# The gaps are the point; the contract test is green on the first run because the
+# divergence is declared, not hidden.
+
+version: 1
+
+# The orchestrator's tool list, identical across all seven routines. Recorded once
+# here rather than per stage (it is the routine's list, not the agent's — the agents
+# declare their own narrower `tools:` in frontmatter) until it starts to differ.
+allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch]
+
+stages:
+  - name: triage
+    agent: .claude/agents/triage.md
+    prompt: .factory/prompts/triage.md
+    scope: issue
+    queue:
+      # Primary search: open issues with no `status:` label and no `duplicate`.
+      # A second search (open issues labeled `status: blocked`) feeds dependency
+      # rechecking; it is declared in `states` below.
+      states: ["status: blocked"]
+      github: 'repo:{owner}/{repo} is:issue is:open -label:"status: needs-plan" -label:"status: needs-plan-review" -label:"status: agent-ready" -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked" -label:duplicate'
+    consumes: ["status: blocked"]
+    produces: ["status: needs-plan", "status: blocked"]
+    human-gate: false
+    idempotency:
+      kind: none            # no per-run guard today; #86 adds a triage marker
+      marker: ""
+      self-heal: false
+    runtime:
+      schedule: "1 22 * * *"
+      model: claude-sonnet-5
+      enabled: true
+      environment: standard
+    order_after: []
+    concurrency: 1
+    wip_limit: null
+
+  - name: planner
+    agent: .claude/agents/planner.md
+    prompt: .factory/prompts/planner.md
+    scope: issue
+    queue:
+      states: ["status: needs-plan"]
+      github: 'repo:{owner}/{repo} is:issue is:open label:"status: needs-plan"'
+    consumes: ["status: needs-plan"]
+    produces: ["status: needs-plan-review"]
+    human-gate: true        # a human promotes needs-plan-review → agent-ready
+    idempotency:
+      kind: end-of-run
+      marker: "<!-- routine:plan-issues -->"
+      self-heal: false
+    runtime:
+      schedule: "0 23 * * *"
+      model: claude-opus-4-8
+      enabled: true
+      environment: standard
+    order_after:
+      - stage: triage
+        realized: true      # triage 22:01 precedes planner 23:00 (same cycle)
+    concurrency: 1
+    wip_limit: null
+
+  - name: implementer
+    agent: .claude/agents/implementer.md
+    prompt: .factory/prompts/implementer.md
+    scope: issue            # resume path also consumes PRs (status: in-progress)
+    queue:
+      states: ["status: agent-ready", "status: in-progress"]
+      github: 'repo:{owner}/{repo} is:pr is:open label:"status: in-progress" | repo:{owner}/{repo} is:issue is:open label:"status: agent-ready"'
+    consumes: ["status: agent-ready", "status: in-progress"]
+    produces: ["status: in-progress", "status: needs-review", "status: blocked"]
+    human-gate: false
+    idempotency:
+      kind: structural      # the branch + draft PR is the artifact; re-runs resume it
+      marker: ""
+      self-heal: false
+    runtime:
+      schedule: "0 2,11,21 * * *"
+      model: claude-opus-4-8
+      enabled: true
+      environment: standard
+    order_after:
+      - stage: triage
+        realized: true      # overnight chain: triage 22:01 → implementer 02:00
+      - stage: planner
+        realized: true      # overnight chain: planner 23:00 → implementer 02:00
+    concurrency: 1
+    wip_limit: null
+
+  - name: rebaser
+    agent: .claude/agents/rebaser.md
+    prompt: .factory/prompts/rebaser.md
+    scope: pr
+    queue:
+      states: ["status: needs-review", "status: needs-qa", "status: approved"]
+      github: 'repo:{owner}/{repo} is:pr is:open (label:"status: needs-review" OR label:"status: needs-qa" OR label:"status: approved")'
+    consumes: ["status: needs-review", "status: needs-qa", "status: approved"]
+    produces: ["status: needs-review", "status: needs-qa", "status: approved", "status: in-progress"]
+    human-gate: false
+    idempotency:
+      # Structural: a rebased branch is no longer behind origin/main, so it leaves
+      # the queue. The `<!-- routine:rebase -->` comment is an audit/bounce record,
+      # not a per-run skip guard, so it is not recorded as a marker here.
+      kind: structural
+      marker: ""
+      self-heal: false
+    runtime:
+      # DRIFT (issue #85 §1.3): the live routine has no model pin (empty → env
+      # default), while .claude/agents/rebaser.md frontmatter declares `model: sonnet`.
+      # Recorded as-is; reconciliation is a deferred runtime-sync operation.
+      schedule: "15 16 * * *"
+      model: ""
+      enabled: true
+      environment: standard
+    order_after:
+      - stage: implementer
+        realized: true      # implementer 11:00 precedes rebaser 16:15 (same cycle)
+    concurrency: 1
+    wip_limit: null
+
+  - name: reviewer
+    agent: .claude/agents/reviewer.md
+    prompt: .factory/prompts/reviewer.md
+    scope: pr
+    queue:
+      states: ["status: needs-review"]
+      github: 'repo:{owner}/{repo} is:pr is:open label:"status: needs-review"'
+    consumes: ["status: needs-review"]
+    produces: ["status: needs-qa", "status: in-progress"]
+    human-gate: false
+    idempotency:
+      kind: per-sha
+      marker: "<!-- routine:code-review sha={head} -->"
+      self-heal: true       # reconciles a label that disagrees with its verdict
+    runtime:
+      schedule: "0 6,16 * * *"
+      model: claude-opus-4-8
+      enabled: true
+      environment: standard
+    order_after:
+      - stage: implementer
+        realized: true       # implementer 02:00/11:00 precede reviewer 06:00/16:00
+      - stage: rebaser
+        realized: false      # rebaser 16:15 → next reviewer 06:00 (+14h)
+        note: accepted; schedule kept deliberately, see .claude/agents/README.md §5
+    concurrency: 1
+    wip_limit: null
+
+  - name: qa-tester
+    agent: .claude/agents/qa-tester.md
+    prompt: .factory/prompts/qa-tester.md
+    scope: pr
+    queue:
+      states: ["status: needs-qa"]
+      github: 'repo:{owner}/{repo} is:pr is:open label:"status: needs-qa"'
+    consumes: ["status: needs-qa"]
+    produces: ["status: approved", "status: in-progress"]
+    human-gate: true         # a human merges an approved PR
+    idempotency:
+      kind: per-sha
+      marker: "<!-- routine:qa sha={head} -->"
+      self-heal: true
+    runtime:
+      schedule: "0 7,17 * * *"
+      model: claude-opus-4-8
+      enabled: true
+      environment: standard
+    order_after:
+      - stage: reviewer
+        realized: true       # reviewer 06:00/16:00 precede qa 07:00/17:00
+      - stage: rebaser
+        realized: true       # rebaser 16:15 → qa 17:00 (same afternoon)
+    concurrency: 1
+    wip_limit: null
+
+  - name: docs-auditor
+    agent: .claude/agents/docs-auditor.md
+    prompt: .factory/prompts/docs-auditor.md
+    scope: repo
+    queue:
+      # No queue — one whole-repo audit per run, feeding one docs-only PR into the
+      # reviewer queue.
+      states: []
+      github: ""
+    consumes: []
+    produces: ["status: needs-review"]
+    human-gate: false
+    idempotency:
+      # Structural: one open docs-audit PR at a time; the `<!-- routine:docs-audit -->`
+      # body marker identifies it for the implementer's resume path.
+      kind: structural
+      marker: "<!-- routine:docs-audit -->"
+      self-heal: false
+    runtime:
+      # DRIFT (issue #85 §1.2): documented as "(e.g. weekly)" but the live cron is
+      # daily. Recorded as-is.
+      schedule: "0 16 * * *"
+      model: claude-opus-4-8
+      enabled: true
+      environment: standard
+    order_after: []
+    concurrency: 1
+    wip_limit: null

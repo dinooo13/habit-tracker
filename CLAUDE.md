@@ -141,6 +141,9 @@ stay at the call sites.
 - Security posture: `SECURITY.md`
 - Architecture decisions: `docs/adr/`
 - Development workflow (issues → branches → PRs, labels): `docs/WORKFLOW.md`
+- Agent factory: `.claude/agents/` (per-item agents + pipeline README) and
+  `.factory/` (`factory.yml` machine-readable manifest + verbatim routine prompts,
+  guarded by `tests/factory-contract.test.ts`, ADR-0021)
 
 ## Contributing flow (brief)
 

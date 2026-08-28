@@ -1,5 +1,5 @@
-import type { AppData, CoachingSuggestion, Habit, HabitEntry, MissReasonCode } from '~/types/app-data'
-import { APP_DATA_SCHEMA_VERSION } from '~/types/app-data'
+import type { AppData, CoachingSuggestion, Habit, HabitEntry, HabitType, MissReasonCode } from '~/types/app-data'
+import { APP_DATA_SCHEMA_VERSION, DEFAULT_SETTINGS } from '~/types/app-data'
 import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 
 // ── date helpers ──────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ function makeLcg(seed: number) {
 interface HabitDef {
   id: string
   name: string
-  type: 'build' | 'break'
+  type: HabitType
   identityStatement: string
   scheduleWeekdays: number[] // 0 = Sun … 6 = Sat (JS getDay convention)
   reminderTime: string // HH:MM
@@ -348,13 +348,6 @@ export function generateDemoData(today = new Date()): AppData {
     habits,
     entries,
     suggestions,
-    settings: {
-      notificationsEnabled: true,
-      dailyReviewTime: '20:00',
-      weekStartsOn: 1,
-      primaryColor: 'emerald',
-      lastExportedAt: null,
-      backupNudgeSnoozedUntil: null,
-    },
+    settings: { ...DEFAULT_SETTINGS, notificationsEnabled: true },
   }
 }

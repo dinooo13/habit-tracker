@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Habit } from '~/types/app-data'
+import type { Habit, HabitType } from '~/types/app-data'
 import { isDateInHabitPause } from '~/utils/domain/date'
 import { sortWeekdaysForDisplay, WEEKDAY_LABELS } from '~/utils/domain/weekdays'
 
@@ -31,8 +31,6 @@ const pagedHabits = computed(() => {
   const offset = (page.value - 1) * itemsPerPage
   return filteredHabits.value.slice(offset, offset + itemsPerPage)
 })
-
-type HabitType = 'build' | 'break'
 
 const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, icon: string, iconClass: string, badgeVariant: 'soft' }> = {
   build: {

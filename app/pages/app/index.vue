@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
+import type { HabitType } from '~/types/app-data'
 import {
   addDays,
   calendarDateToDateKey,
@@ -181,7 +182,6 @@ const actionRowClass = 'flex flex-wrap items-center gap-2'
 const statusActionBadgeClass = 'inline-flex h-7 min-w-[64px] items-center justify-center rounded-md px-2 text-xs font-medium leading-none'
 
 type QueueStatus = 'open' | 'done' | 'missed' | 'skipped'
-type HabitType = 'build' | 'break'
 type ReviewedStatus = Exclude<QueueStatus, 'open'>
 
 const habitTypeMeta: Record<HabitType, { label: string, color: 'primary' | 'warning', cardClass: string, dotClass: string, badgeVariant: 'subtle' | 'soft' }> = {

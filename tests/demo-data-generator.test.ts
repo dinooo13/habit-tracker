@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { generateDemoData } from '~/utils/domain/demo-data-generator'
 import { generateSuggestionsForMissedEntry } from '~/utils/domain/atomic-rules'
 import { parseAppData } from '~/utils/persistence/storage-schema'
+import { DEFAULT_SETTINGS } from '~/types/app-data'
 import type { Habit } from '~/types/app-data'
 
 // A fixed local anchor date keeps the seeded generator fully deterministic.
@@ -24,6 +25,11 @@ describe('generateDemoData', () => {
     expect(parsed.schemaVersion).toBe(2)
     expect(parsed.entries.length).toBe(data.entries.length)
     expect(parsed.suggestions.length).toBe(data.suggestions.length)
+  })
+
+  it('derives demo settings from DEFAULT_SETTINGS with only notifications flipped on', () => {
+    const data = generateDemoData(new Date(ANCHOR))
+    expect(data.settings).toEqual({ ...DEFAULT_SETTINGS, notificationsEnabled: true })
   })
 
   it('routes every reflected miss through the real coaching engine', () => {

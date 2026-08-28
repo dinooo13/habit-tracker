@@ -100,3 +100,6 @@
 - name: "area: analytics"
   color: "c5def5"
   description: "Insights, streaks, stats"
+- name: "area: factory"
+  color: "c5def5"
+  description: "Agent factory, routines, queues, and workflow automation"

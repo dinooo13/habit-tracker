@@ -41,10 +41,27 @@ user clicks **Reload**; the banner is dismissible. A thin `usePwaUpdate()` compo
 `$pwa` and degrades to a no-op when the injection is unavailable (SSR/tests). The update
 lifecycle is logged via the SEC-16 security log (`pwa.update.available` / `pwa.update.applied`).
 
+## Update: injectable dependencies + instance-owned state (#71)
+
+The reminder engine was refactored from module-global mutable state behind an
+instance-looking composable into a `createReminderEngine(deps)` factory (all state —
+the interval handle, the `notifiedKeys` dedupe set, the rollover/listener unregister
+handles — is closure-local) plus an explicit module-singleton `useReminderEngine()`
+accessor that wires the real dependencies. The clock (a minimal `ReminderClock` subset
+of ADR-0018's `useClock()`), the notification I/O (a `Notifier` interface with a default
+`createBrowserNotifier()` wrapping the `Notification` guards), and the wall-clock minute
+source (`now: () => Date`) are all injectable, so ticks are unit-testable without real
+timers or the global `Notification`. `stop()` removes the focus/visibility listeners and
+unregisters the rollover subscription (the leak in the original `stop()` was fixed in
+#70 and is now locked by regression tests). Behaviour, timing, and the public API
+(`{ start, stop, tick, requestPermission, currentPermission }`) are unchanged — this is a
+pure refactor. The DI-for-testability shape mirrors `createPersistenceSaver` (ADR-0017).
+
 ## References
 
 - `nuxt.config.ts` — PWA manifest, workbox, `registerType: 'prompt'`.
 - `app/composables/use-pwa-update.ts` — `needRefresh` / `reload()` wrapper over `$pwa`.
 - `app/layouts/app.vue` — reload banner.
-- `app/composables/use-reminder-engine.ts` — tick loop, notification logic, dedup.
+- `app/composables/use-reminder-engine.ts` — `createReminderEngine(deps)` factory (tick
+  loop, notification logic, dedup) + module-singleton `useReminderEngine()` accessor (#71).
 - `app/plugins/bootstrap.client.ts` — starts the engine.

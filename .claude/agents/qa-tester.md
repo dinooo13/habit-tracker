@@ -54,6 +54,11 @@ open`, `goto`, `click`, `fill`, `snapshot`, `console`, `requests`, ...) — neve
 throwaway Playwright scripts. `playwright-cli close` the session when you're done with
 the PR.
 
+The skill and its browser come from `scripts/setup-agent-env.sh`. If that reported
+`PLAYWRIGHT_UNAVAILABLE`, you have no browser and **cannot** QA this PR: leave the label
+at `status: needs-qa` so the next run retries, report "browser unavailable", and stop.
+Never substitute a source read for a browser walk, and never fake a pass.
+
 Context you need from the repo (read-only): `CLAUDE.md` for the route map and domain
 model, `app/pages/` for what exists, the plan for what changed. The app is client-only:
 dummy auth (just log in through `/login`), all data in the browser's IndexedDB (your

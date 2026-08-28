@@ -119,22 +119,36 @@ export function createPersistenceSaver(deps: PersistenceSaverDeps): PersistenceS
   return { save, cancelRetries }
 }
 
+/** Outcome of {@link loadAppDataSafely}: the data to hydrate plus whether the read failed. */
+export interface SafeLoadResult {
+  data: AppData
+  /**
+   * `true` when the underlying read threw (DB open/read failure), so the caller
+   * can suppress the debounced auto-save watcher and avoid clobbering data that
+   * a partially-working database might still hold (issue #66). A Zod validation
+   * failure does **not** set this — that path returns valid empty data and the
+   * adapter has already quarantined the raw payload.
+   */
+  failed: boolean
+}
+
 /**
  * Load app data, degrading to an empty-state fallback if the read throws (e.g. a
  * blocked or corrupt IndexedDB in a locked-down/private-mode browser). Marks the
  * persistence status `unavailable` on failure so the shell shows the recovery
- * banner instead of white-screening (issue #65, Q2.4).
+ * banner instead of white-screening (issue #65, Q2.4), and reports `failed` so
+ * bootstrap can suppress the auto-save watcher on an open failure (issue #66).
  */
 export async function loadAppDataSafely(
   load: () => Promise<AppData>,
   onUnavailable: (reason: string) => void,
   fallback: () => AppData,
-): Promise<AppData> {
+): Promise<SafeLoadResult> {
   try {
-    return await load()
+    return { data: await load(), failed: false }
   }
   catch {
     onUnavailable('load-failed')
-    return fallback()
+    return { data: fallback(), failed: true }
   }
 }

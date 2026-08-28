@@ -45,3 +45,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0016](0016-habit-action-composable-owns-cross-store-transactions.md) | Habit-action composable owns cross-store entry/suggestion transactions | Accepted |
 | [0017](0017-persistence-status-lifecycle-retry-backoff.md) | Persistence status lifecycle with retry and backoff | Accepted |
 | [0018](0018-central-reactive-day-clock-service.md) | Central reactive day-clock service for midnight rollover | Accepted |
+| [0019](0019-quarantine-invalid-stored-data-on-load-failure.md) | Quarantine invalid stored data on load failure | Accepted |

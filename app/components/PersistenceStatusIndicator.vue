@@ -13,6 +13,7 @@ const RELATIVE_REFRESH_MS = 30_000
 const SUCCESS_AUTOHIDE_MS = 10_000
 
 const storageHealth = useStorageHealth()
+const dataRecovery = useDataRecovery()
 const lifecycle = useAppDataLifecycle()
 const backupNudge = useBackupNudge()
 const { logSecurityEvent } = useSecurityLog()
@@ -51,6 +52,11 @@ onBeforeUnmount(() => {
 
 const status = computed(() => storageHealth.status.value)
 const isUnavailable = computed(() => status.value === 'unavailable')
+
+// Load-time recovery banner (issue #66, ADR-0019): shown when stored data failed
+// to load and its raw payload was preserved in quarantine. Distinct from the
+// save-time `unavailable` banner above; both can share this surface.
+const hasQuarantine = computed(() => dataRecovery.quarantine.value !== null)
 
 // Whenever the status settles on `ok` (or a fresh save stamps a new lastSavedAt),
 // show the pill and schedule it to fade after SUCCESS_AUTOHIDE_MS. Leaving `ok`
@@ -109,10 +115,41 @@ function exportBackup(): void {
 function retryNow(): void {
   storageHealth.requestRetry()
 }
+
+async function exportPreserved(): Promise<void> {
+  const exported = await dataRecovery.exportPreserved()
+  if (!exported) {
+    // Quarantine vanished between render and click (e.g. dismissed elsewhere).
+    await dataRecovery.refresh()
+    return
+  }
+  logSecurityEvent('data.export', 'info', 'Quarantined data exported (recovery)')
+  toast.add({ title: 'Recovered data exported', color: 'success' })
+}
+
+async function dismissRecovery(): Promise<void> {
+  await dataRecovery.discard()
+  logSecurityEvent('data.delete', 'info', 'Quarantined data discarded')
+}
 </script>
 
 <template>
   <div>
+    <UAlert
+      v-if="hasQuarantine"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-shield-alert"
+      class="rounded-none"
+      title="Your saved data couldn't be loaded."
+      description="A backup of it was preserved on this device. Export it to recover, or dismiss to start fresh."
+      aria-live="polite"
+      :actions="[
+        { label: 'Export preserved data', color: 'warning', variant: 'solid', onClick: exportPreserved },
+        { label: 'Dismiss', color: 'neutral', variant: 'ghost', onClick: dismissRecovery },
+      ]"
+    />
+
     <UAlert
       v-if="isUnavailable"
       color="error"

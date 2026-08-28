@@ -21,6 +21,7 @@ export default defineNuxtPlugin(async () => {
 
   const persistence = usePersistence()
   const storageHealth = useStorageHealth()
+  const dataRecovery = useDataRecovery()
 
   // Best-effort quota pre-check at startup (SEC-18). Non-fatal when unavailable.
   void storageHealth.checkQuota()
@@ -34,13 +35,18 @@ export default defineNuxtPlugin(async () => {
   // A blocked/corrupt IndexedDB (private mode, locked-down browser) must not
   // white-screen the app — degrade to empty state and mark storage unavailable
   // so the shell shows the recovery banner (issue #65, Q2.4).
-  const loaded = await loadAppDataSafely(
+  const { data: loaded, failed: loadFailed } = await loadAppDataSafely(
     () => persistence.load(),
     reason => storageHealth.markUnavailable(reason),
     createEmptyAppData,
   )
   lifecycle.replaceAppData(loaded)
   lifecycle.reconcileDerivedState(todayDateKey())
+
+  // Pick up any quarantined payload preserved by a failed validation on load —
+  // from this session or a prior one — so the recovery banner can offer export /
+  // dismiss (issue #66, ADR-0019). Best-effort; never blocks startup.
+  void dataRecovery.refresh()
 
   watch(
     () => settingsStore.primaryColor,
@@ -108,6 +114,14 @@ export default defineNuxtPlugin(async () => {
   watch(
     () => [habitsStore.habits, entriesStore.entries, coachStore.suggestions, settingsStore.settings],
     () => {
+      // Read-only in-memory mode after an IndexedDB open failure (issue #66): the
+      // DB might be partially working, so an idle-edit auto-save that runs
+      // `clear()` + `bulkPut(empty)` could clobber recoverable data. Suppress the
+      // debounced save; the explicit "Retry now" path below stays live so the
+      // user can still push their in-memory edits once the DB becomes writable.
+      if (loadFailed) {
+        return
+      }
       pendingPayload = lifecycle.snapshotAppData()
       if (saveTimer) {
         clearTimeout(saveTimer)

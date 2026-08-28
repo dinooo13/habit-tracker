@@ -85,11 +85,12 @@ provision_browser() {
 
 find_browser() {
   local candidate
-  for candidate in \
-    "${PLAYWRIGHT_BROWSERS_PATH:-}/chromium" \
-    /opt/pw-browsers/chromium \
-    /opt/pw-browsers/chrome; do
-    [ -n "$candidate" ] && [ -x "$candidate" ] && printf '%s' "$candidate" && return 0
+  local candidates=(/opt/pw-browsers/chromium /opt/pw-browsers/chrome)
+  # Only probe under PLAYWRIGHT_BROWSERS_PATH when it is actually set; otherwise
+  # the entry expands to the literal /chromium and is a dead probe.
+  [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && candidates=("$PLAYWRIGHT_BROWSERS_PATH/chromium" "${candidates[@]}")
+  for candidate in "${candidates[@]}"; do
+    [ -x "$candidate" ] && printf '%s' "$candidate" && return 0
   done
   return 1
 }

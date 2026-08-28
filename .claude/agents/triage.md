@@ -59,8 +59,9 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
 - **priority:** `high` = data loss, broken core flow, or security; `medium` = default;
   `low` = cosmetic/nice-to-have. Only when reasonably confident — omission is fine.
 - **area:** every subsystem the issue touches (`persistence` / `coaching` / `ui` /
-  `pwa` / `auth` / `analytics` / `factory`), grounded in the architecture map, not guessed from
-  keywords.
+  `pwa` / `auth` / `analytics`), grounded in the architecture map, not guessed from
+  keywords. `factory` is the exception — it is not an app subsystem; use it for work on
+  the agent pipeline itself (agent definitions, routines, queues, workflow automation).
 
 ## 4. Route
 

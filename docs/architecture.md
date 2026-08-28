@@ -213,6 +213,21 @@ File-based routing under `app/pages/`. Public: `/`, `/login`. Protected (gated b
 `/app/habits/[id]`, `/app/review`, `/app/insights`, `/app/settings`. The middleware also maps
 legacy top-level paths (e.g. `/habits` → `/app/habits`) via `app/utils/auth/route-mapping.ts`.
 
+## Deployment & CI
+
+`.github/workflows/ci.yml` runs test + build on every push and PR. On a push to `main` with
+site changes, `deploy-production` mirrors the `.output/public` artifact to
+`habits.fmeyer.dev` over FTPS. Every generated build stamps its commit SHA into
+`.output/public/version.json` (`{ commit, builtAt }`) via the `nitro:init` close hook in
+`nuxt.config.ts` — the same hook that writes `.htaccess` — with `COMMIT_SHA` supplied by the
+`build` job. After a successful production deploy, the `production-smoke` job polls
+`version.json` until the deployed SHA is live (FTPS mirroring is non-atomic and the host may
+cache, so this gate prevents a stale build passing a false green), then runs the
+`@production`-tagged Playwright subset against the live origin in remote mode
+(`E2E_SKIP_WEB_SERVER=1`). On failure it files one label-less bug issue (no dedup) and goes
+red; it never fixes, rolls back, or merges. See [adr/0020](adr/0020-production-smoke-tests-with-build-sha-stamping.md)
+and [e2e-testing.md](e2e-testing.md).
+
 ## Related
 
 - Decisions: [adr/](adr/)

@@ -20,11 +20,11 @@ describe('resolveCommitSha', () => {
     expect(sha).toBe('ccc333')
   })
 
-  it("degrades to 'unknown' when nothing resolves", () => {
+  it(`degrades to 'unknown' when nothing resolves`, () => {
     expect(resolveCommitSha({}, () => null)).toBe('unknown')
   })
 
-  it("degrades to 'unknown' by default (no git resolver injected)", () => {
+  it(`degrades to 'unknown' by default (no git resolver injected)`, () => {
     expect(resolveCommitSha({})).toBe('unknown')
   })
 
@@ -42,7 +42,7 @@ describe('buildVersionPayload', () => {
     })
   })
 
-  it("passes 'unknown' through unchanged", () => {
+  it(`passes 'unknown' through unchanged`, () => {
     const now = new Date('2026-01-01T00:00:00.000Z')
     expect(buildVersionPayload('unknown', now).commit).toBe('unknown')
   })

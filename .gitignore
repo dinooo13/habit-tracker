@@ -32,3 +32,7 @@ test-results
 .env
 .env.*
 !.env.example
+
+# Claude Code agent worktrees (transient, per-session) and locally installed skills
+.claude/worktrees/
+.claude/skills/

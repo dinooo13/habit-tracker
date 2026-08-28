@@ -5,7 +5,12 @@ import { createEmptyAppData } from '~/utils/persistence/storage-schema'
 import { createPersistenceSaver, loadAppDataSafely } from '~/utils/persistence/persistence-saver'
 import { applyPrimaryColorPalette } from '~/utils/ui/primary-color'
 
-function requestPersistentStorage(): void {
+/**
+ * Ask the browser to make our IndexedDB data persistent (not evictable under
+ * pressure), recording the resolved grant into storage-health for the
+ * diagnostics panel (issue #73). Best-effort: unsupported/blocked → `false`.
+ */
+function requestPersistentStorage(setPersisted: (value: boolean) => void): void {
   if (typeof navigator === 'undefined' || !navigator.storage?.persist) {
     return
   }
@@ -13,15 +18,16 @@ function requestPersistentStorage(): void {
   navigator.storage
     .persisted()
     .then(persisted => (persisted ? true : navigator.storage.persist()))
-    .catch(() => false)
+    .then(result => setPersisted(result))
+    .catch(() => setPersisted(false))
 }
 
 export default defineNuxtPlugin(async () => {
-  requestPersistentStorage()
-
   const persistence = usePersistence()
   const storageHealth = useStorageHealth()
   const dataRecovery = useDataRecovery()
+
+  requestPersistentStorage(result => storageHealth.setPersisted(result))
 
   // Best-effort quota pre-check at startup (SEC-18). Non-fatal when unavailable.
   void storageHealth.checkQuota()
@@ -41,7 +47,7 @@ export default defineNuxtPlugin(async () => {
     createEmptyAppData,
   )
   lifecycle.replaceAppData(loaded)
-  lifecycle.reconcileDerivedState(todayDateKey())
+  storageHealth.recordReconcile(lifecycle.reconcileDerivedState(todayDateKey()))
 
   // Pick up any quarantined payload preserved by a failed validation on load —
   // from this session or a prior one — so the recovery banner can offer export /
@@ -156,7 +162,7 @@ export default defineNuxtPlugin(async () => {
   // `persistence.load()`.
   const clock = useClock()
   clock.onRollover((key) => {
-    lifecycle.reconcileDerivedState(key)
+    storageHealth.recordReconcile(lifecycle.reconcileDerivedState(key))
   })
   clock.start()
 

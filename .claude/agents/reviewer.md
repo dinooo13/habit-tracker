@@ -15,7 +15,16 @@ one label transition. You run unattended: never ask the user anything.
 - `pull_request_read` the PR: title, body, branch, **head SHA**, and comments.
 - **Idempotency (check this before reading anything else):** a comment
   `<!-- routine:code-review sha={head} -->` for the current head SHA means this commit
-  is already reviewed — do not review again; re-review only after new commits. But
+  is already reviewed — do not review again; re-review only after new commits. **One
+  exception — a fresh human thread on an already-reviewed SHA:** before skipping,
+  fetch the PR's review threads (`pull_request_read` method `get_review_comments`). If
+  any **unresolved human thread** (the human/bot test is in §3a) was created or updated
+  *after* this review comment's timestamp, do **not** skip — re-review at the same SHA:
+  the diff is unchanged, but the human feedback is new input the earlier review never
+  saw. This terminates — a re-review either bounces to `status: in-progress` (the
+  implementer then pushes a new SHA) or re-approves once every such thread is resolved
+  or explicitly answered. If no unresolved human thread post-dates the review comment,
+  the SHA is genuinely done. But
   before stopping, **self-heal the label** if it disagrees with that comment's
   recorded verdict (a prior run may have died between comment and label flip, or
   predate the label chain): verdict `Approve` + PR still `status: needs-review` → set
@@ -59,12 +68,42 @@ Fetch and check out the PR branch, then review:
   **Markdown-only diff** (verify with `git diff --name-only origin/main`), skip the
   local gates — they cannot be affected, and CI runs them anyway.
 
+### 3a. Unresolved human review threads
+
+A red gate is not the only thing that must gate the verdict — **open human review
+feedback does too.** Before deciding, fetch the PR's review threads with
+`pull_request_read` method `get_review_comments`. From the returned threads, keep only
+those where `isResolved == false` **and** whose author is **human** — the human/bot
+test: treat a thread as bot-authored when its author `type == "Bot"` **or** its login
+ends with `[bot]`; everything else is human. Bot-authored threads (lint bots, etc.)
+keep their current, non-gating handling — the gap this closes is human maintainer
+feedback silently approved past.
+
+For each unresolved **human** thread:
+
+- Locate the `file:line` it targets and read the current diff/branch at that location.
+- Decide whether the current head **already addresses** the request (the code was
+  changed to satisfy it, or it is a pure nit that no longer applies) or whether it is
+  an **open, substantive** change request.
+- An open, substantive human request is a **blocking finding** — it must be fixed, or,
+  if you judge it already satisfied, explicitly justified in the review comment. Never
+  silently approve past one. A nit the diff already handles is recorded but does not
+  block.
+
+Record every enumerated thread and its disposition in the review comment (§4).
+
 ## 4. Post the review
 
 One comment on the PR, first line `<!-- routine:code-review sha={head} -->`:
 
 - **Verdict:** `Approve` (no blocking findings) or `Changes requested`.
 - **Blocking** — numbered, each with `file:line` and why it must be fixed before merge.
+  This list absorbs every human thread marked "Blocking — not addressed" below (each
+  already carries a `file:line`).
+- **Open human review threads** — one row per enumerated unresolved human thread (§3a):
+  `file:line`, a one-line summary, and disposition — `Addressed at {sha}` /
+  `Blocking — not addressed` / `Nit — noted`. If there are none, state "No unresolved
+  human review threads."
 - **Non-blocking / nits** — optional improvements.
 - **Gate results** — the lint/test/typecheck/build (and e2e) output you observed.
 
@@ -72,10 +111,16 @@ One comment on the PR, first line `<!-- routine:code-review sha={head} -->`:
 
 - **Changes requested:** set the **PR** label from `status: needs-review` to
   `status: in-progress` — that is the implementer's resume queue; it will treat your
-  Blocking list as its work queue.
+  Blocking list as its work queue. This verdict **includes** the case where an
+  unresolved human thread (§3a) is a substantive, unaddressed change request: the open
+  thread is work, so the bounce to `status: in-progress` puts it in the implementer's
+  queue. Do not introduce a terminal `needs-review` hold — leaving the label at
+  `needs-review` would strand the PR (the next run skips an already-reviewed SHA).
 - **Approve:** set the **PR** label from `status: needs-review` to `status: needs-qa` —
   the qa-tester takes it from there (and marks PRs with no preview, e.g. docs-only,
-  `status: approved` directly). Your approving comment is the record.
+  `status: approved` directly). Your approving comment is the record. `Approve` is only
+  permissible when **every** unresolved human thread (§3a) is either resolved or
+  explicitly justified as already-addressed in the comment.
 - Never set a PR label to any other value than these two transitions, whatever its
   current state.
 - Do not touch the linked issue's labels; it stays `status: in-progress` until merge.

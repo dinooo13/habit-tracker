@@ -603,6 +603,8 @@ async function loadDemoDataFromSettings(replaceExisting: boolean): Promise<void>
           </UButton>
         </div>
       </UCard>
+
+      <PersistenceHealthPanel />
     </div>
 
     <UModal

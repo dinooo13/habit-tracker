@@ -71,3 +71,51 @@ export function describeWriteFailure(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   return isQuotaExceededError(error) ? `Storage is full: ${message}` : message
 }
+
+/**
+ * A retained `navigator.storage.estimate()` result, surfaced by the persistence
+ * health panel (issue #73). Bytes; `quota === 0` means "unknown/unbounded".
+ */
+export interface StorageEstimateSummary {
+  usage: number
+  quota: number
+}
+
+/**
+ * The counts produced by an automatic derived-state reconcile (boot / midnight
+ * rollover), surfaced by the persistence health panel (issue #73). `at` is an ISO
+ * timestamp of when the reconcile ran.
+ */
+export interface ReconcileSummary {
+  missedEntriesCreated: number
+  suggestionsCreated: number
+  at: string
+}
+
+const BYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'] as const
+
+/**
+ * Human-readable binary-unit byte size — `0 B`, `512 B`, `1.5 KiB`, `1.3 GiB`.
+ * Binary units (KiB/MiB/GiB) for consistency with the 64 MiB import-limit copy in
+ * settings. Bytes are shown as whole numbers; larger units keep one decimal place.
+ * Defensive: `NaN`, `Infinity`, and negatives collapse to `0 B`.
+ */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B'
+  }
+
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < BYTE_UNITS.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+
+  if (unitIndex === 0) {
+    return `${Math.round(value)} B`
+  }
+
+  const rounded = Math.round(value * 10) / 10
+  return `${rounded} ${BYTE_UNITS[unitIndex]}`
+}

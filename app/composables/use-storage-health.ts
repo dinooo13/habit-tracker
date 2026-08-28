@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { nowIso } from '~/utils/domain/date'
-import type { PersistenceStatus } from '~/utils/observability/storage-health'
+import type { PersistenceStatus, ReconcileSummary, StorageEstimateSummary } from '~/utils/observability/storage-health'
 import { describeWriteFailure, isQuotaExceededError, isQuotaLowFromEstimate } from '~/utils/observability/storage-health'
 
 const STORAGE_HEALTH_LAST_ERROR_KEY = 'storage-health:last-error'
@@ -10,6 +10,9 @@ const STORAGE_HEALTH_STATUS_KEY = 'storage-health:status'
 const STORAGE_HEALTH_LAST_SAVED_KEY = 'storage-health:last-saved-at'
 const STORAGE_HEALTH_RETRY_TOKEN_KEY = 'storage-health:retry-token'
 const STORAGE_HEALTH_DEGRADED_KEY = 'storage-health:degraded-since-ok'
+const STORAGE_HEALTH_ESTIMATE_KEY = 'storage-health:estimate'
+const STORAGE_HEALTH_PERSISTED_KEY = 'storage-health:persisted'
+const STORAGE_HEALTH_LAST_RECONCILE_KEY = 'storage-health:last-reconcile'
 
 export interface StorageHealth {
   lastError: Ref<string | null>
@@ -20,6 +23,23 @@ export interface StorageHealth {
   lastSavedAt: Ref<string | null>
   /** Bumped by {@link requestRetry}; the bootstrap save path watches it to re-save on demand. */
   retryToken: Ref<number>
+  /**
+   * Last retained `navigator.storage.estimate()` result in bytes (issue #73);
+   * `null` until the first {@link checkQuota} or when the API is unavailable.
+   * In-memory only.
+   */
+  estimate: Ref<StorageEstimateSummary | null>
+  /**
+   * Result of the boot-time persistent-storage request (issue #73): `true` when
+   * granted, `false` when best-effort, `null` when unknown/unsupported.
+   * In-memory only.
+   */
+  persisted: Ref<boolean | null>
+  /**
+   * Counts from the last automatic derived-state reconcile (boot / rollover,
+   * issue #73); `null` before the first reconcile. In-memory only.
+   */
+  lastReconcile: Ref<ReconcileSummary | null>
   /** Best-effort quota pre-check; returns true when usage is high. Never throws. */
   checkQuota: () => Promise<boolean>
   /** Record a persistence write failure (esp. QuotaExceededError). Transitions to `failed`. */
@@ -32,6 +52,10 @@ export interface StorageHealth {
   markUnavailable: (reason?: string) => void
   /** Request an on-demand save (the "Retry now" recovery action). */
   requestRetry: () => void
+  /** Record the resolved persistent-storage grant (issue #73). */
+  setPersisted: (value: boolean) => void
+  /** Stamp and store the counts from an automatic reconcile (issue #73). */
+  recordReconcile: (counts: { missedEntriesCreated: number, suggestionsCreated: number }) => void
 }
 
 /**
@@ -58,6 +82,10 @@ export function useStorageHealth(): StorageHealth {
   // transient `saving` before every attempt (including the recovering one), so
   // `status` alone can't tell `markSaved` whether it is exiting a degraded episode.
   const degradedSinceOk = useState<boolean>(STORAGE_HEALTH_DEGRADED_KEY, () => false)
+  // In-memory diagnostics surfaced by the persistence health panel (issue #73).
+  const estimate = useState<StorageEstimateSummary | null>(STORAGE_HEALTH_ESTIMATE_KEY, () => null)
+  const persisted = useState<boolean | null>(STORAGE_HEALTH_PERSISTED_KEY, () => null)
+  const lastReconcile = useState<ReconcileSummary | null>(STORAGE_HEALTH_LAST_RECONCILE_KEY, () => null)
   const { logSecurityEvent } = useSecurityLog()
 
   async function checkQuota(): Promise<boolean> {
@@ -66,13 +94,16 @@ export function useStorageHealth(): StorageHealth {
     }
 
     try {
-      const estimate = await navigator.storage.estimate()
-      const low = isQuotaLowFromEstimate(estimate)
+      const estimateResult = await navigator.storage.estimate()
+      const low = isQuotaLowFromEstimate(estimateResult)
       isQuotaLow.value = low
+      // Retain the raw figures for the diagnostics panel (issue #73); the
+      // low-quota warning path below is unchanged.
+      estimate.value = { usage: estimateResult.usage ?? 0, quota: estimateResult.quota ?? 0 }
 
       if (low && !warnedQuota.value) {
         warnedQuota.value = true
-        const ratio = (estimate.usage ?? 0) / (estimate.quota ?? 1)
+        const ratio = (estimateResult.usage ?? 0) / (estimateResult.quota ?? 1)
         logSecurityEvent('storage.quota_low', 'warn', `Storage usage at ${Math.round(ratio * 100)}% of quota`)
       }
       else if (!low) {
@@ -134,17 +165,34 @@ export function useStorageHealth(): StorageHealth {
     retryToken.value += 1
   }
 
+  function setPersisted(value: boolean): void {
+    persisted.value = value
+  }
+
+  function recordReconcile(counts: { missedEntriesCreated: number, suggestionsCreated: number }): void {
+    lastReconcile.value = {
+      missedEntriesCreated: counts.missedEntriesCreated,
+      suggestionsCreated: counts.suggestionsCreated,
+      at: nowIso(),
+    }
+  }
+
   return {
     lastError,
     isQuotaLow,
     status,
     lastSavedAt,
     retryToken,
+    estimate,
+    persisted,
+    lastReconcile,
     checkQuota,
     reportWriteFailure,
     markSaving,
     markSaved,
     markUnavailable,
     requestRetry,
+    setPersisted,
+    recordReconcile,
   }
 }

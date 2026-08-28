@@ -73,16 +73,24 @@ Supporting decisions:
 
 ## References
 
-- `app/composables/use-storage-health.ts` — the extended state.
-- `app/utils/observability/storage-health.ts` — `PersistenceStatus`, `nextRetryDelay`, constants.
+- `app/composables/use-storage-health.ts` — the extended state. Also carries the in-memory
+  diagnostics surfaced by the persistence health panel (issue #73): `estimate` (retained
+  `navigator.storage.estimate()` result), `persisted` (the boot-time persistent-storage grant),
+  and `lastReconcile` (boot/rollover reconcile counts), with `setPersisted` / `recordReconcile`
+  setters. In-memory only, mirroring the `lastSavedAt` rationale — no schema bump.
+- `app/utils/observability/storage-health.ts` — `PersistenceStatus`, `nextRetryDelay`, constants,
+  plus `formatBytes()`, `StorageEstimateSummary`, and `ReconcileSummary` (issue #73).
 - `app/utils/persistence/persistence-saver.ts` — `createPersistenceSaver`, `loadAppDataSafely`.
-- `app/plugins/bootstrap.client.ts` — wiring (saver, load fallback, retry token, teardown flush).
+- `app/plugins/bootstrap.client.ts` — wiring (saver, load fallback, retry token, teardown flush;
+  records the persist grant and boot/rollover reconcile counts, issue #73).
 - `app/components/PersistenceStatusIndicator.vue`, `app/layouts/app.vue` — the shell indicator.
+- `app/components/PersistenceHealthPanel.vue`, `app/pages/app/settings.vue` — the read-only
+  Settings diagnostics panel (issue #73).
 - `app/utils/persistence/export-backup.ts` — the recovery download.
 - Tests: `tests/storage-health.test.ts`, `tests/persistence-saver.test.ts`,
   `tests/nuxt/use-storage-health.test.ts`, `tests/nuxt/persistence-status-indicator.test.ts`,
-  `tests/nuxt/export-backup.test.ts`.
+  `tests/nuxt/persistence-health-panel.test.ts`, `tests/nuxt/export-backup.test.ts`.
 - ADR-0004 (snapshot persistence), ADR-0009 (persistence adapter), ADR-0012 (dual Vitest projects),
-  ADR-0014 (utility taxonomy), ADR-0015 (app-data lifecycle). SEC-18; issue #65.
+  ADR-0014 (utility taxonomy), ADR-0015 (app-data lifecycle). SEC-18; issues #65, #73.
 - ADR-0019 (quarantine invalid stored data on load failure) — adds a load-time recovery banner on
   the same indicator surface and hardens the open-failure path this ADR introduced.

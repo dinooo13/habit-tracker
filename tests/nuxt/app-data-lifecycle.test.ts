@@ -149,11 +149,16 @@ describe('useAppDataLifecycle', () => {
     const entriesBefore = entriesStore.entries.length
 
     const { reconcileDerivedState } = useAppDataLifecycle()
-    reconcileDerivedState(today)
+    const summary = reconcileDerivedState(today)
 
     // ensureMissedEntries backfilled the other due-but-unlogged past days.
     expect(entriesStore.entries.length).toBeGreaterThan(entriesBefore)
     // reconcileMissingSuggestions then generated suggestions for the reflected miss.
     expect(coachStore.suggestions.some(suggestion => suggestion.entryId === 'entry_seed')).toBe(true)
+
+    // The counts are returned (issue #73), not discarded.
+    expect(summary.missedEntriesCreated).toBeGreaterThan(0)
+    expect(summary.suggestionsCreated).toBeGreaterThan(0)
+    expect(summary.at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 })

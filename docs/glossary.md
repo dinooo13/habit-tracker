@@ -94,3 +94,9 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   instead of being discarded (issue #66, ADR-0019). A load-time recovery banner — **Export preserved
   data** / **Dismiss** — lets the user export the raw JSON or clear it. Tracked by `useDataRecovery()`,
   distinct from the save-time persistence status above.
+- **Persistence health panel** — a read-only **Storage & diagnostics** card on the Settings page
+  (issue #73, ADR-0017) that surfaces the session diagnostics `useStorageHealth()` already
+  computes but never showed: the persistence status and last-save time, the persistent-storage
+  grant, the retained storage usage/quota estimate, the counts from the last automatic
+  (boot/rollover) reconcile, and the recent SEC-16 security-log events. All in-memory and
+  session-only — it clears on reload.

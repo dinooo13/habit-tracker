@@ -59,7 +59,7 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
 - **priority:** `high` = data loss, broken core flow, or security; `medium` = default;
   `low` = cosmetic/nice-to-have. Only when reasonably confident — omission is fine.
 - **area:** every subsystem the issue touches (`persistence` / `coaching` / `ui` /
-  `pwa` / `auth` / `analytics`), grounded in the architecture map, not guessed from
+  `pwa` / `auth` / `analytics` / `factory`), grounded in the architecture map, not guessed from
   keywords.
 
 ## 4. Route

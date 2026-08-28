@@ -195,8 +195,8 @@ comment.
   concurrency group cancels superseded runs, so back-to-back rebases don't stack.
 - It invalidates the per-SHA `<!-- routine:code-review sha=… -->` /
   `<!-- routine:qa sha=… -->` markers: the code now sits on a new base, so re-review /
-  re-QA at the new head is correct, not waste. The routine ordering (rebaser after the
-  implementer, before reviewer/qa) makes that re-run happen the same cycle.
+  re-QA at the new head is correct, not waste. A `needs-qa` PR is re-tested by the 17:00
+  qa run; a `needs-review` PR is re-reviewed at 06:00 the next morning.
 
 ## Idempotency
 

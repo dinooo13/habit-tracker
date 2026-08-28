@@ -7,6 +7,12 @@ Each agent handles **one** work item with fresh context; the cloud **routines**
 (claude.ai/code/routines) are thin orchestrators that only build the queue, spawn one
 agent per item, and summarize. All per-item logic lives here, versioned and reviewable.
 
+The pipeline is also described machine-readably in
+[`.factory/factory.yml`](../../.factory/factory.yml) — a descriptive manifest of every
+stage's queue, label transitions, idempotency guard, and live schedule/model, guarded by a
+contract test (ADR-0021). This README stays the human-facing architecture; the manifest is
+what a machine diffs against the live routine config.
+
 ## Label state machine
 
 Status lives on the **issue** until a PR exists; from then on the dev ↔ review
@@ -79,9 +85,10 @@ self-resolution audit** comment on the PR — no per-SHA variant: rebaser idempo
 structural, a rebased branch is no longer behind).
 
 A rebaser force-push intentionally invalidates the per-SHA review/QA markers: the code
-sits on a new base, so re-review/re-QA at the new head is correct, not waste — and the
-routine ordering (rebaser after the implementer, before reviewer/qa) makes that re-run
-happen the same cycle.
+sits on a new base, so re-review/re-QA at the new head is correct, not waste. The rebaser
+runs at 16:15, so a rebased `needs-qa` PR is re-tested by the 17:00 qa run that same
+afternoon, while a rebased `needs-review` PR waits for the 06:00 reviewer the next
+morning. The re-run always happens; only its latency differs by stage.
 
 ## Environment
 
@@ -106,98 +113,53 @@ rename or a new required flag needs a matching routine edit in the claude.ai/cod
 
 ## Routine prompts
 
-Paste these as the routine prompts; keep them thin — anything per-item belongs in the
-agent files, not the routine.
+Each routine's orchestrator prompt is kept **verbatim** in its own file under
+[`.factory/prompts/`](../../.factory/prompts/) — one file per stage, holding only the exact
+text configured in the routine (ADR-0021). Keep them thin: anything per-item belongs in the
+agent files, not the routine. The cadences in the headings below are the **live crons**
+(UTC), also recorded in [`.factory/factory.yml`](../../.factory/factory.yml).
 
-### Triage routine (e.g. nightly, before planner)
+### Triage routine (22:01 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Build the queue from
-> two searches: (1) every open issue that has no `status:` label and no `duplicate` label
-> (`search_issues`:
-> `repo:dinooo13/habit-tracker is:issue is:open -label:"status: draft"
-> -label:"status: needs-plan" -label:"status: needs-plan-review"
-> -label:"status: agent-ready" -label:"status: in-progress"
-> -label:"status: needs-review" -label:"status: blocked" -label:duplicate`); and
-> (2) every open issue labeled `status: blocked`. For the second result set, let the
-> triage agent determine whether dependency rechecking applies. If both searches are
-> empty, report "nothing to triage" and stop. For each, spawn one
-> fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
-> issue, never reused. Collect only each verdict. Finish with a summary: queued for
-> planning, unblocked, duplicates, blocked (missing information or dependency), skipped.
-> Never label, plan, or change anything yourself.
+[`.factory/prompts/triage.md`](../../.factory/prompts/triage.md)
 
-### Planner routine (e.g. nightly)
+### Planner routine (23:00 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> issue labeled `status: needs-plan` (`mcp__github__list_issues`). If none, report "no
-> issues need planning" and stop. For each issue, spawn one fresh `planner` agent
-> (subagent_type: "planner") with the prompt "Plan issue #{N}" — one agent per issue,
-> never reused. Collect only each agent's short report. Finish with a summary: planned,
-> skipped (why), unplannable (what's missing). Do not plan, write files, or change code
-> yourself.
+[`.factory/prompts/planner.md`](../../.factory/prompts/planner.md)
 
-### Implementer routine (e.g. nightly, after planner)
+### Implementer routine (02:00, 11:00, 21:00 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Build the queue:
-> (1) resume — open PRs labeled `status: in-progress`; (2) start — open issues labeled
-> `status: agent-ready` with no open PR referencing them. For each item, spawn one fresh
-> `implementer` agent (subagent_type: "implementer") with isolation: "worktree" —
-> "Resume PR #{P}" or "Implement issue #{N}" — one agent per item, never reused. Items
-> touching the same files run sequentially; otherwise agents may run in parallel in the
-> background. Collect only outcomes (PR link, gate results, blockers). Finish with a
-> summary: started, resumed, ready for review, skipped (no plan), blocked (where). Never
-> implement anything yourself, never push to main, never merge.
+[`.factory/prompts/implementer.md`](../../.factory/prompts/implementer.md)
 
-### Rebaser routine (e.g. nightly, after the implementer, before the reviewer)
+### Rebaser routine (16:15 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> PR labeled `status: needs-review`, `status: needs-qa`, or `status: approved`
-> (`search_pull_requests`). If none, report "nothing to rebase" and stop. For each,
-> spawn one fresh `rebaser` agent (subagent_type: "rebaser") with isolation:
-> "worktree" — "Rebase PR #{P}" — one agent per PR, never reused; agents may run in
-> parallel (branches are independent). Collect only each outcome. Finish with a
-> summary: rebased (clean / self-resolved, label kept / self-resolved, demoted to
-> needs-qa), bounced to in-progress (big conflict or red gates), skipped (current /
-> docs-only drift / draft). Never resolve conflicts you are not confident about, and
-> never review, merge, or push to main yourself.
+[`.factory/prompts/rebaser.md`](../../.factory/prompts/rebaser.md) — records the **live**
+routine text, which lags the agent's current self-resolution wording (no `self-resolved`
+summary bucket; "Never resolve conflicts, review, merge, or push to main yourself" rather
+than "…conflicts *you are not confident about*"). The agent file `rebaser.md` governs
+behavior; re-aligning the routine is a deferred sync op — see
+[`.factory/README.md`](../../.factory/README.md).
 
 The routine passes every candidate; the *agent* performs the cheap behind/need check in
 git — keeping the routine thin per the rule above. Run it once per cycle, after the
 implementer routine and any human merges — not per merge — so a merge burst costs each
 stale PR a single rebase.
 
-### Reviewer routine (e.g. nightly, after the rebaser)
+### Reviewer routine (06:00, 16:00 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> PR labeled `status: needs-review` (`search_pull_requests`:
-> `repo:dinooo13/habit-tracker is:pr is:open label:"status: needs-review"`). For each,
-> spawn one fresh `reviewer` agent (subagent_type: "reviewer") with isolation:
-> "worktree" — "Review PR #{P}" — one agent per PR, never reused. Collect only verdict,
-> blocking count, comment link. Finish with a summary: approved (awaiting human merge),
-> sent back to in-progress, skipped (already reviewed at head). Never review, fix, push,
-> or merge yourself.
+[`.factory/prompts/reviewer.md`](../../.factory/prompts/reviewer.md)
 
-### QA routine (e.g. nightly, after the reviewer)
+### QA routine (07:00, 17:00 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Fetch every open
-> PR labeled `status: needs-qa` (`search_pull_requests`:
-> `repo:dinooo13/habit-tracker is:pr is:open label:"status: needs-qa"`). For each,
-> spawn one fresh `qa-tester` agent (subagent_type: "qa-tester") — "QA PR #{P}" — one
-> agent per PR, never reused. Collect only verdict, blocking count, comment link.
-> Finish with a summary: approved (passed / QA not applicable), issues found (sent back
-> to in-progress), still waiting on a preview deploy. Never test, fix, push, or merge
-> yourself.
+[`.factory/prompts/qa-tester.md`](../../.factory/prompts/qa-tester.md)
 
 Note: the routine's cloud environment must allow the domain
 `preview.habits.fmeyer.dev` in its network access settings, or every preview fetch
 will fail with `403 host_not_allowed`.
 
-### Docs-audit routine (e.g. weekly)
+### Docs-audit routine (16:00 UTC daily)
 
-> You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Spawn one fresh
-> `docs-auditor` agent (subagent_type: "docs-auditor") with isolation: "worktree" and
-> the prompt "Audit the docs". Relay its report: PR link (or "docs in sync"), fix
-> count, and any items needing human attention. Do not audit or fix anything yourself.
+[`.factory/prompts/docs-auditor.md`](../../.factory/prompts/docs-auditor.md)
 
 ## Humans in the loop
 

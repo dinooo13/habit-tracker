@@ -42,7 +42,8 @@
     "happy-dom": "^20.10.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "vue-tsc": "^3.3.4"
+    "vue-tsc": "^3.3.4",
+    "yaml": "^2.8.2"
   },
   "engines": {
     "node": ">=22 <23"

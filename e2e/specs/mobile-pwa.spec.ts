@@ -1,7 +1,7 @@
 import { test, expect } from '../support/fixtures'
 
 test.describe('PWA / shell', () => {
-  test('the app shell loads and PWA assets are served', async ({ authedPage: page }) => {
+  test('the app shell loads and PWA assets are served', { tag: '@production' }, async ({ authedPage: page }) => {
     await page.goto('/app')
     await expect(page.getByRole('heading', { name: 'Today\'s habit queue' })).toBeVisible()
 
@@ -22,7 +22,7 @@ test.describe('Mobile bottom navigation', () => {
   // Only meaningful on the mobile viewport project, where MobileBottomNav is shown.
   test.skip(({ viewport }) => !viewport || viewport.width >= 768, 'mobile viewport only')
 
-  test('the bottom nav switches between primary sections', async ({ authedPage: page }) => {
+  test('the bottom nav switches between primary sections', { tag: '@production' }, async ({ authedPage: page }) => {
     await page.goto('/app')
 
     const bottomNav = page.getByRole('navigation', { name: 'Primary navigation' })

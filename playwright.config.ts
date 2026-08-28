@@ -12,6 +12,11 @@ const isCI = !!process.env.CI
 // handy for fast local debugging (HMR, source maps) at the cost of fidelity.
 const useDevServer = process.env.E2E_WEB_SERVER === 'dev'
 
+// Remote mode: `E2E_SKIP_WEB_SERVER=1` starts no local server, so Playwright
+// drives whatever `E2E_BASE_URL` points at (e.g. the live production origin in
+// the post-deploy `production-smoke` job — see docs/e2e-testing.md, ADR-0020).
+const skipWebServer = !!process.env.E2E_SKIP_WEB_SERVER
+
 export default defineConfig({
   testDir: './e2e/specs',
   outputDir: './test-results',
@@ -44,13 +49,15 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: useDevServer ? 'npm run dev' : 'npm run build && npm run preview',
-    url: baseURL,
-    reuseExistingServer: !isCI,
-    timeout: 180_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: { NUXT_TELEMETRY_DISABLED: '1' },
-  },
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: useDevServer ? 'npm run dev' : 'npm run build && npm run preview',
+        url: baseURL,
+        reuseExistingServer: !isCI,
+        timeout: 180_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+        env: { NUXT_TELEMETRY_DISABLED: '1' },
+      },
 })

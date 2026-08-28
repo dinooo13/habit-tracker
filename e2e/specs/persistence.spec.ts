@@ -33,7 +33,9 @@ test.describe('Persistence', () => {
     await expect(page.locator('.habit-card').filter({ hasText: 'Persistent habit' })).toBeVisible()
   })
 
-  test('seeded status changes survive a reload', async ({ authedPage: page, seed }) => {
+  // Tagged `@production` (ADR-0020): also selected by the post-deploy smoke job
+  // as the "seeded data survives a hard reload" check against the live origin.
+  test('seeded status changes survive a reload', { tag: '@production' }, async ({ authedPage: page, seed }) => {
     const habit = makeHabit({
       name: 'Daily greens',
       scheduleWeekdays: [0, 1, 2, 3, 4, 5, 6],

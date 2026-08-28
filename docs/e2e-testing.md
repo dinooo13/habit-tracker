@@ -19,6 +19,15 @@ Playwright's `webServer` builds and serves the app automatically
 first. Set `E2E_WEB_SERVER=dev` to use the dev server instead (faster, less faithful), or
 `E2E_BASE_URL` to point at an already-running server.
 
+**Remote mode.** Set `E2E_SKIP_WEB_SERVER=1` to start no local server at all, so Playwright
+drives whatever `E2E_BASE_URL` points at. This is how the post-deploy `production-smoke` job
+runs the `@production` subset against the live origin (ADR-0020):
+
+```
+E2E_SKIP_WEB_SERVER=1 E2E_BASE_URL=https://habits.fmeyer.dev \
+  npx playwright test --grep @production --retries=2
+```
+
 First-time setup installs the browser binaries: `npx playwright install --with-deps chromium`.
 
 ## Layout
@@ -68,9 +77,30 @@ e2e/
 | `persistence.spec.ts` | Create/status changes survive reload; auth flag survives. |
 | `mobile-pwa.spec.ts` | PWA manifest/service worker; mobile bottom-nav. |
 
+### The `@production` subset
+
+A small subset of the specs above is tagged `@production` (Playwright test tags). Tags are
+**additive** — those tests still run in the normal `e2e` job; the tag only lets the
+post-deploy `production-smoke` job select them with `--grep @production` and drive them
+against the live origin (the fixtures are origin-agnostic, so they run unchanged). The
+subset covers: the authed shell renders, seeded data hydrates and survives a hard reload,
+mobile navigation renders, PWA manifest/SW assets are served, and a deep-link + hard reload
+walk (`smoke.spec.ts`) that asserts no unexpected console errors and no failed same-origin
+requests — exercising the `.htaccess` SPA fallback and base path that local E2E otherwise
+avoids. Do not add a parallel production-only spec; edit and tag the shared ones (ADR-0020).
+
 ## CI
 
 The `e2e` job in `.github/workflows/ci.yml` (Node 22) runs Chromium + one mobile project,
 gated on the `changes.outputs.site` filter (skipped for docs-only PRs). It caches the
 browser binaries, uses `retries: 1` + `trace: 'on-first-retry'`, and uploads the
 `playwright-report` and traces as artifacts.
+
+The `production-smoke` job runs **after** `deploy-production` (push to `main`, same `site`
+filter). Every build stamps its commit SHA into `.output/public/version.json` (the
+`nitro:init` close hook in `nuxt.config.ts`, `COMMIT_SHA` wired in the `build` job); the
+smoke job first polls that endpoint until the deployed SHA is live — FTPS mirroring is not
+atomic and the host may cache, so this poll is what stops a stale build passing a false
+green — then runs the `@production` subset in remote mode with `--retries=2`. It uploads the
+report/traces on failure and, on failure, files exactly one label-less bug issue (no dedup);
+`issues: write` is scoped to that job alone. See ADR-0020.

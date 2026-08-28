@@ -47,10 +47,14 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
   hooks: {
-    // Resolve placeholders in public/.htaccess.tpl using the runtime base URL
-    // and write the result to .output/public/.htaccess at generate time, so
-    // production ('/') and preview ('/pr-<n>/') builds each get the right
-    // RewriteBase / SPA-fallback path (and noindex header for previews).
+    // At generate close, write two files into .output/public (the artifact that
+    // deploy-production mirrors to the host):
+    //   1. .htaccess — resolve public/.htaccess.tpl placeholders with the runtime
+    //      base URL so production ('/') and preview ('/pr-<n>/') builds each get
+    //      the right RewriteBase / SPA-fallback path (and noindex header for previews).
+    //   2. version.json — stamp the build with its commit SHA so the post-deploy
+    //      production-smoke job can confirm which build is live before asserting
+    //      (ADR-0020). A stale/partial FTPS mirror would otherwise pass a false green.
     'nitro:init'(nitro) {
       if (nitro.options.dev) return
       nitro.hooks.hook('close', async () => {
@@ -74,6 +78,39 @@ export default defineNuxtConfig({
           await fs.rm(leakedTemplate, { force: true })
         }
         catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+        }
+
+        // Build-SHA stamp. The git fallback is injected here (dynamic-imported
+        // node:child_process, mirroring node:fs/node:path above) so the helper in
+        // app/utils/observability stays pure and Node-free; a missing .git or a
+        // failed git call degrades to 'unknown' rather than throwing.
+        const { execSync } = await import('node:child_process')
+        const { resolveCommitSha, buildVersionPayload } = await import(
+          './app/utils/observability/build-version'
+        )
+        const gitSha = (): string | null => {
+          try {
+            return execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+              .toString()
+              .trim() || null
+          }
+          catch {
+            return null
+          }
+        }
+        const payload = buildVersionPayload(resolveCommitSha(process.env, gitSha))
+        try {
+          await fs.writeFile(
+            resolve(outputDir, 'version.json'),
+            `${JSON.stringify(payload, null, 2)}\n`,
+          )
+        }
+        catch (err) {
+          // The hook also fires during `nuxt prepare`, when the output publicDir
+          // doesn't exist yet — skip the stamp then, exactly as the .htaccess
+          // write above tolerates a missing output dir. It is written for real
+          // during `nuxt generate`, when the dir exists.
           if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
         }
       })

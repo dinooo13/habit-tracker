@@ -79,6 +79,11 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:
       NUXT_TELEMETRY_DISABLED: '1'
+      # Stamp the generated build with the commit SHA so the post-deploy
+      # production-smoke job can confirm which build is live (ADR-0020). For a
+      # push to main this is the merge commit = the deployed SHA the poll waits
+      # for. Applies to both the production and preview "Generate" steps below.
+      COMMIT_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -213,6 +218,137 @@ jobs:
           mirror --reverse --delete --continue --parallel=4 --verbose ./.output/public/ ./httpdocs/
           bye
           EOF
+
+  # Post-deploy verification (ADR-0020, issue #87). Runs only after a successful
+  # production deploy, behind the same `site` change filter. It first proves the
+  # deployed SHA is actually live (version.json poll) — FTPS mirroring is not
+  # atomic and the host may cache, so a check run right after deploy can be served
+  # the previous build and pass — then drives the `@production`-tagged subset
+  # against the live origin. On failure it files one label-less bug issue (no
+  # dedup) and goes red; it never fixes, rolls back, pushes, or merges.
+  production-smoke:
+    name: Production smoke
+    needs: [changes, deploy-production]
+    if: |
+      needs.changes.outputs.site == 'true' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      issues: write
+    env:
+      CI: 'true'
+      NUXT_TELEMETRY_DISABLED: '1'
+      PROD_URL: https://habits.fmeyer.dev
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Reuse the same browser-cache strategy as the `e2e` job.
+      - name: Resolve Playwright version
+        id: pw
+        shell: bash
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Fail-fast SHA gate: poll version.json (cache-busted) until it reports the
+      # deployed SHA, on a short bounded window. Without this the smoke run could
+      # pass against a stale build — the exact false green it exists to catch.
+      - name: Wait for the deployed SHA to go live
+        id: poll
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          echo "Waiting for $PROD_URL/version.json to report $EXPECTED_SHA (~90s bounded)…"
+          for i in $(seq 1 18); do
+            body="$(curl -fsS "$PROD_URL/version.json?ts=$(date +%s)" || true)"
+            live="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{process.stdout.write(String(JSON.parse(s).commit||""))}catch{process.stdout.write("")}})')"
+            echo "attempt $i/18: live=${live:-<none>}"
+            if [ "$live" = "$EXPECTED_SHA" ]; then
+              echo "Deployed SHA is live."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::version.json never reported $EXPECTED_SHA within the poll window (stale or absent deploy)."
+          exit 1
+
+      - name: Run production smoke tests
+        id: smoke
+        env:
+          E2E_SKIP_WEB_SERVER: '1'
+          E2E_BASE_URL: ${{ env.PROD_URL }}
+        run: npx playwright test --grep @production --retries=2
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: production-smoke-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # One label-less issue per failure — no dedup (three bad deploys ⇒ three
+      # issues, deliberate per issue #87). Label-less so normal triage stays the
+      # front door; recommended labels are named as text in the body.
+      - name: File a failure issue
+        if: failure()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const sha = context.sha;
+            const short = sha.slice(0, 7);
+            const failedStep = '${{ steps.poll.outcome }}' === 'failure'
+              ? 'version-poll gate — the deployed SHA never went live (stale or absent deploy)'
+              : 'production smoke Playwright run';
+            const body = [
+              '<!-- routine:production-smoke -->',
+              '',
+              `The post-deploy production smoke check failed for **\`${short}\`**.`,
+              '',
+              `- **Deployed SHA:** \`${sha}\``,
+              `- **Failed step:** ${failedStep}`,
+              `- **Workflow run:** ${runUrl}`,
+              '- **Artifacts:** the `production-smoke-report` (HTML report, traces, screenshots) is attached to the run on failure.',
+              '',
+              '`deploy-production` mirrors over FTPS with **no previous-artifact retention**, so a red smoke check does not restore service — production may be broken until a human acts.',
+              '',
+              'Recommended labels (add during triage): `type: bug`, `priority: high`, `area: pwa`.',
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production smoke failed for ${short}`,
+              body,
+            });
+
+      - name: Record tested SHA
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo "### Production smoke ✓"
+            echo ""
+            echo "Verified deployed SHA \`${{ github.sha }}\` is live at $PROD_URL and passed the \`@production\` smoke subset."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-preview:
     if: |

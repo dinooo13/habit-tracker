@@ -82,6 +82,27 @@ sits on a new base, so re-review/re-QA at the new head is correct, not waste —
 routine ordering (rebaser after the implementer, before reviewer/qa) makes that re-run
 happen the same cycle.
 
+## Environment
+
+`scripts/setup-agent-env.sh` is the one environment contract, shared by every caller:
+the cloud routines (which run it as their setup step), `.devcontainer/devcontainer.json`
+(`postCreateCommand`), the `SessionStart` hook in `.claude/settings.json`
+(with `--no-browser`), and humans on a fresh checkout. It is idempotent — a warm
+environment costs ~0.2s.
+
+Two tiers, deliberately:
+
+- **Required** — node ≥22 and `npm ci`. Failure exits non-zero; an agent that sees this
+  must report a broken environment rather than proceeding or exiting silently.
+- **Best-effort** — `@playwright/cli`, the `playwright-cli` skill that `qa-tester`
+  declares, a chromium binary, and `.playwright/cli.config.json`. Failure prints
+  **`PLAYWRIGHT_UNAVAILABLE`** and still exits 0: the implementer notes it in the PR body
+  and lets CI's `e2e` job cover the suite (`implementer.md` §5), and the qa-tester cannot
+  run at all and must report rather than fake a pass.
+
+Editing the script changes the repo half only. The cloud routines invoke it by path, so a
+rename or a new required flag needs a matching routine edit in the claude.ai/code UI.
+
 ## Routine prompts
 
 Paste these as the routine prompts; keep them thin — anything per-item belongs in the

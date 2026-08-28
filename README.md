@@ -81,7 +81,7 @@ app/
 ├── layouts/               # default (public) + app (authenticated shell)
 ├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo, PersistenceStatusIndicator
 ├── stores/                # Pinia: habits, entries, coach, settings
-├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-clipboard
+├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-clipboard, use-clock
 ├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)
@@ -127,6 +127,7 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 15. [App-data lifecycle composable for snapshot/replace/reconcile](docs/adr/0015-app-data-lifecycle-composable.md)
 16. [Habit-action composable owns cross-store entry/suggestion transactions](docs/adr/0016-habit-action-composable-owns-cross-store-transactions.md)
 17. [Persistence status lifecycle with retry and backoff](docs/adr/0017-persistence-status-lifecycle-retry-backoff.md)
+18. [Central reactive day-clock service for midnight rollover](docs/adr/0018-central-reactive-day-clock-service.md)
 
 ## Contributing & workflow
 

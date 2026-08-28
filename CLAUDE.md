@@ -42,8 +42,8 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`, `PersistenceStatusIndicator.vue` (app-shell save status + recovery banner, ADR-0017). |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings + persistence status lifecycle `ok\|saving\|failed\|unavailable`, ADR-0017), `use-clipboard.ts` (settings clipboard-copy helper, issue #69), `use-clock.ts` (central reactive day-clock: `todayKey` + `onRollover` for midnight rollover, ADR-0018). |
-| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`ai-prompts.ts`, `atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `stats.ts`, `weekdays.ts`), `persistence/` (`backup.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `persistence-saver.ts` (retry/backoff loop, ADR-0017), `export-backup.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
+| `app/composables/` | `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-persistence.ts`, `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings + persistence status lifecycle `ok\|saving\|failed\|unavailable`, ADR-0017), `use-data-recovery.ts` (load-time quarantine recovery banner state: export/dismiss preserved invalid data, ADR-0019), `use-clipboard.ts` (settings clipboard-copy helper, issue #69), `use-clock.ts` (central reactive day-clock: `todayKey` + `onRollover` for midnight rollover, ADR-0018). |
+| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`ai-prompts.ts`, `atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `stats.ts`, `weekdays.ts`), `persistence/` (`backup.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `persistence-saver.ts` (retry/backoff loop + `loadAppDataSafely`, ADR-0017), `export-backup.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |
@@ -99,7 +99,13 @@ stay at the call sites.
 
 `app/plugins/bootstrap.client.ts` on startup:
 1. `usePersistence().load()` reads from IndexedDB (Dexie), migrating any legacy
-   `localStorage` payload on first run.
+   `localStorage` payload on first run. If the stored payload fails Zod validation, the
+   adapter first preserves the raw payload in a dedicated Dexie `quarantine` table (newest-only,
+   never cleared by normal saves) so a later save can't clobber it, then returns empty state;
+   `useDataRecovery().refresh()` surfaces the recovery banner (ADR-0019). An IndexedDB *open*
+   failure (vs. a validation failure) is caught by `loadAppDataSafely` → `{ data, failed }`, and
+   bootstrap suppresses the debounced auto-save watcher while keeping "Retry now" live so a broken
+   read never clobbers recoverable data.
 2. `replaceAppData(loaded)` hydrates the four stores and applies the primary color.
 3. `reconcileDerivedState(todayDateKey())` backfills missed entries then reconciles suggestions.
 4. Deep-`watch`es a combined snapshot (`snapshotAppData()`) and persists it **debounced at 800ms**,

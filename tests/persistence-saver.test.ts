@@ -120,16 +120,17 @@ describe('createPersistenceSaver (#65)', () => {
 })
 
 describe('loadAppDataSafely (#65)', () => {
-  it('returns the loaded data on success without marking unavailable', async () => {
+  it('returns the loaded data with failed:false on success without marking unavailable', async () => {
     const onUnavailable = vi.fn()
     const loaded = appData({ suggestions: [] })
     const result = await loadAppDataSafely(() => Promise.resolve(loaded), onUnavailable, () => appData())
 
-    expect(result).toBe(loaded)
+    expect(result.data).toBe(loaded)
+    expect(result.failed).toBe(false)
     expect(onUnavailable).not.toHaveBeenCalled()
   })
 
-  it('falls back to empty state and marks unavailable when the load throws', async () => {
+  it('falls back to empty state, marks unavailable, and reports failed:true when the load throws', async () => {
     const onUnavailable = vi.fn()
     const fallback = appData()
     const result = await loadAppDataSafely(
@@ -138,7 +139,8 @@ describe('loadAppDataSafely (#65)', () => {
       () => fallback,
     )
 
-    expect(result).toBe(fallback)
+    expect(result.data).toBe(fallback)
+    expect(result.failed).toBe(true)
     expect(onUnavailable).toHaveBeenCalledWith('load-failed')
   })
 })

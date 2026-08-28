@@ -87,4 +87,108 @@ describe('DexiePersistenceAdapter', () => {
     clearSecurityLog()
     vi.restoreAllMocks()
   })
+
+  describe('quarantine (#66)', () => {
+    beforeEach(() => {
+      clearSecurityLog()
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      clearSecurityLog()
+      vi.restoreAllMocks()
+    })
+
+    it('quarantines the raw payload instead of discarding it on validation failure', async () => {
+      await db.meta.put({ key: 'schemaVersion', value: 1 })
+      await db.habits.put({ id: 'broken' } as never)
+
+      const result = await adapter.load()
+      expect(result).toEqual(createEmptyAppData())
+
+      const record = await adapter.loadQuarantine()
+      expect(record).not.toBeNull()
+      expect(record?.capturedAt).toBeTruthy()
+      expect(record?.reason).toBeTruthy()
+
+      const payload = record?.payload as { schemaVersion: unknown, habits: unknown[] }
+      expect(payload.schemaVersion).toBe(1)
+      expect(payload.habits).toContainEqual({ id: 'broken' })
+    })
+
+    it('keeps only the newest quarantine record across repeated failures', async () => {
+      await db.meta.put({ key: 'schemaVersion', value: 1 })
+      await db.habits.put({ id: 'broken-1' } as never)
+      await adapter.load()
+
+      await db.habits.clear()
+      await db.habits.put({ id: 'broken-2' } as never)
+      await adapter.load()
+
+      expect(await db.quarantine.count()).toBe(1)
+      const record = await adapter.loadQuarantine()
+      const payload = record?.payload as { habits: Array<{ id: string }> }
+      expect(payload.habits).toContainEqual({ id: 'broken-2' })
+      expect(payload.habits).not.toContainEqual({ id: 'broken-1' })
+    })
+
+    it('does not quarantine when valid data round-trips', async () => {
+      await adapter.save(readFixture())
+      await adapter.load()
+
+      expect(await adapter.loadQuarantine()).toBeNull()
+    })
+
+    it('preserves the quarantine record across a normal save()', async () => {
+      await db.meta.put({ key: 'schemaVersion', value: 1 })
+      await db.habits.put({ id: 'broken' } as never)
+      await adapter.load()
+      expect(await adapter.loadQuarantine()).not.toBeNull()
+
+      await adapter.save(createEmptyAppData())
+
+      expect(await adapter.loadQuarantine()).not.toBeNull()
+    })
+
+    it('clearQuarantine() removes the record; other data is untouched', async () => {
+      await adapter.save(readFixture())
+      await db.quarantine.put({ id: 'latest', capturedAt: '2026-01-01T00:00:00.000Z', reason: 'x', payload: {} })
+
+      await adapter.clearQuarantine()
+
+      expect(await adapter.loadQuarantine()).toBeNull()
+      expect(await adapter.hasData()).toBe(true)
+    })
+
+    it('clear() (delete-all) also wipes the quarantine record', async () => {
+      await db.quarantine.put({ id: 'latest', capturedAt: '2026-01-01T00:00:00.000Z', reason: 'x', payload: {} })
+
+      await adapter.clear()
+
+      expect(await adapter.loadQuarantine()).toBeNull()
+    })
+  })
+
+  it('upgrades a v1 database to the v2 schema without destroying existing data', async () => {
+    // Seed valid data through the adapter (registers the v2 schema), then reopen a
+    // fresh adapter over the same database name to exercise the Dexie upgrade path.
+    const fixture = readFixture()
+    await adapter.save(fixture)
+    db.close()
+
+    const reopened = new HabitDatabase()
+    const reopenedAdapter = new DexiePersistenceAdapter(reopened)
+    try {
+      const loaded = await reopenedAdapter.load()
+      expect(loaded.habits).toHaveLength(fixture.habits.length)
+      expect(loaded.entries).toHaveLength(fixture.entries.length)
+      expect(loaded.settings).toEqual(fixture.settings)
+      // The quarantine table exists and is empty on the upgraded database.
+      expect(await reopenedAdapter.loadQuarantine()).toBeNull()
+    }
+    finally {
+      await reopened.delete()
+    }
+  })
 })

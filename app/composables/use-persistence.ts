@@ -1,7 +1,7 @@
 import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter } from '~/utils/persistence/dexie-persistence-adapter'
 import { migrateLegacyLocalStorage } from '~/utils/persistence/legacy-migration'
-import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import type { PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
 import { createEmptyAppData } from '~/utils/persistence/storage-schema'
 
 let defaultAdapter: PersistenceAdapter | null = null
@@ -46,9 +46,27 @@ export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()
     await adapter.clear()
   }
 
+  async function loadQuarantine(): Promise<QuarantineRecord | null> {
+    if (!import.meta.client) {
+      return null
+    }
+
+    return adapter.loadQuarantine()
+  }
+
+  async function clearQuarantine(): Promise<void> {
+    if (!import.meta.client) {
+      return
+    }
+
+    await adapter.clearQuarantine()
+  }
+
   return {
     load,
     save,
     clear,
+    loadQuarantine,
+    clearQuarantine,
   }
 }

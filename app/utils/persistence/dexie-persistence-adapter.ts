@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
-import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import type { PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
+import { nowIso } from '~/utils/domain/date'
 import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
 import { recordSecurityEvent } from '~/utils/observability/security-log'
 
@@ -8,6 +9,11 @@ export const DATABASE_NAME = 'habit-tracker'
 
 const SCHEMA_VERSION_META_KEY = 'schemaVersion'
 const SETTINGS_META_KEY = 'settings'
+
+// Fixed primary key for the quarantine table so a clear-then-put keeps exactly
+// one (newest-only) record — quarantined payloads consume quota, so we never
+// accumulate generations (issue #66, ADR-0019).
+const QUARANTINE_RECORD_KEY = 'latest'
 
 interface MetaRecord {
   key: string
@@ -19,6 +25,7 @@ export class HabitDatabase extends Dexie {
   entries!: Table<HabitEntry, string>
   suggestions!: Table<CoachingSuggestion, string>
   meta!: Table<MetaRecord, string>
+  quarantine!: Table<QuarantineRecord, string>
 
   constructor() {
     super(DATABASE_NAME)
@@ -33,6 +40,21 @@ export class HabitDatabase extends Dexie {
       entries: 'id, habitId, date, status',
       suggestions: 'id, entryId, createdAt',
       meta: 'key',
+    })
+
+    // Store version 2 registers the `quarantine` table (issue #66, ADR-0019).
+    // This is a pure *Dexie store* bump to add a table; the persisted `AppDataV2`
+    // shape is unchanged, so `APP_DATA_SCHEMA_VERSION`/`migrateToV2` stay put —
+    // the same store-vs-schema distinction noted on `version(1)` above. Dexie
+    // treats each `version()` as the full schema, so the four existing tables'
+    // index strings are repeated here verbatim. The upgrade is additive and
+    // non-destructive: existing habits/entries/suggestions/meta are retained.
+    this.version(2).stores({
+      habits: 'id, startDate',
+      entries: 'id, habitId, date, status',
+      suggestions: 'id, entryId, createdAt',
+      meta: 'key',
+      quarantine: 'id',
     })
   }
 }
@@ -94,31 +116,74 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
       return createEmptyAppData()
     }
 
+    const rawPayload = {
+      schemaVersion: schemaVersionRecord.value,
+      habits,
+      entries,
+      suggestions,
+      settings: settingsRecord?.value,
+    }
+
     try {
-      return parseAppData({
-        schemaVersion: schemaVersionRecord.value,
-        habits,
-        entries,
-        suggestions,
-        settings: settingsRecord?.value,
-      })
+      return parseAppData(rawPayload)
     }
     catch (error) {
-      // Stored data failed Zod validation — fall back to empty state and log the
-      // failure (SEC-16) so the silent reset is observable.
-      recordSecurityEvent(
-        'data.validation_failed',
-        'error',
-        error instanceof Error ? error.message : 'Stored AppData failed validation',
-      )
+      const reason = error instanceof Error ? error.message : 'Stored AppData failed validation'
+      // Stored data failed Zod validation. Before falling back to empty state,
+      // preserve the raw payload in the quarantine table so a later save (which
+      // never touches that table) can't clobber the recoverable data — the user
+      // gets an export/recover path via the load-time recovery banner (issue #66,
+      // ADR-0019). Keep the SEC-16 log so the reset stays observable.
+      await this.quarantinePayload(rawPayload, reason)
+      recordSecurityEvent('data.validation_failed', 'error', reason)
       return createEmptyAppData()
     }
   }
 
+  /**
+   * Write the raw, un-parseable payload into the quarantine table, keeping only
+   * the newest record (clear-then-put on a fixed key). Best-effort: a quarantine
+   * write failure must not mask the original validation failure, so it is caught
+   * and logged rather than rethrown.
+   */
+  private async quarantinePayload(payload: unknown, reason: string): Promise<void> {
+    try {
+      const { db } = this
+      await db.transaction('rw', db.quarantine, async () => {
+        await db.quarantine.clear()
+        await db.quarantine.put({ id: QUARANTINE_RECORD_KEY, capturedAt: nowIso(), reason, payload })
+      })
+    }
+    catch (error) {
+      recordSecurityEvent(
+        'data.validation_failed',
+        'warn',
+        `Failed to quarantine invalid payload: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  async loadQuarantine(): Promise<QuarantineRecord | null> {
+    return (await this.db.quarantine.get(QUARANTINE_RECORD_KEY)) ?? null
+  }
+
+  async clearQuarantine(): Promise<void> {
+    await this.db.quarantine.clear()
+  }
+
   async clear(): Promise<void> {
+    // Delete-all is a deliberate full wipe, so it clears the quarantine table too
+    // — leaving an orphaned recovery banner after the user chose to erase
+    // everything would be surprising (issue #66, ADR-0019).
     const { db } = this
-    await db.transaction('rw', [db.habits, db.entries, db.suggestions, db.meta], async () => {
-      await Promise.all([db.habits.clear(), db.entries.clear(), db.suggestions.clear(), db.meta.clear()])
+    await db.transaction('rw', [db.habits, db.entries, db.suggestions, db.meta, db.quarantine], async () => {
+      await Promise.all([
+        db.habits.clear(),
+        db.entries.clear(),
+        db.suggestions.clear(),
+        db.meta.clear(),
+        db.quarantine.clear(),
+      ])
     })
   }
 }

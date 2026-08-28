@@ -163,6 +163,17 @@ Two cross-cutting, client-only flows guard the local-first model:
   **Export backup** / **Retry now** — when `unavailable`; the transient `lastError` toast is
   suppressed while that banner shows. Entry/exit of degraded mode emit `storage.unavailable` /
   `storage.recovered` security events. See [ADR-0017](adr/0017-persistence-status-lifecycle-retry-backoff.md).
+- **Quarantine-on-corrupt & open-failure hardening (issue #66).** When stored data fails Zod
+  validation on load, `DexiePersistenceAdapter.load()` preserves the raw payload in a dedicated
+  Dexie `quarantine` table (store version 1→2; newest-only; never touched by normal saves) *before*
+  falling back to empty state — so a later save can't clobber the recoverable data. `useDataRecovery()`
+  surfaces a second, load-time recovery banner on `PersistenceStatusIndicator.vue` — **Export
+  preserved data** (downloads the raw JSON) / **Dismiss** (clears quarantine) — kept separate from
+  the four-state save lifecycle above. An IndexedDB *open* failure (distinct from a validation
+  failure) is caught by `loadAppDataSafely` returning `{ data, failed }`; bootstrap then degrades to
+  read-only in-memory mode, suppressing the debounced auto-save watcher (while keeping "Retry now"
+  live) so a broken read never clobbers stored data. See
+  [ADR-0019](adr/0019-quarantine-invalid-stored-data-on-load-failure.md).
 - **Service-worker update prompt (SEC-14).** With `registerType: 'prompt'`, a new worker is
   precached but held; `usePwaUpdate()` (wrapping `$pwa.needRefresh`) drives a reload banner in
   the app layout and applies the waiting worker only on user confirmation.

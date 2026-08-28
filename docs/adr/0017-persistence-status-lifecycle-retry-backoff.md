@@ -84,3 +84,5 @@ Supporting decisions:
   `tests/nuxt/export-backup.test.ts`.
 - ADR-0004 (snapshot persistence), ADR-0009 (persistence adapter), ADR-0012 (dual Vitest projects),
   ADR-0014 (utility taxonomy), ADR-0015 (app-data lifecycle). SEC-18; issue #65.
+- ADR-0019 (quarantine invalid stored data on load failure) — adds a load-time recovery banner on
+  the same indicator surface and hardens the open-failure path this ADR introduced.

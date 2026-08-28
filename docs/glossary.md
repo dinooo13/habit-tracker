@@ -89,3 +89,8 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
 - **Degraded (unavailable) mode** — the terminal persistence state where writes are failing and
   cannot be recovered automatically. The app shell shows a standing recovery banner offering an
   **Export backup** and a **Retry now**, so the user can get their data out before it is lost.
+- **Quarantine** — when stored data fails Zod validation on load, the raw (un-parseable) payload is
+  preserved in a dedicated Dexie `quarantine` table (newest-only, never cleared by normal saves)
+  instead of being discarded (issue #66, ADR-0019). A load-time recovery banner — **Export preserved
+  data** / **Dismiss** — lets the user export the raw JSON or clear it. Tracked by `useDataRecovery()`,
+  distinct from the save-time persistence status above.

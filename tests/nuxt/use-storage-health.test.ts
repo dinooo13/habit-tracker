@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useStorageHealth } from '~/composables/use-storage-health'
 import { clearSecurityLog, recentSecurityEvents } from '~/utils/observability/security-log'
 
@@ -96,5 +96,54 @@ describe('useStorageHealth lifecycle (#65)', () => {
     const before = health.retryToken.value
     health.requestRetry()
     expect(health.retryToken.value).toBe(before + 1)
+  })
+
+  describe('diagnostics state (#73)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('checkQuota retains the estimate and keeps the low-quota path', async () => {
+      const health = useStorageHealth()
+      health.estimate.value = null
+      vi.stubGlobal('navigator', {
+        storage: { estimate: () => Promise.resolve({ usage: 400, quota: 1000 }) },
+      })
+
+      const low = await health.checkQuota()
+
+      expect(low).toBe(false)
+      expect(health.estimate.value).toEqual({ usage: 400, quota: 1000 })
+    })
+
+    it('checkQuota fills missing figures with 0', async () => {
+      const health = useStorageHealth()
+      health.estimate.value = null
+      vi.stubGlobal('navigator', {
+        storage: { estimate: () => Promise.resolve({ usage: 200 }) },
+      })
+
+      await health.checkQuota()
+
+      expect(health.estimate.value).toEqual({ usage: 200, quota: 0 })
+    })
+
+    it('setPersisted records the grant', () => {
+      const health = useStorageHealth()
+      health.setPersisted(true)
+      expect(health.persisted.value).toBe(true)
+      health.setPersisted(false)
+      expect(health.persisted.value).toBe(false)
+    })
+
+    it('recordReconcile stores the counts and stamps an ISO timestamp', () => {
+      const health = useStorageHealth()
+      health.recordReconcile({ missedEntriesCreated: 3, suggestionsCreated: 2 })
+
+      expect(health.lastReconcile.value?.missedEntriesCreated).toBe(3)
+      expect(health.lastReconcile.value?.suggestionsCreated).toBe(2)
+      expect(health.lastReconcile.value?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+      expect(Number.isNaN(new Date(health.lastReconcile.value!.at).getTime())).toBe(false)
+    })
   })
 })

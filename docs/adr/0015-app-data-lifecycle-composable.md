@@ -29,8 +29,11 @@ state-only functions:
   it from the four stores' `snapshot()` results, stamping `APP_DATA_SCHEMA_VERSION`.
 - **`replaceAppData(data: AppData): void`** — whole-envelope replacement: `hydrate()` all four
   stores, then `applyPrimaryColorPalette(settings.primaryColor)`. Not for partial merges.
-- **`reconcileDerivedState(dateKey = todayDateKey()): void`** — `ensureMissedEntries` then
-  `reconcileMissingSuggestions`, in that order.
+- **`reconcileDerivedState(dateKey = todayDateKey()): ReconcileSummary`** — `ensureMissedEntries`
+  then `reconcileMissingSuggestions`, in that order. Returns the `{ missedEntriesCreated,
+  suggestionsCreated, at }` counts the two store calls already produce (issue #73) so the
+  bootstrap can surface boot/rollover reconcile activity in the persistence health panel;
+  additive, so the import/delete-all call sites that ignore the return are unaffected.
 
 All four call sites are migrated to compose these functions. The literal `schemaVersion: 2`
 writers (`settings.vue`, `demo-data-generator.ts`) switch to the constant.

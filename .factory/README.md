@@ -12,19 +12,22 @@ configuration — can be compared mechanically instead of by eye. See
 
 | Path | What it is |
 | --- | --- |
-| `factory.yml` | One entry per stage: scope, queue, consumed/produced label states, human-gate flag, idempotency guard, live `runtime` (schedule/model/enabled), and `order_after` intent edges. Plus a top-level `allowed_tools` (the orchestrator's list, identical across all seven routines). |
+| `factory.yml` | One entry per stage: scope, queue, consumed/produced label states, human-gate flag, idempotency guard (`kind` / `marker` / `self-heal` / a required machine-checked `note`, ADR-0023), live `runtime` (schedule/model/enabled), and `order_after` intent edges. Plus a top-level `allowed_tools` (the orchestrator's list, identical across all seven routines) and a top-level `markers:` registry — the whole HTML-comment marker graph (`id` / `produced_by` / `consumed_by` / `purpose`), one producer and ≥1 consumers per marker, which every stage `marker` must resolve against. |
 | `prompts/{stage}.md` | The exact text configured as each routine's orchestrator prompt, one verbatim file per stage. The README links here instead of inlining them. |
 | `../tests/factory-contract.test.ts` | The static contract test (Vitest, `unit` project, no network) that guards the manifest against itself and the repo. |
 
 ## The manifest is descriptive
 
-`factory.yml` records **what is true**, including known divergences (issue #85 §1):
+`factory.yml` records **what is true**, including two known divergences (issue #85 §1):
 
 - the rebaser's live `model` is empty (env default) while its agent frontmatter says
-  `model: sonnet`;
-- the docs-auditor's cron is daily, though older prose called it weekly; and
-- `idempotency.kind: none` where a stage has no per-run guard (triage) — tightened away by
-  the follow-up #86.
+  `model: sonnet`; and
+- the docs-auditor's cron is daily, though older prose called it weekly.
+
+The third original drift — `idempotency.kind: none` where a stage had no per-run guard
+(triage) — is **closed** by #86 / ADR-0023: `none` is gone from the enum, every stage
+declares a guard `kind` and a `note`, and every stage `marker` resolves against the
+top-level `markers:` registry. The guards are advisory, not exclusive.
 
 `prompts/rebaser.md` likewise records the **live (stale)** routine text: it predates conflict
 self-resolution, so its summary vocabulary has no `self-resolved` bucket and it says "Never

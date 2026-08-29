@@ -1,4 +1,4 @@
-# 22. Declared, machine-checked idempotency guards for every factory stage
+# 23. Declared, machine-checked idempotency guards for every factory stage
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
@@ -66,8 +66,8 @@ does not exist yet.
    labels the marker implies — so `self-heal` is `true`. Legacy untyped
    `<!-- routine:triage -->` comments match by prefix and keep guarding.
 
-5. **`docs-auditor` gets a base-SHA marker**: `<!-- routine:docs-audit base={sha} -->`,
-   where `{sha}` is `git rev-parse origin/main` after `git fetch origin main`. An open
+5. **`docs-auditor` gets a base-SHA marker**: `<!-- routine:docs-audit base={base} -->`,
+   where `{base}` is `git rev-parse origin/main` after `git fetch origin main`. An open
    audit PR whose base equals current `origin/main` is a skip; a stale one is refreshed in
    place (rebase, re-audit, rewrite the marker); none means a new branch. This makes the
    daily cron a genuine no-op when `main` has not moved, and distinguishes a current audit

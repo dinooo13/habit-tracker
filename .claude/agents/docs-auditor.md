@@ -50,10 +50,17 @@ fix would *make a decision* rather than record one. Collect these in the PR body
 
 ## Procedure
 
-1. **Idempotency:** check open PRs for one whose body contains
-   `<!-- routine:docs-audit -->`. If found, check out its branch and update it instead
-   of opening a second PR. Otherwise `git fetch origin main` and branch
-   `claude/docs-audit-{YYYY-MM-DD}` off `origin/main`.
+1. **Idempotency (per base SHA, ADR-0023):** `git fetch origin main` and record the
+   audit's input SHA, `BASE=$(git rev-parse origin/main)`. Search open PRs for a body
+   marker with the `<!-- routine:docs-audit` prefix (the `base=` value may vary), then:
+   - **Open audit PR whose marker `base=` equals `BASE`** → the audit for this exact
+     `origin/main` head is already open; **skip** — report "docs audit current — no PR"
+     and stop. This makes the daily run a genuine no-op when `main` has not moved.
+   - **Open audit PR with a stale or absent `base=`** → refresh it in place: check out its
+     branch, rebase onto `origin/main`, re-run the audit, and rewrite its body marker to
+     `base=BASE`. Never open a second PR. (A rebaser force-push can leave the marker stale;
+     one conservative re-audit corrects it.)
+   - **No open audit PR** → branch `claude/docs-audit-{YYYY-MM-DD}` off `origin/main`.
 2. Run the audit, fix what qualifies, and keep a list of what you changed and why —
    every fix must cite the code that proves it (e.g. "CLAUDE.md said X, but
    `app/types/app-data.ts:12` defines Y").
@@ -66,7 +73,7 @@ fix would *make a decision* rather than record one. Collect these in the PR body
    not draft — docs fixes skip the draft stage), body:
 
    ```markdown
-   <!-- routine:docs-audit -->
+   <!-- routine:docs-audit base={BASE} -->
    ## Summary
    Documentation audit {YYYY-MM-DD}: N fixes, M items needing human attention.
 

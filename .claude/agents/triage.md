@@ -31,6 +31,18 @@ Use only labels that exist in `labels.yml` — never invent new ones.
     stop. If all are closed, change only the status label from `status: blocked` to
     `status: needs-plan`, report `unblocked: queued for planning`, and stop.
   - It has any other `status:` label — it's in the pipeline; a human or agent owns it.
+- **Fingerprint guard** (idempotency, ADR-0023): scan the comments for the newest
+  `<!-- routine:triage … -->` marker — any kind, and a legacy untyped
+  `<!-- routine:triage -->` counts. If one exists and **no human comment is newer than
+  it** (compare the newest human comment's timestamp against that marker comment's; a tie
+  or any ambiguity counts as *not* newer, so you proceed to a normal run — a duplicate
+  comment is cheaper than a missed triage), you have already triaged this issue: **do not
+  post another comment.** Still reconcile the labels the marker implies — they are
+  idempotent set-operations, so completing a label a crashed prior run never applied is
+  safe: `kind=duplicate` ⇒ ensure the `duplicate` label is present (no `status:` label);
+  `kind=missing-information` ⇒ ensure `status: blocked` is present. Then report
+  `skipped: already triaged` and stop. If a human comment *is* newer, fall through and
+  run normally (a fresh comment is warranted).
 - Ground yourself: read `CLAUDE.md` for the architecture map so `area:` labels land on
   the right subsystem; `Grep` the code when the issue cites files or behavior you need
   to verify exists.
@@ -41,10 +53,10 @@ Search open **and closed** issues (`search_issues`) for the same problem or requ
 match on symptoms and subsystem, not just title words. Also check whether an open PR
 already implements it.
 
-- **Confident duplicate:** comment `<!-- routine:triage -->` + one line linking the
-  original (`Duplicate of #M — {why}`), add the `duplicate` label, and apply **no**
-  `status:` label so it never enters the planner queue. **Do not close it** — that's
-  the human's call. Stop here.
+- **Confident duplicate:** comment `<!-- routine:triage kind=duplicate -->` + one line
+  linking the original (`Duplicate of #M — {why}`), add the `duplicate` label, and apply
+  **no** `status:` label so it never enters the planner queue. **Do not close it** —
+  that's the human's call. Stop here.
 - Related but distinct: proceed, and mention the related issue in your comment only if
   it materially affects planning (e.g. "builds on #M").
 
@@ -78,8 +90,9 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
   proposed solution, only a comprehensible problem.
 - **Not plannable** (can't tell what's being asked; a bug with no clue what happens or
   where; empty template): add `status: blocked`, and comment
-  `<!-- routine:triage -->` listing concretely what's missing (e.g. "steps to
-  reproduce", "expected vs actual"). A human unblocks it by editing the issue and
+  `<!-- routine:triage kind=missing-information -->` listing concretely what's missing
+  (e.g. "steps to reproduce", "expected vs actual"). A human unblocks it by editing the
+  issue and
   swapping the label to `status: needs-plan`. (That recovery applies only to issues
   *you* blocked — an issue blocked later in the pipeline already has a plan and a PR,
   and re-planning it would orphan them; its PR is the resume point.)
@@ -88,7 +101,8 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
 
 Return only: issue number, verdict (`queued for planning` / `unblocked: queued for planning` /
 `duplicate of #M` / `still blocked by #N[, #M]` / `blocked: {missing}` /
-`skipped: draft (human-owned)` / `skipped: {reason}`), and the labels applied.
+`skipped: already triaged` / `skipped: draft (human-owned)` / `skipped: {reason}`), and the
+labels applied.
 
 ## Guardrails
 

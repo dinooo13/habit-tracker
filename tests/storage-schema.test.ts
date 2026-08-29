@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { Habit, HabitPause } from '~/types/app-data'
-import { COLLECTION_LIMITS, FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
+import { APP_DATA_SCHEMA_VERSION, COLLECTION_LIMITS, FIELD_LIMITS, MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
 import { addDays, todayDateKey } from '~/utils/domain/date'
 import {
   assertRawHabitLimits,
   createEmptyAppData,
   normalizeHabitPauses,
   parseAppData,
+  parseAppDataResult,
   parseLenientHabit,
+  SCHEMA_MIGRATIONS,
 } from '~/utils/persistence/storage-schema'
+import { assertMigrationRegistryInvariants } from '~/utils/persistence/schema-migrations'
 
 // Build N valid, distinct single-day pause ranges within the allowed calendar
 // bounds, so a "just under the cap" payload passes full validation.
@@ -223,6 +226,114 @@ describe('import collection limits (#35)', () => {
   it('normalizeHabitPauses defensively throws on an over-limit array', () => {
     expect(() => normalizeHabitPauses(new Array(COLLECTION_LIMITS.pausesPerHabit + 1))).toThrow()
     expect(() => normalizeHabitPauses(validPauses(COLLECTION_LIMITS.pausesPerHabit))).not.toThrow()
+  })
+})
+
+describe('parseAppDataResult — discriminated result (#68)', () => {
+  it('returns ok for a current V2 payload, data deep-equal to input', () => {
+    const payload = createEmptyAppData()
+    const result = parseAppDataResult(payload)
+
+    expect(result.status).toBe('ok')
+    if (result.status !== 'ok') {
+      return
+    }
+    expect(result.sourceVersion).toBe(APP_DATA_SCHEMA_VERSION)
+    expect(result.data).toEqual(payload)
+  })
+
+  it('reports a present future/bogus version as unsupported-version, naming the value and range', () => {
+    for (const schemaVersion of [99, 0, 1.5]) {
+      const result = parseAppDataResult({ ...createEmptyAppData(), schemaVersion })
+      expect(result.status, String(schemaVersion)).toBe('unrecoverable')
+      if (result.status !== 'unrecoverable') {
+        continue
+      }
+      expect(result.reason).toBe('unsupported-version')
+      expect(result.message).toContain(String(schemaVersion))
+      expect(result.message).toContain(`1–${APP_DATA_SCHEMA_VERSION}`)
+    }
+  })
+
+  it('does not coerce a present non-numeric version to V1 (pauses cannot be silently stripped)', () => {
+    // schemaVersion: '2' (string) must be unrecoverable, not migrated through V1
+    // where the non-strict V1 schema would strip habits[].pauses.
+    const withPauses = createEmptyAppData()
+    withPauses.habits.push(validHabit({ pauses: validPauses(1) }))
+    const result = parseAppDataResult({ ...withPauses, schemaVersion: '2' })
+
+    expect(result.status).toBe('unrecoverable')
+    if (result.status !== 'unrecoverable') {
+      return
+    }
+    expect(result.reason).toBe('unsupported-version')
+  })
+
+  it('reports a malformed V2 payload as invalid-shape', () => {
+    const payload = createEmptyAppData()
+    payload.habits.push({ id: 'h1' } as unknown as Habit)
+    const result = parseAppDataResult(payload)
+
+    expect(result.status).toBe('unrecoverable')
+    if (result.status !== 'unrecoverable') {
+      return
+    }
+    expect(result.reason).toBe('invalid-shape')
+  })
+
+  it('reports a malformed V1 migration input as invalid-shape', () => {
+    const badV1 = {
+      schemaVersion: 1,
+      habits: [{ id: 'h1', name: 'Read', type: 'build', identityStatement: 'Reader', scheduleWeekdays: [1], reminderTime: null, startDate: 'not-a-date', archived: false, createdAt: 'x', updatedAt: 'x' }],
+      entries: [],
+      suggestions: [],
+      settings: createEmptyAppData().settings,
+    }
+    const result = parseAppDataResult(badV1)
+
+    expect(result.status).toBe('unrecoverable')
+    if (result.status !== 'unrecoverable') {
+      return
+    }
+    expect(result.reason).toBe('invalid-shape')
+  })
+
+  it('lets the oversized preflight win over the version check', () => {
+    const result = parseAppDataResult({
+      schemaVersion: 99,
+      habits: [],
+      entries: new Array(COLLECTION_LIMITS.entries + 1),
+      suggestions: [],
+      settings: createEmptyAppData().settings,
+    })
+
+    expect(result.status).toBe('unrecoverable')
+    if (result.status !== 'unrecoverable') {
+      return
+    }
+    expect(result.reason).toBe('oversized')
+  })
+
+  it('never throws for hostile inputs and always yields a valid status', () => {
+    const hostile: unknown[] = [null, undefined, 'str', 42, [], {}, { a: { b: { c: 1 } } }, true, Symbol.iterator]
+    for (const input of hostile) {
+      let result
+      expect(() => {
+        result = parseAppDataResult(input)
+      }, String(input)).not.toThrow()
+      expect(['ok', 'migrated', 'unrecoverable']).toContain(result!.status)
+    }
+  })
+
+  it('parseAppData wrapper throws on unrecoverable and returns data otherwise', () => {
+    expect(() => parseAppData({ ...createEmptyAppData(), schemaVersion: 99 })).toThrow()
+    expect(parseAppData(createEmptyAppData()).schemaVersion).toBe(APP_DATA_SCHEMA_VERSION)
+  })
+
+  it('the shipped registry is a well-formed chain topping out at the current version', () => {
+    expect(() => assertMigrationRegistryInvariants(SCHEMA_MIGRATIONS)).not.toThrow()
+    const maxTo = Math.max(...[...SCHEMA_MIGRATIONS.values()].map(step => step.to))
+    expect(maxTo).toBe(APP_DATA_SCHEMA_VERSION)
   })
 })
 

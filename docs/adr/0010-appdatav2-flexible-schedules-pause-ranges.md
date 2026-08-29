@@ -84,3 +84,4 @@ Introduce a per-habit list of inclusive pause ranges and bump the persisted enve
 - `app/components/HabitForm.vue` — the pause editor.
 - `tests/pause-mode.test.ts` — migration, due-date, prune, completion-rate, coaching behavior.
 - Builds on ADR-0002 (Dexie), ADR-0004 (snapshot persistence), ADR-0005 (coaching), ADR-0006 (versioned schema). Supersedes none.
+- The V1→V2 step is now one entry in a version-keyed migration registry behind a discriminated parse result; see ADR-0022.

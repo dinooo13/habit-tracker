@@ -62,10 +62,13 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
 ## Data & settings
 
 - **`AppDataV2`** — the versioned envelope persisted to IndexedDB:
-  `{ schemaVersion: 2, habits, entries, suggestions, settings }`. V1 payloads (and legacy
-  `localStorage`) migrate up to V2 via a one-way `migrateToV2` in `parseAppData`, which
-  defaults `pauses: []` on every habit
-  (see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
+  `{ schemaVersion: 2, habits, entries, suggestions, settings }`. Untrusted payloads flow through
+  `parseAppDataResult`, a discriminated `ok | migrated | unrecoverable` result: V1 payloads (and
+  legacy `localStorage`) are upgraded by a version-keyed migration registry whose `v1->v2` step
+  runs the one-way `migrateToV2` (defaulting `pauses: []` on every habit), and an unrecognised or
+  corrupt payload is `unrecoverable`
+  (see [adr/0022](adr/0022-version-keyed-schema-migration-registry.md) and
+  [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md)).
 - **Settings** — `notificationsEnabled`, `dailyReviewTime` (`HH:MM`), `weekStartsOn`
   (`0` Sunday / `1` Monday), and `primaryColor` (one of `sky`, `emerald`, `violet`, `rose`,
   `amber`). `weekStartsOn` is a **display-order preference only**: it sets the first

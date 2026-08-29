@@ -13,6 +13,7 @@ import {
   migrateToV2,
   normalizeHabitPauses,
   parseAppData,
+  parseAppDataResult,
 } from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
@@ -112,6 +113,30 @@ describe('V1 → V2 migration', () => {
 
   it('rejects an unknown schemaVersion so callers fall back to empty', () => {
     expect(() => parseAppData({ ...buildV1Envelope(), schemaVersion: 99 })).toThrow()
+  })
+
+  it('reports a V1 payload as migrated with the v1->v2 step (#68)', () => {
+    const result = parseAppDataResult(buildV1Envelope())
+
+    expect(result.status).toBe('migrated')
+    if (result.status !== 'migrated') {
+      return
+    }
+    expect(result.sourceVersion).toBe(1)
+    expect(result.steps).toEqual(['v1->v2'])
+    expect(result.data.habits.every(habit => Array.isArray(habit.pauses) && habit.pauses.length === 0)).toBe(true)
+  })
+
+  it('treats an absent schemaVersion as a migrated V1 (#68)', () => {
+    const { schemaVersion: _omit, ...legacy } = buildV1Envelope()
+    const result = parseAppDataResult(legacy)
+
+    expect(result.status).toBe('migrated')
+    if (result.status !== 'migrated') {
+      return
+    }
+    expect(result.sourceVersion).toBe(1)
+    expect(result.steps).toEqual(['v1->v2'])
   })
 
   it('rejects a pause whose end precedes its start', () => {

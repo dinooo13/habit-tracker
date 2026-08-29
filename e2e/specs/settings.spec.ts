@@ -126,6 +126,80 @@ test.describe('Settings: backup & restore', () => {
     await expect(page.locator('.habit-card').filter({ hasText: 'Bulk habit' })).toHaveCount(0)
   })
 
+  test('importing a V1 backup upgrades it and reports the schema upgrade (#68)', async ({ authedPage: page }) => {
+    await page.goto('/app/settings')
+    const settings = new SettingsPage(page)
+
+    // A pre-pauses V1 envelope (schemaVersion 1, no habits[].pauses).
+    const v1Backup = {
+      schemaVersion: 1,
+      habits: [
+        {
+          id: 'habit_v1',
+          name: 'Legacy habit',
+          type: 'build',
+          identityStatement: 'I am legacy.',
+          scheduleWeekdays: [1],
+          reminderTime: null,
+          startDate: '2026-01-01',
+          archived: false,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      entries: [],
+      suggestions: [],
+      settings: {
+        notificationsEnabled: false,
+        dailyReviewTime: '20:00',
+        weekStartsOn: 1,
+        primaryColor: 'emerald',
+      },
+    }
+
+    await settings.openImportModal()
+    await settings.setImportFile({
+      name: 'v1-backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(v1Backup)),
+    })
+    await settings.confirmImport()
+
+    await expect(page.getByText('Import complete').first()).toBeVisible()
+    await expect(page.getByText(/Upgraded from schema v1/).first()).toBeVisible()
+
+    await page.getByRole('link', { name: 'Habits', exact: true }).click()
+    await expect(page.locator('.habit-card').filter({ hasText: 'Legacy habit' })).toBeVisible()
+  })
+
+  test('importing a future-version backup is rejected with specific copy (#68)', async ({ authedPage: page, seed }) => {
+    await seed(makeAppData({ habits: [makeHabit({ name: 'Existing habit' })] }))
+    await page.goto('/app/settings')
+    const settings = new SettingsPage(page)
+
+    const futureBackup = {
+      ...makeAppData({ habits: [makeHabit({ id: 'habit_future', name: 'Future habit' })] }),
+      schemaVersion: 99,
+    }
+
+    await settings.openImportModal()
+    await settings.setImportFile({
+      name: 'future-backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(futureBackup)),
+    })
+    await settings.confirmImport()
+
+    await expect(page.getByText('Import failed').first()).toBeVisible()
+    await expect(page.getByText(/newer version of the app/).first()).toBeVisible()
+
+    // Existing data is untouched.
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.goto('/app/habits')
+    await expect(page.locator('.habit-card').filter({ hasText: 'Existing habit' })).toBeVisible()
+    await expect(page.locator('.habit-card').filter({ hasText: 'Future habit' })).toHaveCount(0)
+  })
+
   test('an invalid import file is rejected', async ({ authedPage: page }) => {
     await page.goto('/app/settings')
     const settings = new SettingsPage(page)

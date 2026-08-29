@@ -132,15 +132,21 @@ the backup nudge, and the reminder engine — reads the reactive `todayKey` rath
 
 The persisted envelope is **`AppDataV2`** (`{ schemaVersion: 2, habits, entries, suggestions,
 settings }`). Each `Habit` carries a `pauses: HabitPause[]` list of inclusive `YYYY-MM-DD`
-ranges; days inside a pause are never *due*. Stored V1 payloads and legacy `localStorage`
-migrate up via a one-way `migrateToV2` inside `parseAppData`
-(see [adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md) and
+ranges; days inside a pause are never *due*. Validation and migration go through
+`parseAppDataResult`, which returns a discriminated `ok | migrated | unrecoverable`: a stored V1
+payload or legacy `localStorage` is upgraded by a version-keyed migration registry (the `v1->v2`
+step runs `migrateToV2`), an unrecognised or corrupt payload is `unrecoverable` with an
+actionable reason, and `parseAppData` remains a thin throwing wrapper over it
+(see [adr/0022](adr/0022-version-keyed-schema-migration-registry.md),
+[adr/0010](adr/0010-appdatav2-flexible-schedules-pause-ranges.md), and
 [adr/0006](adr/0006-zod-validated-versioned-data-schema.md)).
 
 The **backup import/export** flow on the settings page is presentation only: the pure,
 framework-free `app/utils/persistence/backup.ts` owns `extractImportedHabits`,
 `mergeHabitsForImport`, `serializeBackup`, and `backupFilename`, and the AI prompt builders
-live in `app/utils/domain/ai-prompts.ts`. A **full** import validates through `parseAppData`
+live in `app/utils/domain/ai-prompts.ts`. A **full** import validates through
+`parseAppDataResult` — surfacing a migrated backup ("Upgraded from schema v1") or a specific
+failure (a newer-version backup vs. a corrupt file) via the pure `describeImportOutcome` helper —
 and replaces all state via `useAppDataLifecycle()`; a **habits-only** import maps each raw item
 through `LenientHabitImportSchema` — a forgiving Zod counterpart to the strict `HabitSchema`,
 key-anchored to it so no future `Habit` field is silently dropped — then merges by id. The page

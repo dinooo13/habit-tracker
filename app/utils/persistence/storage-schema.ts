@@ -11,6 +11,11 @@ import {
 } from '~/types/app-data'
 import { compareDateKeys, isValidDateKey, nowIso, todayDateKey } from '~/utils/domain/date'
 import { createId } from '~/utils/domain/id'
+import {
+  assertMigrationRegistryInvariants,
+  runMigrationChain,
+  type MigrationStep,
+} from '~/utils/persistence/schema-migrations'
 
 // A real YYYY-MM-DD date within sane calendar bounds. Replaces a bare regex so a
 // crafted import can't smuggle in an out-of-range date that drives unbounded
@@ -283,48 +288,173 @@ function assertRawCollectionLimits(payload: unknown): void {
   }
 }
 
+// ── Version-keyed migration registry (issue #68, ADR-0022) ───────────────────
+// The bespoke V1→V2 branch is now one entry in a registry keyed by source
+// version. A future V3 is another entry — not another `if` in `parseAppData`.
+// The generic walker lives in `schema-migrations.ts`; the registry *data* stays
+// here (it needs `AppDataV1Schema` + `migrateToV2`), and the engine takes the
+// registry as an argument, so there is no import cycle.
+
+/**
+ * Normalise a legacy payload's `schemaVersion` to `1` before V1 validation. A
+ * missing/`null` version (pre-Dexie `localStorage`) is treated as V1; a
+ * *present* unrecognised version never reaches here (it resolves to
+ * `unsupported-version` first), so this only ever stamps a `1`. Non-object
+ * payloads pass through untouched to fail V1 validation as `invalid-shape`.
+ */
+function normalizeLegacyVersion(payload: unknown): unknown {
+  return payload && typeof payload === 'object'
+    ? { ...(payload as object), schemaVersion: 1 }
+    : payload
+}
+
+const V1_TO_V2: MigrationStep = {
+  id: 'v1->v2',
+  from: 1,
+  to: APP_DATA_SCHEMA_VERSION,
+  // Validate the input as a V1 envelope (throwing on a bad shape, which the
+  // engine captures), then upgrade it. The engine re-validates the output
+  // against the current schema, so a buggy step can never reach a store.
+  migrate: raw => migrateToV2(AppDataV1Schema.parse(normalizeLegacyVersion(raw))),
+}
+
+/** Migration steps keyed by the source version each consumes. */
+export const SCHEMA_MIGRATIONS: ReadonlyMap<number, MigrationStep> = new Map([[V1_TO_V2.from, V1_TO_V2]])
+
+// Fail fast at module load if the chain is ever mis-edited (a hole, a duplicate,
+// or a step that skips a version), rather than silently mis-migrating at runtime.
+assertMigrationRegistryInvariants(SCHEMA_MIGRATIONS)
+
+// ── Discriminated parse result (issue #68, ADR-0022) ─────────────────────────
+
+/** Why a payload could not be turned into current-shape {@link AppDataV2}. */
+export type ParseFailureReason
+  = | 'oversized' // raw-count preflight rejected it (issue #35)
+    | 'unsupported-version' // no migration path from the stored version
+    | 'invalid-shape' // a Zod parse (V1 input or final V2 output) failed
+    | 'migration-failed' // a registry step threw for a non-validation reason
+
+/**
+ * The outcome of validating/migrating an untrusted payload. `ok`/`migrated`
+ * carry clean {@link AppDataV2}; `unrecoverable` carries a human-readable
+ * `message` (rendered by the recovery banner) and a machine-readable `reason`.
+ */
+export type ParseAppDataResult
+  = | { status: 'ok', data: AppDataV2, sourceVersion: number }
+    | { status: 'migrated', data: AppDataV2, sourceVersion: number, steps: string[] }
+    | { status: 'unrecoverable', reason: ParseFailureReason, message: string, sourceVersion: unknown }
+
+function rawSchemaVersion(payload: unknown): unknown {
+  return payload && typeof payload === 'object'
+    ? (payload as { schemaVersion?: unknown }).schemaVersion
+    : undefined
+}
+
+/**
+ * Resolve the source schema version to migrate *from*, or `null` when the stored
+ * version is present but unrecognised. Only an absent/`null` version is treated
+ * as legacy V1 — a *present* value that is not `1`/`2` (including the string
+ * `'2'`, `99`, `1.5`, `NaN`, or an object) is unrecoverable, so a non-V1 payload
+ * can never be coerced through the V1 schema (which would silently strip
+ * `pauses`). See §3.2 of the plan.
+ */
+function resolveSourceVersion(payload: unknown): number | null {
+  const version = rawSchemaVersion(payload)
+  if (version === APP_DATA_SCHEMA_VERSION) {
+    return APP_DATA_SCHEMA_VERSION
+  }
+  if (version === 1 || version === undefined || version === null) {
+    return 1
+  }
+  return null
+}
+
+const INVALID_SHAPE_MESSAGE = 'Stored data does not match the expected AppData shape and cannot be read.'
+
 /**
  * Validate and (if needed) migrate an arbitrary persisted/imported payload to
- * the current {@link AppDataV2} shape.
- *
- * - `schemaVersion === 2` → validate as V2.
- * - `schemaVersion === 1` (or missing/legacy) → normalise to `schemaVersion: 1`,
- *   validate as V1, then {@link migrateToV2} and re-validate as V2.
- *
- * Invalid input throws; callers (Dexie load, importers) catch and fall back to
- * {@link createEmptyAppData}.
+ * the current {@link AppDataV2} shape, returning a discriminated result. **Never
+ * throws** — it is the single source of truth for turning an untrusted payload
+ * into app data, and the adapter/importers branch on `status` rather than
+ * catching (issue #68, ADR-0022).
+ */
+export function parseAppDataResult(payload: unknown): ParseAppDataResult {
+  // Cheap raw-count preflight first (issue #35): reject an obviously oversized
+  // payload before Zod traverses (and the migration copies) every element.
+  try {
+    assertRawCollectionLimits(payload)
+  }
+  catch (error) {
+    return {
+      status: 'unrecoverable',
+      reason: 'oversized',
+      message: error instanceof Error ? error.message : 'Stored data exceeds the allowed size limits.',
+      sourceVersion: rawSchemaVersion(payload),
+    }
+  }
+
+  const sourceVersion = resolveSourceVersion(payload)
+
+  if (sourceVersion === null) {
+    return {
+      status: 'unrecoverable',
+      reason: 'unsupported-version',
+      message: `Stored data uses schemaVersion ${String(rawSchemaVersion(payload))}, which this app version cannot read (supported: 1–${APP_DATA_SCHEMA_VERSION}).`,
+      sourceVersion: rawSchemaVersion(payload),
+    }
+  }
+
+  if (sourceVersion === APP_DATA_SCHEMA_VERSION) {
+    const parsed = AppDataV2Schema.safeParse(payload)
+    return parsed.success
+      ? { status: 'ok', data: parsed.data, sourceVersion: APP_DATA_SCHEMA_VERSION }
+      : { status: 'unrecoverable', reason: 'invalid-shape', message: INVALID_SHAPE_MESSAGE, sourceVersion: APP_DATA_SCHEMA_VERSION }
+  }
+
+  const chain = runMigrationChain(payload, sourceVersion, APP_DATA_SCHEMA_VERSION, SCHEMA_MIGRATIONS)
+
+  if (!chain.ok) {
+    // No step registered for a version (shouldn't happen for a resolved V1, but
+    // defended) → unsupported; a Zod throw from a step → invalid input shape;
+    // any other throw → a genuine migration bug.
+    if (chain.failedStepId === null) {
+      return {
+        status: 'unrecoverable',
+        reason: 'unsupported-version',
+        message: `Stored data uses schemaVersion ${String(rawSchemaVersion(payload))}, which this app version cannot read (supported: 1–${APP_DATA_SCHEMA_VERSION}).`,
+        sourceVersion: rawSchemaVersion(payload),
+      }
+    }
+    if (chain.error instanceof z.ZodError) {
+      return { status: 'unrecoverable', reason: 'invalid-shape', message: INVALID_SHAPE_MESSAGE, sourceVersion }
+    }
+    return {
+      status: 'unrecoverable',
+      reason: 'migration-failed',
+      message: `Stored data could not be upgraded from schemaVersion ${sourceVersion}.`,
+      sourceVersion,
+    }
+  }
+
+  const parsed = AppDataV2Schema.safeParse(chain.payload)
+  return parsed.success
+    ? { status: 'migrated', data: parsed.data, sourceVersion, steps: chain.steps }
+    : { status: 'unrecoverable', reason: 'invalid-shape', message: INVALID_SHAPE_MESSAGE, sourceVersion }
+}
+
+/**
+ * Validate and (if needed) migrate an arbitrary persisted/imported payload to
+ * the current {@link AppDataV2} shape. Thin throwing wrapper over
+ * {@link parseAppDataResult}: invalid input throws; callers that want a value or
+ * an exception (demo fetch, the legacy fallbacks' inner attempt) use this, while
+ * the adapter and settings import branch on the result directly.
  */
 export function parseAppData(payload: unknown): AppDataV2 {
-  // Cheap raw-count preflight: reject an obviously oversized payload before Zod
-  // traverses (and the migration copies) every element (issue #35).
-  assertRawCollectionLimits(payload)
-
-  const version
-    = payload && typeof payload === 'object'
-      ? (payload as { schemaVersion?: unknown }).schemaVersion
-      : undefined
-
-  if (version === APP_DATA_SCHEMA_VERSION) {
-    return AppDataV2Schema.parse(payload)
+  const result = parseAppDataResult(payload)
+  if (result.status === 'unrecoverable') {
+    throw new Error(result.message)
   }
-
-  // Migrate only V1 input: an explicit `schemaVersion: 1`, or a legacy payload
-  // with a missing/non-numeric version (normalised to 1 below). Any *other*
-  // explicit version (e.g. a future or bogus 99) is rejected so callers fall
-  // back to empty state rather than silently mis-migrating.
-  const isMigratableV1 = version === 1 || version === undefined
-
-  if (!isMigratableV1) {
-    throw new Error(`Unsupported schemaVersion: ${String(version)}`)
-  }
-
-  const candidate
-    = payload && typeof payload === 'object'
-      ? { ...(payload as object), schemaVersion: 1 }
-      : payload
-
-  const v1 = AppDataV1Schema.parse(candidate)
-  return AppDataV2Schema.parse(migrateToV2(v1))
+  return result.data
 }
 
 /**

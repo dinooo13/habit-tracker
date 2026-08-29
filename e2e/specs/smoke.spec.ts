@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures'
 import { buildStreakData } from '../support/data'
+import { appRoutePattern } from '../support/url'
 
 test.describe('App shell smoke', () => {
   // Tagged `@production`: these run in the normal `e2e` job AND are selected by
@@ -7,7 +8,10 @@ test.describe('App shell smoke', () => {
   // fixtures are origin-agnostic, so they drive the live origin unchanged.
   test('authenticated dashboard renders the habit queue shell', { tag: '@production' }, async ({ authedPage: page }) => {
     await page.goto('/app')
-    await expect(page).toHaveURL(/\/app$/)
+    // Trailing-slash tolerant: production serves `/app` from a directory and
+    // 301-redirects to `/app/`, so a bare `/\/app$/` never matches on the live
+    // origin (issue #106). See e2e/support/url.ts.
+    await expect(page).toHaveURL(appRoutePattern('/app'))
     await expect(page.getByRole('heading', { name: 'Today\'s habit queue' })).toBeVisible()
   })
 

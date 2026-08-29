@@ -9,9 +9,10 @@ agent per item, and summarize. All per-item logic lives here, versioned and revi
 
 The pipeline is also described machine-readably in
 [`.factory/factory.yml`](../../.factory/factory.yml) — a descriptive manifest of every
-stage's queue, label transitions, idempotency guard, and live schedule/model, guarded by a
-contract test (ADR-0021). This README stays the human-facing architecture; the manifest is
-what a machine diffs against the live routine config.
+stage's queue, label transitions, idempotency guard, and live schedule/model, plus a
+top-level `markers:` registry (ADR-0023), guarded by a contract test (ADR-0021, ADR-0023).
+This README stays the human-facing architecture; the manifest is what a machine diffs
+against the live routine config.
 
 ## Label state machine
 
@@ -75,14 +76,25 @@ the PR has left every agent queue. One label, one writer at a time: no race, and
 nightly no-op runs on PRs that are just waiting for a human.
 
 Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue),
-`<!-- routine:triage -->` (triage comment, only on duplicates or missing-information blocks),
-`<!-- routine:dev-progress -->` (progress section **in the PR body** — comment editing
-is unavailable in the routine toolset, PR bodies are editable via
+`<!-- routine:triage kind=duplicate|missing-information -->` (triage comment, only on
+duplicates or missing-information blocks — the typed kind lets triage's fingerprint guard
+recognize its own prior comment; a legacy untyped `<!-- routine:triage -->` still matches
+by prefix), `<!-- routine:dev-progress -->` (progress section **in the PR body** — comment
+editing is unavailable in the routine toolset, PR bodies are editable via
 `update_pull_request`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
-`<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit -->`
-(docs-audit PR body), `<!-- routine:rebase -->` (rebaser bounce, demotion, **or
-self-resolution audit** comment on the PR — no per-SHA variant: rebaser idempotency is
-structural, a rebased branch is no longer behind).
+`<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit base=… -->`
+(docs-audit PR body, keyed on the `origin/main` head it was audited against so a stale
+audit is distinguishable from a current one), `<!-- routine:rebase -->` (rebaser bounce,
+demotion, **or self-resolution audit** comment on the PR — no per-SHA variant: rebaser
+idempotency is structural, a rebased branch is no longer behind).
+
+The whole marker graph — one producer and ≥1 consumers per marker — is recorded
+machine-readably in the [`.factory/factory.yml`](../../.factory/factory.yml) `markers:`
+registry, and each stage's guard `kind` / `marker` / `note` sits in its `idempotency`
+block (ADR-0023). Every stage follows one convention: **claim with the durable artifact
+(comment, branch, or PR), flip the queue-state label last, and stay in your own queue** so
+a run that dies mid-way is retried for free — no transient status labels. The guards are
+advisory, not exclusive; a single scheduler stays a standing constraint.
 
 A rebaser force-push intentionally invalidates the per-SHA review/QA markers: the code
 sits on a new base, so re-review/re-QA at the new head is correct, not waste. The rebaser

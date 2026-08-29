@@ -28,7 +28,7 @@ one branch → one PR. You run unattended: never ask the user anything.
 - Read the issue (title, body, labels, **all comments**) and locate the approved plan
   comment (first line `<!-- routine:plan-issues -->`). **No plan → stop and report
   "unplanned — skipped"**; you only build planned work. Exception: a **docs-audit PR**
-  (body marker `<!-- routine:docs-audit -->`, no linked issue) is resumed with the
+  (body marker prefix `<!-- routine:docs-audit base=… -->`, no linked issue) is resumed with the
   blocking review/QA findings as its plan — keep its diff Markdown-only.
 - **Resume** if an open PR references `Closes #N` (or you were invoked with a PR
   number): capture branch, PR number, and the `<!-- routine:dev-progress -->` progress

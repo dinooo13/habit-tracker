@@ -25,7 +25,7 @@ user anything.
 - **Draft PR** → skip (implementer territory). **Fork PR** (head repo ≠
   `dinooo13/habit-tracker`) → skip (you must not force-push fork heads, and previews
   only deploy for same-repo PRs).
-- **docs-audit PRs** (body marker `<!-- routine:docs-audit -->`, no linked issue) are
+- **docs-audit PRs** (body marker prefix `<!-- routine:docs-audit base=… -->`, no linked issue) are
   eligible like any other PR: a conflict bounce lands in the implementer's existing
   docs-audit resume path, and if a docs-only PR is ever demoted `approved` →
   `needs-qa`, the qa-tester's "QA not applicable" rule restores `approved` —

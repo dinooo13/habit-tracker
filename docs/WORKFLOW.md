@@ -116,7 +116,11 @@ letting them drift". Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
 PR. One *state* is wholly human: `status: draft` marks a pre-pipeline issue whose
 requirements are still being written — no agent applies, removes, or acts on it.
-Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
+Every stage declares an idempotency guard in
+[`.factory/factory.yml`](../.factory/factory.yml) (ADR-0023) so a re-run does not redo
+finished work; the guards are advisory (they narrow the duplicate-work window rather than
+close it), so running the cloud routines alongside a second scheduler at once stays a
+standing constraint. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 
 ## 7. When to write an ADR
 

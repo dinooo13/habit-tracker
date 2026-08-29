@@ -1,26 +1,84 @@
-# Agent factory manifest (ADR-0021).
+# Agent factory manifest (ADR-0021, ADR-0023).
 #
 # A DESCRIPTIVE, machine-checked map of the seven-stage agent pipeline as it
-# exists today — no runner, no scheduler, no behavior change. `.claude/agents/*.md`
-# hold the per-item behavior; `.claude/agents/README.md` holds the architecture and
-# label state machine; the claude.ai routine configuration holds the live schedules,
-# models, and enabled state. This file records all of it in one place so nothing has
-# to be compared by eye, and `tests/factory-contract.test.ts` checks it against itself
-# and the repo. See `.factory/README.md` for the sync convention and the deferred
+# exists today — no runner, no scheduler. `.claude/agents/*.md` hold the per-item
+# behavior; `.claude/agents/README.md` holds the architecture and label state
+# machine; the claude.ai routine configuration holds the live schedules, models, and
+# enabled state. This file records all of it in one place so nothing has to be
+# compared by eye, and `tests/factory-contract.test.ts` checks it against itself and
+# the repo. See `.factory/README.md` for the sync convention and the deferred
 # authoritative-sync script.
 #
-# The manifest is DESCRIPTIVE: it records what is true on 2026-08-28, including three
-# known drifts (issue #85 §1) — the rebaser's absent model pin, the docs-auditor's
-# daily (not weekly) cron, and `idempotency.kind: none` where a stage has no guard.
-# The gaps are the point; the contract test is green on the first run because the
-# divergence is declared, not hidden.
+# The manifest is DESCRIPTIVE: it records what is true, including two known drifts
+# (issue #85 §1) — the rebaser's absent model pin and the docs-auditor's daily (not
+# weekly) cron. The gaps are the point; the contract test is green because the
+# divergence is declared, not hidden. The third original drift — `idempotency.kind:
+# none` where a stage had no guard — is closed by #86 / ADR-0023: every stage now
+# declares a guard `kind` (no `none`), a machine-checked `note`, and its `marker`
+# resolves against the top-level `markers:` registry (one producer, ≥1 consumer). The
+# guards are advisory, not exclusive — they narrow the duplicate-work window to
+# read-queue → write-claim; a single scheduler stays a standing constraint.
 
-version: 1
+version: 2
 
 # The orchestrator's tool list, identical across all seven routines. Recorded once
 # here rather than per stage (it is the routine's list, not the agent's — the agents
 # declare their own narrower `tools:` in frontmatter) until it starts to differ.
 allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch]
+
+# Marker registry (ADR-0023). The whole HTML-comment marker graph in one place: each
+# id is written by exactly one `produced_by` stage and read by ≥1 `consumed_by`
+# stages. This is a SUPERSET of the idempotency guard markers — it also lists the two
+# markers no stage skips on (`routine:dev-progress`, `routine:rebase`), because the
+# relation is "a stage's idempotency.marker MUST resolve to a registry entry", not the
+# reverse. `{placeholder}` tokens (head / kind / base) are templated per run. The
+# contract test resolves every stage marker here and greps each `routine:{name}` family
+# into its producer and every consumer agent file, so a rename that desyncs the
+# manifest from the agents fails the build.
+markers:
+  - id: "<!-- routine:plan-issues -->"
+    produced_by: planner
+    consumed_by: [planner, implementer, reviewer, qa-tester]
+    purpose: >
+      The approved plan comment on the issue — planner's end-of-run guard, and the
+      scope authority everyone downstream reads.
+  - id: "<!-- routine:triage kind={kind} -->"
+    produced_by: triage
+    consumed_by: [triage]
+    purpose: >
+      Typed triage comment (kind=duplicate | missing-information); triage's fingerprint
+      guard and label self-heal read it back. Legacy untyped comments match by prefix.
+  - id: "<!-- routine:dev-progress -->"
+    produced_by: implementer
+    consumed_by: [implementer]
+    purpose: >
+      Progress checklist section in the PR body; the implementer's resume path reads
+      it. Not a skip guard — the branch + draft PR is the structural claim.
+  - id: "<!-- routine:code-review sha={head} -->"
+    produced_by: reviewer
+    consumed_by: [reviewer, implementer]
+    purpose: >
+      One review verdict per head SHA; the reviewer skips a SHA it already reviewed,
+      and the implementer treats a bounce's blocking findings as its work queue.
+  - id: "<!-- routine:qa sha={head} -->"
+    produced_by: qa-tester
+    consumed_by: [qa-tester, implementer]
+    purpose: >
+      One QA verdict per head SHA against that SHA's deployed preview; consumed as the
+      reviewer's is.
+  - id: "<!-- routine:docs-audit base={base} -->"
+    produced_by: docs-auditor
+    consumed_by: [docs-auditor, implementer, rebaser, reviewer]
+    purpose: >
+      Identifies the single open docs-audit PR and the `origin/main` head it was
+      audited against; the base SHA is what distinguishes a current audit from a stale
+      one. Downstream stages match it by the `routine:docs-audit` prefix.
+  - id: "<!-- routine:rebase -->"
+    produced_by: rebaser
+    consumed_by: [implementer]
+    purpose: >
+      Bounce / demotion / self-resolution audit comment — an implementer work source,
+      deliberately NOT a skip guard (rebaser idempotency is structural).
 
 stages:
   - name: triage
@@ -37,9 +95,17 @@ stages:
     produces: ["status: needs-plan", "status: blocked"]
     human-gate: false
     idempotency:
-      kind: none            # no per-run guard today; #86 adds a triage marker
-      marker: ""
-      self-heal: false
+      kind: fingerprint
+      marker: "<!-- routine:triage kind={kind} -->"
+      self-heal: true
+      note: >
+        Claim is the typed comment (kind=duplicate | missing-information); the state
+        flip is the label it implies. A run that dies between them leaves no `status:`
+        label, so the next run re-reads the marker, suppresses a second comment, and
+        completes the label — hence self-heal. Fingerprint = newest human comment
+        timestamp vs. the marker comment's; ambiguous → run, since a duplicate comment
+        is cheaper than a missed triage. Legacy untyped `routine:triage` comments match
+        by prefix and keep guarding.
     runtime:
       schedule: "1 22 * * *"
       model: claude-sonnet-5
@@ -63,6 +129,11 @@ stages:
       kind: end-of-run
       marker: "<!-- routine:plan-issues -->"
       self-heal: false
+      note: >
+        The plan comment is both artifact and guard, written at the end of the run:
+        the race window equals the run duration. Acceptable under a single scheduler;
+        must be revisited before a second *mutating* execution path exists. Skips when a
+        plan comment exists and no newer human comment changed the requirements.
     runtime:
       schedule: "0 23 * * *"
       model: claude-opus-4-8
@@ -85,9 +156,15 @@ stages:
     produces: ["status: in-progress", "status: needs-review", "status: blocked"]
     human-gate: false
     idempotency:
-      kind: structural      # the branch + draft PR is the artifact; re-runs resume it
+      kind: structural
       marker: ""
       self-heal: false
+      note: >
+        The pushed branch + draft PR is the claim and is created BEFORE the feature
+        work; relabeling the issue happens only after the PR exists, so a dead run
+        leaves the issue `agent-ready` and the next run retries for free. Its own
+        dedupe check looks for exactly that PR (`Closes #N`), then resumes from the
+        `routine:dev-progress` section in the PR body.
     runtime:
       schedule: "0 2,11,21 * * *"
       model: claude-opus-4-8
@@ -112,12 +189,15 @@ stages:
     produces: ["status: needs-review", "status: needs-qa", "status: approved", "status: in-progress"]
     human-gate: false
     idempotency:
-      # Structural: a rebased branch is no longer behind origin/main, so it leaves
-      # the queue. The `<!-- routine:rebase -->` comment is an audit/bounce record,
-      # not a per-run skip guard, so it is not recorded as a marker here.
       kind: structural
       marker: ""
       self-heal: false
+      note: >
+        A rebased branch is no longer behind origin/main, so it leaves the queue; a
+        bounced PR leaves via `status: in-progress`. `--force-with-lease` guards the
+        push against a concurrent writer. The `routine:rebase` comment is an audit /
+        bounce / self-resolution record (registered in `markers:` as an implementer
+        work source), not a per-run skip guard, so `marker` is empty here.
     runtime:
       # DRIFT (issue #85 §1.3): the live routine has no model pin (empty → env
       # default), while .claude/agents/rebaser.md frontmatter declares `model: sonnet`.
@@ -145,7 +225,12 @@ stages:
     idempotency:
       kind: per-sha
       marker: "<!-- routine:code-review sha={head} -->"
-      self-heal: true       # reconciles a label that disagrees with its verdict
+      self-heal: true
+      note: >
+        One review per head SHA; a rebase force-push deliberately invalidates it so the
+        code on the new base is re-reviewed. Self-heal reconciles a label that
+        disagrees with the recorded verdict when a prior run died between posting the
+        comment and flipping the label.
     runtime:
       schedule: "0 6,16 * * *"
       model: claude-opus-4-8
@@ -174,6 +259,11 @@ stages:
       kind: per-sha
       marker: "<!-- routine:qa sha={head} -->"
       self-heal: true
+      note: >
+        As reviewer, one verdict per head SHA — but against the deployed preview for
+        that SHA. A rebase force-push invalidates it and the preview redeploys, so
+        re-QA at the new head is correct. Self-heal reconciles a label that disagrees
+        with the recorded verdict after a mid-run death.
     runtime:
       schedule: "0 7,17 * * *"
       model: claude-opus-4-8
@@ -200,11 +290,16 @@ stages:
     produces: ["status: needs-review"]
     human-gate: false
     idempotency:
-      # Structural: one open docs-audit PR at a time; the `<!-- routine:docs-audit -->`
-      # body marker identifies it for the implementer's resume path.
-      kind: structural
-      marker: "<!-- routine:docs-audit -->"
+      kind: per-sha
+      marker: "<!-- routine:docs-audit base={base} -->"
       self-heal: false
+      note: >
+        Per BASE SHA rather than head: the audit's input is `main`, not a diff, so
+        `{base}` is `origin/main`'s head at audit time. An open audit PR whose base
+        equals current `origin/main` is a skip; a stale one is refreshed in place; none
+        means a new branch. One open audit PR at a time stays the structural invariant;
+        the base SHA is what distinguishes a current audit from a stale one, making the
+        daily cron a genuine no-op when `main` has not moved.
     runtime:
       # DRIFT (issue #85 §1.2): documented as "(e.g. weekly)" but the live cron is
       # daily. Recorded as-is.

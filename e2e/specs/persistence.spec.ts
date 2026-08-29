@@ -3,6 +3,7 @@ import { DashboardPage } from '../support/pages/dashboard'
 import { HabitFormPage } from '../support/pages/habit-form'
 import { readPersistedStore } from '../support/seed'
 import { addDaysKey, makeAppData, makeHabit, todayKey } from '../support/data'
+import { appRoutePattern } from '../support/url'
 
 async function flushSave(page: import('@playwright/test').Page): Promise<void> {
   // The bootstrap plugin flushes its debounced save on visibilitychange → hidden.
@@ -95,9 +96,9 @@ test.describe('Persistence', () => {
     await page.goto('/login')
     await expect(page.getByRole('heading', { name: 'Continue to Atomic Habit Tracker' })).toBeVisible()
     await page.getByRole('button', { name: 'Continue with demo login' }).click()
-    await expect(page).toHaveURL(/\/app$/)
+    await expect(page).toHaveURL(appRoutePattern('/app'))
 
     await page.reload()
-    await expect(page).toHaveURL(/\/app$/)
+    await expect(page).toHaveURL(appRoutePattern('/app'))
   })
 })

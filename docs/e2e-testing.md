@@ -89,6 +89,17 @@ walk (`smoke.spec.ts`) that asserts no unexpected console errors and no failed s
 requests — exercising the `.htaccess` SPA fallback and base path that local E2E otherwise
 avoids. Do not add a parallel production-only spec; edit and tag the shared ones (ADR-0020).
 
+**Host trailing-slash normalization.** `nuxt generate` emits prerendered routes as
+directories (`app/index.html`, `app/insights/index.html`, …). The production/preview host
+serves those directories and 301-redirects the no-slash form (`/app` → `/app/`), while the
+local nitro preview resolves the same path with no redirect. So any URL assertion that
+follows a *server* navigation must be trailing-slash tolerant: use
+`appRoutePattern('/app/…')` from [`e2e/support/url.ts`](../e2e/support/url.ts) instead of a
+bare `toHaveURL(/\/app…$/)` — the latter passes locally but can never match the live origin.
+The helper is applied uniformly to every in-app-route `toHaveURL` (client- and server-side
+alike) so a newly `@production`-tagged spec can't reintroduce the mismatch; `/login?…` and
+root (`/$`) assertions stay raw.
+
 ## CI
 
 The `e2e` job in `.github/workflows/ci.yml` (Node 22) runs Chromium + one mobile project,
@@ -104,3 +115,11 @@ atomic and the host may cache, so this poll is what stops a stale build passing 
 green — then runs the `@production` subset in remote mode with `--retries=2`. It uploads the
 report/traces on failure and, on failure, files exactly one label-less bug issue (no dedup);
 `issues: write` is scoped to that job alone. See ADR-0020.
+
+In remote mode the run also emits a JSON report (`production-smoke-results.json`, gated on
+`E2E_SKIP_WEB_SERVER`), which the failure-issue step feeds through
+[`scripts/ci/summarize-playwright-failures.cjs`](../scripts/ci/summarize-playwright-failures.cjs)
+to embed the failing test names and their first error directly in the filed issue body — so a
+delayed triage pass isn't blocked on the 7-day-expiring artifacts. The summary is best-effort:
+a missing or unparsable report (e.g. when the version-poll gate is what failed, so no report
+exists) degrades to the plain issue body and never fails the step.

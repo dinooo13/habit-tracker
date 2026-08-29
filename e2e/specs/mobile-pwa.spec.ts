@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures'
+import { appRoutePattern } from '../support/url'
 
 test.describe('PWA / shell', () => {
   test('the app shell loads and PWA assets are served', { tag: '@production' }, async ({ authedPage: page }) => {
@@ -29,12 +30,12 @@ test.describe('Mobile bottom navigation', () => {
     await expect(bottomNav).toBeVisible()
 
     await bottomNav.getByRole('link', { name: 'Habits' }).click()
-    await expect(page).toHaveURL(/\/app\/habits$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/habits'))
 
     await bottomNav.getByRole('link', { name: 'Settings' }).click()
-    await expect(page).toHaveURL(/\/app\/settings$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/settings'))
 
     await bottomNav.getByRole('link', { name: 'Today' }).click()
-    await expect(page).toHaveURL(/\/app$/)
+    await expect(page).toHaveURL(appRoutePattern('/app'))
   })
 })

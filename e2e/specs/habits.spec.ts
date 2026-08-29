@@ -2,6 +2,7 @@ import { test, expect } from '../support/fixtures'
 import { HabitFormPage } from '../support/pages/habit-form'
 import { DashboardPage } from '../support/pages/dashboard'
 import { addDaysKey, makeAppData, makeHabit, todayKey } from '../support/data'
+import { appRoutePattern } from '../support/url'
 
 test.describe('Habit CRUD', () => {
   test('creates a build habit and shows it in the list and the queue', async ({ authedPage: page }) => {
@@ -17,7 +18,7 @@ test.describe('Habit CRUD', () => {
     })
     await form.submit()
 
-    await expect(page).toHaveURL(/\/app\/habits$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/habits'))
     await expect(page.getByText('Habit created').first()).toBeVisible()
     await expect(page.locator('.habit-card').filter({ hasText: 'Read 10 pages' })).toBeVisible()
 
@@ -53,7 +54,7 @@ test.describe('Habit CRUD', () => {
     await form.submit()
 
     await expect(page.getByText('Name must be at least 2 characters.')).toBeVisible()
-    await expect(page).toHaveURL(/\/app\/habits\/new$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/habits/new'))
   })
 
   test('requires at least one scheduled weekday', async ({ authedPage: page }) => {
@@ -72,7 +73,7 @@ test.describe('Habit CRUD', () => {
     await page.goto('/app/habits')
 
     await page.locator('.habit-card').filter({ hasText: 'Old name' }).getByRole('link', { name: 'Edit' }).click()
-    await expect(page).toHaveURL(new RegExp(`/app/habits/${habit.id}$`))
+    await expect(page).toHaveURL(appRoutePattern(`/app/habits/${habit.id}`))
 
     const form = new HabitFormPage(page)
     await form.setName('New name')

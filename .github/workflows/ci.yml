@@ -302,6 +302,7 @@ jobs:
           path: |
             playwright-report
             test-results
+            production-smoke-results.json
           retention-days: 7
           if-no-files-found: ignore
 
@@ -319,6 +320,21 @@ jobs:
             const failedStep = '${{ steps.poll.outcome }}' === 'failure'
               ? 'version-poll gate — the deployed SHA never went live (stale or absent deploy)'
               : 'production smoke Playwright run';
+
+            // Embed the failing test names + first errors so triage isn't blocked
+            // on 7-day-expiring artifacts (ADR-0020). Best-effort: a missing or
+            // unparsable report (e.g. the poll-gate failure path, where no report
+            // exists) must degrade to the plain body, never fail the step.
+            let failingTests = '';
+            try {
+              const fs = require('fs');
+              const { summarizeFailures } = require('./scripts/ci/summarize-playwright-failures.cjs');
+              const raw = fs.readFileSync('production-smoke-results.json', 'utf8');
+              failingTests = summarizeFailures(JSON.parse(raw));
+            } catch {
+              failingTests = '';
+            }
+
             const body = [
               '<!-- routine:production-smoke -->',
               '',
@@ -328,6 +344,7 @@ jobs:
               `- **Failed step:** ${failedStep}`,
               `- **Workflow run:** ${runUrl}`,
               '- **Artifacts:** the `production-smoke-report` (HTML report, traces, screenshots) is attached to the run on failure.',
+              ...(failingTests ? ['', '## Failing tests', '', failingTests] : []),
               '',
               '`deploy-production` mirrors over FTPS with **no previous-artifact retention**, so a red smoke check does not restore service — production may be broken until a human acts.',
               '',

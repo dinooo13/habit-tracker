@@ -25,7 +25,7 @@ When an issue comes in, label it. Every issue should get at least a **type** and
 | **type** | `type: feature`, `type: bug`, `type: enhancement`, `type: docs`, `type: refactor`, `type: test`, `type: chore`, `type: security` | What kind of work it is. |
 | **priority** | `priority: high`, `priority: medium`, `priority: low` | How urgent. |
 | **effort** | `effort: small`, `effort: medium`, `effort: large` | Rough size (mirrors the issue's *Effort* field). |
-| **status** | `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review`, `status: needs-qa`, `status: approved` (PRs) | Where it stands. Issues: `needs-plan-review` = plan awaits human approval. PRs: `needs-review` → `needs-qa` → `approved` (ready for human merge). |
+| **status** | `status: draft`, `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review`, `status: needs-qa`, `status: approved` (PRs) | Where it stands. Issues: `draft` = human-only, pre-pipeline — agents ignore it entirely; `needs-plan-review` = plan awaits human approval. PRs: `needs-review` → `needs-qa` → `approved` (ready for human merge). |
 | **area** | `area: persistence`, `area: coaching`, `area: ui`, `area: pwa`, `area: auth`, `area: analytics`, `area: factory` | Part of the app affected — except `factory`, which is the agent pipeline itself. |
 
 Use the namespaced `type: enhancement` / `type: security` labels; the bare legacy
@@ -35,6 +35,26 @@ Use the namespaced `type: enhancement` / `type: security` labels; the bare legac
 > [`label-sync` workflow](../.github/workflows/label-sync.yml) runs `github-label-sync` on
 > pushes to `main` that touch `.github/labels.yml` (and on manual dispatch): it creates and
 > updates every label listed in the file **and deletes any repo label that is not listed**.
+
+### Draft issues (human-only)
+
+`status: draft` is the one **pre-pipeline** state, and the only label no agent ever touches.
+Apply it when the issue's *content* is still undecided — you are filing a placeholder, or
+composing requirements over several sittings. GitHub has draft pull requests but no draft
+issues; this label is the equivalent, so half-formed ideas can live in the backlog instead of
+a local scratch file, without triage consuming them.
+
+- A **human** applies it, normally while creating the issue, and a **human** removes it.
+  Agents never apply, remove, or act on it — a draft issue is in no queue.
+- Removing the label leaves the issue with no `status:` label, i.e. the untriaged state, so
+  the next triage run picks it up normally. That is the whole release mechanism.
+- Keep it exclusive: `status: draft` should be the only `status:` label on the issue. If
+  another one is present too, draft wins (agents skip) — remove the stale one.
+- Draft is about undecided content, not sequencing. A fully specified issue that must wait
+  for a prerequisite gets `status: blocked` (see below); work already in flight uses GitHub's
+  native draft-PR state. The label is for issues only.
+- The "every issue gets a type and an effort" rule above applies once the draft is released;
+  a draft may carry no other labels.
 
 ### Dependency-blocked issues
 
@@ -94,7 +114,9 @@ their label including `approved`) and bouncing big or ambiguous conflicts or red
 back to `status: in-progress` — operationalizing §3's "rebase on `main` rather than
 letting them drift". Two
 gates stay human: promoting a plan to `status: agent-ready`, and merging an approved
-PR. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
+PR. One *state* is wholly human: `status: draft` marks a pre-pipeline issue whose
+requirements are still being written — no agent applies, removes, or acts on it.
+Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 
 ## 7. When to write an ADR
 

@@ -20,6 +20,9 @@ Use only labels that exist in `labels.yml` — never invent new ones.
 - `issue_read` the issue: title, body, labels, comments.
 - **Skip guards** (stop and report "skipped: {reason}"):
   - It's a PR, not an issue.
+  - It carries `status: draft` — a human-only, pre-pipeline state. Skip it regardless of
+    any other label it carries, and report `skipped: draft (human-owned)`. Never add or
+    remove this label yourself.
   - It carries the `duplicate` label — terminal until a human removes that label.
   - If it has `status: blocked`, recheck it only when its body or existing human comments
     explicitly name one or more prerequisite issues and no open PR references it. Otherwise
@@ -85,7 +88,7 @@ Apply, alongside any existing non-status labels (never remove a human's labels):
 
 Return only: issue number, verdict (`queued for planning` / `unblocked: queued for planning` /
 `duplicate of #M` / `still blocked by #N[, #M]` / `blocked: {missing}` /
-`skipped: {reason}`), and the labels applied.
+`skipped: draft (human-owned)` / `skipped: {reason}`), and the labels applied.
 
 ## Guardrails
 
@@ -94,4 +97,6 @@ Return only: issue number, verdict (`queued for planning` / `unblocked: queued f
 - Never remove or contradict labels a human already applied except for the label-only
   dependency transition from `status: blocked` to `status: needs-plan` described above.
 - Never re-triage another status-labeled issue.
+- Never apply or remove `status: draft`. It is human-owned; an issue carrying it is
+  outside every queue.
 - Only labels from `.github/labels.yml`. Stay in `dinooo13/habit-tracker`.

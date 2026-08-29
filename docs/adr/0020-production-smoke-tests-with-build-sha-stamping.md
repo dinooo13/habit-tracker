@@ -73,6 +73,29 @@ noise it saves at this deploy volume. This requires `issues: write` scoped to th
 the workflow default stays `contents: read`. On success the job records the tested SHA in
 the run summary and files nothing.
 
+The **body follows the repo's bug-report template** (`Description → Steps to reproduce →
+Expected → Actual → Environment`, per `docs/WORKFLOW.md` §1) and **inlines the failing tests**
+— issue #107. Because there is no dedup, each body must stand alone, so it carries the failure
+detail rather than a "go read the logs" pointer: `playwright.config.ts` emits a `json` reporter
+in remote mode (`test-results/production-smoke-results.json`), and a pure, unit-tested composer
+(`scripts/ci/production-smoke-issue.mjs`) parses it into a fenced block of failing test titles +
+assertion diffs (ANSI-stripped, capped at 10 tests / 1000 chars per error / 4000 chars total),
+with the artifact as the deep-dive path. The composer never throws — a formatting bug yields a
+minimal fallback body, never a swallowed alert. The **outage warning branches on the failure
+mode**: the smoke-assertion path states the build is live and failing (confirmed by the SHA
+gate); the poll-gate path warns of a stale or partially-mirrored deploy whose state is *unknown*
+— the SHA gate is what distinguishes the two. The two failure-filing steps are **gated on the
+poll/smoke outcomes** (`!cancelled() && (steps.poll.outcome == 'failure' || steps.smoke.outcome
+== 'failure')`), not a bare `failure()`, so a `checkout` / `npm ci` / `playwright install` flake
+still reddens the job but files no "production may be broken" issue.
+
+These issues **stay label-less on purpose** — the deliberate exception to `docs/WORKFLOW.md` §2's
+"every issue gets at least a type". Applying `type: bug` at creation was considered (issue #107,
+Q12) and rejected here: triage runs anyway and adds the type, and pre-stamping a priority the
+benign poll path cannot justify (`priority: high` is wrong when production is actually fine) is
+worse than leaving triage the single front door. Recommended labels remain *text* in the body.
+Reversing this to auto-apply `type: bug` would supersede this decision and needs its own ADR.
+
 ## Consequences
 
 - **Pros:** production is verified after every deploy against the real origin, base path,
@@ -108,5 +131,9 @@ the run summary and files nothing.
 - `e2e/specs/smoke.spec.ts`, `e2e/specs/persistence.spec.ts`, `e2e/specs/mobile-pwa.spec.ts`
   — the `@production`-tagged subset and the new deep-link/console-health walk.
 - `.github/workflows/ci.yml` — `build` job `COMMIT_SHA` wiring and the `production-smoke` job.
+- `scripts/ci/production-smoke-issue.mjs` — pure, unit-tested failure-issue composer + Playwright
+  report summarizer (issue #107).
 - `tests/build-version.test.ts` — unit coverage for the helper.
-- Issue #87.
+- `tests/production-smoke-issue.test.ts`, `tests/production-smoke-workflow-contract.test.ts` —
+  composer unit tests and the `ci.yml` wiring contract test (issue #107).
+- Issues #87, #107.

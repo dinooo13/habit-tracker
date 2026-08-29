@@ -24,7 +24,21 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
   workers: isCI ? 2 : undefined,
-  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+  // In CI: `list` for logs + an `html` report artifact. In remote mode
+  // (`production-smoke`, ADR-0020) additionally emit a machine-readable `json`
+  // report so the failure-issue composer can inline the failing tests
+  // (scripts/ci/production-smoke-issue.mjs, issue #107). `test-results/` is the
+  // Playwright `outputDir`, already uploaded and gitignored, so the report ships
+  // in the artifact for free. Local/PR runs are unchanged.
+  reporter: isCI
+    ? [
+        ['list'],
+        ['html', { open: 'never' }],
+        ...(skipWebServer
+          ? [['json', { outputFile: 'test-results/production-smoke-results.json' }] as const]
+          : []),
+      ]
+    : [['list']],
   expect: { timeout: 10_000 },
 
   use: {

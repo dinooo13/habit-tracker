@@ -28,6 +28,11 @@ E2E_SKIP_WEB_SERVER=1 E2E_BASE_URL=https://habits.fmeyer.dev \
   npx playwright test --grep @production --retries=2
 ```
 
+In remote mode under CI the config additionally writes a machine-readable `json` report to
+`test-results/production-smoke-results.json`; the `production-smoke` job's failure-issue composer
+(`scripts/ci/production-smoke-issue.mjs`) parses it to inline the failing tests (ADR-0020, issue
+#107). Local/PR `e2e` runs are unaffected.
+
 First-time setup installs the browser binaries: `npx playwright install --with-deps chromium`.
 
 ## Layout

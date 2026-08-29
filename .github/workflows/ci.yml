@@ -274,9 +274,11 @@ jobs:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
           echo "Waiting for $PROD_URL/version.json to report $EXPECTED_SHA (~90s bounded)…"
+          live_last=""
           for i in $(seq 1 18); do
             body="$(curl -fsS "$PROD_URL/version.json?ts=$(date +%s)" || true)"
             live="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{process.stdout.write(String(JSON.parse(s).commit||""))}catch{process.stdout.write("")}})')"
+            live_last="$live"
             echo "attempt $i/18: live=${live:-<none>}"
             if [ "$live" = "$EXPECTED_SHA" ]; then
               echo "Deployed SHA is live."
@@ -284,6 +286,14 @@ jobs:
             fi
             sleep 5
           done
+          # Record what the poll last saw so the failure-issue composer can report
+          # "served def5678 for ~90s" instead of a bare timeout. Outputs written
+          # before a non-zero exit remain readable by later steps (issue #107).
+          {
+            echo "live_sha=$live_last"
+            echo "attempts=18"
+            echo "window_seconds=90"
+          } >> "$GITHUB_OUTPUT"
           echo "::error::version.json never reported $EXPECTED_SHA within the poll window (stale or absent deploy)."
           exit 1
 
@@ -295,7 +305,7 @@ jobs:
         run: npx playwright test --grep @production --retries=2
 
       - name: Upload Playwright report
-        if: failure()
+        if: ${{ !cancelled() && steps.smoke.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: production-smoke-report
@@ -305,38 +315,52 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      # Compose the failure issue body from a pure, unit-tested module
+      # (scripts/ci/production-smoke-issue.mjs, issue #107): it parses the
+      # Playwright JSON report, renders the repo's bug-report shape, and writes
+      # `{title, body}` JSON for the next step to file. Gated on the two real
+      # gates only — a bare `failure()` here would file issues for `checkout` /
+      # `npm ci` / `playwright install` flakes, which are not production outages.
+      - name: Compose failure report
+        id: report
+        if: ${{ !cancelled() && (steps.poll.outcome == 'failure' || steps.smoke.outcome == 'failure') }}
+        env:
+          FAILURE_MODE: ${{ steps.poll.outcome == 'failure' && 'poll' || 'smoke' }}
+          DEPLOYED_SHA: ${{ github.sha }}
+          LIVE_SHA: ${{ steps.poll.outputs.live_sha }}
+          POLL_ATTEMPTS: ${{ steps.poll.outputs.attempts }}
+          POLL_WINDOW_SECONDS: ${{ steps.poll.outputs.window_seconds }}
+          BASE_URL: ${{ env.PROD_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB_NAME: ${{ github.job }}
+          PLAYWRIGHT_VERSION: ${{ steps.pw.outputs.version }}
+          RUNNER_IMAGE: ubuntu-24.04-arm
+          RUNNER_OS_ARCH: ${{ runner.os }}/${{ runner.arch }}
+          NODE_VERSION: '22'
+          JSON_REPORT: test-results/production-smoke-results.json
+          OUTPUT_FILE: ${{ runner.temp }}/production-smoke-issue.json
+        run: node scripts/ci/production-smoke-issue.mjs
+
       # One label-less issue per failure — no dedup (three bad deploys ⇒ three
-      # issues, deliberate per issue #87). Label-less so normal triage stays the
-      # front door; recommended labels are named as text in the body.
+      # issues, deliberate per ADR-0020 §5). Label-less so normal triage stays the
+      # front door; recommended labels are named as text in the body. Same gate as
+      # the composer; body read from the composer's temp file (no YAML escaping).
       - name: File a failure issue
-        if: failure()
+        if: ${{ !cancelled() && (steps.poll.outcome == 'failure' || steps.smoke.outcome == 'failure') }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REPORT_FILE: ${{ runner.temp }}/production-smoke-issue.json
         with:
           script: |
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const sha = context.sha;
-            const short = sha.slice(0, 7);
-            const failedStep = '${{ steps.poll.outcome }}' === 'failure'
-              ? 'version-poll gate — the deployed SHA never went live (stale or absent deploy)'
-              : 'production smoke Playwright run';
-            const body = [
-              '<!-- routine:production-smoke -->',
-              '',
-              `The post-deploy production smoke check failed for **\`${short}\`**.`,
-              '',
-              `- **Deployed SHA:** \`${sha}\``,
-              `- **Failed step:** ${failedStep}`,
-              `- **Workflow run:** ${runUrl}`,
-              '- **Artifacts:** the `production-smoke-report` (HTML report, traces, screenshots) is attached to the run on failure.',
-              '',
-              '`deploy-production` mirrors over FTPS with **no previous-artifact retention**, so a red smoke check does not restore service — production may be broken until a human acts.',
-              '',
-              'Recommended labels (add during triage): `type: bug`, `priority: high`, `area: pwa`.',
-            ].join('\n');
+            const { readFileSync } = require('node:fs');
+            const { title, body } = JSON.parse(readFileSync(process.env.REPORT_FILE, 'utf8'));
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Production smoke failed for ${short}`,
+              title,
               body,
             });
 

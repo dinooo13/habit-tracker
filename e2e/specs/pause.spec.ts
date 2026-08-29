@@ -1,6 +1,7 @@
 import { test, expect } from '../support/fixtures'
 import { DashboardPage } from '../support/pages/dashboard'
 import { addDaysKey, makeAppData, makeHabit, todayKey } from '../support/data'
+import { appRoutePattern } from '../support/url'
 
 test.describe('Pause mode', () => {
   test('a habit paused over today is badged and kept out of the queue', async ({ authedPage: page, seed }) => {
@@ -40,7 +41,7 @@ test.describe('Pause mode', () => {
     await dateInputs.nth(2).fill(end)
 
     await page.getByRole('button', { name: 'Create habit' }).click()
-    await expect(page).toHaveURL(/\/app\/habits$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/habits'))
 
     const card = page.locator('.habit-card').filter({ hasText: 'Read 10 pages' })
     await expect(card).toBeVisible()

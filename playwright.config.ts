@@ -24,7 +24,20 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
   workers: isCI ? 2 : undefined,
-  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
+  // In remote mode (the post-deploy `production-smoke` job) also emit a JSON
+  // report so the failure-issue step can name the failing tests in the issue body
+  // (ADR-0020). The `outputFile` is required — without it the JSON reporter prints
+  // the whole report to stdout and drowns the job log. Keep the html reporter in
+  // the array (a CLI `--reporter` override would silently drop it).
+  reporter: isCI
+    ? [
+        ['list'],
+        ['html', { open: 'never' }],
+        ...(skipWebServer
+          ? [['json', { outputFile: 'production-smoke-results.json' }] as const]
+          : []),
+      ]
+    : [['list']],
   expect: { timeout: 10_000 },
 
   use: {

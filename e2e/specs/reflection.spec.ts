@@ -1,6 +1,7 @@
 import { test, expect } from '../support/fixtures'
 import { DashboardPage } from '../support/pages/dashboard'
 import { addDaysKey, makeAppData, makeHabit, makeEntry, todayKey } from '../support/data'
+import { appRoutePattern } from '../support/url'
 
 // A habit with a single missed entry yesterday — produces one pending reflection.
 function missedYesterday(name: string) {
@@ -24,7 +25,7 @@ test.describe('Reflection → coaching', () => {
     await expect(page.getByText(/need(s)? reflection/)).toBeVisible()
 
     await page.getByRole('link', { name: 'Review', exact: true }).click()
-    await expect(page).toHaveURL(/\/app\/review$/)
+    await expect(page).toHaveURL(appRoutePattern('/app/review'))
     await expect(page.getByText('Read 20 pages').first()).toBeVisible()
   })
 

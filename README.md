@@ -79,9 +79,9 @@ app/
 │       ├── settings.vue   # Preferences + export/import
 │       └── habits/        # List, new, [id] edit
 ├── layouts/               # default (public) + app (authenticated shell)
-├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo, PersistenceStatusIndicator
+├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo, PersistenceStatusIndicator, PersistenceHealthPanel
 ├── stores/                # Pinia: habits, entries, coach, settings
-├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-clipboard, use-clock
+├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-data-recovery, use-clipboard, use-clock
 ├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)
@@ -128,6 +128,9 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 16. [Habit-action composable owns cross-store entry/suggestion transactions](docs/adr/0016-habit-action-composable-owns-cross-store-transactions.md)
 17. [Persistence status lifecycle with retry and backoff](docs/adr/0017-persistence-status-lifecycle-retry-backoff.md)
 18. [Central reactive day-clock service for midnight rollover](docs/adr/0018-central-reactive-day-clock-service.md)
+19. [Quarantine invalid stored data on load failure](docs/adr/0019-quarantine-invalid-stored-data-on-load-failure.md)
+20. [Production deployment smoke tests with build-SHA stamping](docs/adr/0020-production-smoke-tests-with-build-sha-stamping.md)
+21. [Factory manifest as the descriptive source of truth for the agent pipeline](docs/adr/0021-factory-manifest-descriptive-source-of-truth.md)
 
 ## Contributing & workflow
 

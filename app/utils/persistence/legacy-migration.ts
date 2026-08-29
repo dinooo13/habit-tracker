@@ -1,7 +1,7 @@
 import type { AppData } from '~/types/app-data'
 import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
 import { safeJsonParse } from '~/utils/persistence/safe-json'
-import { parseAppData } from '~/utils/persistence/storage-schema'
+import { parseAppDataResult } from '~/utils/persistence/storage-schema'
 
 export const LEGACY_STORAGE_KEY = 'habit-tracker:v1:data'
 export const LEGACY_LAST_VALID_STORAGE_KEY = 'habit-tracker:v1:last-valid'
@@ -16,11 +16,20 @@ function readLegacyPayload(storage: Pick<Storage, 'getItem'>): AppData | null {
       continue
     }
 
+    // JSON.parse still throws on malformed text, so the syntax parse keeps a
+    // guard; the AppData validation itself is no longer exception-driven
+    // (issue #68) — an unrecoverable payload falls through to the next key.
+    let parsed: unknown
     try {
-      return parseAppData(safeJsonParse(value))
+      parsed = safeJsonParse(value)
     }
     catch {
-      // Fall through to the next legacy key.
+      continue
+    }
+
+    const result = parseAppDataResult(parsed)
+    if (result.status !== 'unrecoverable') {
+      return result.data
     }
   }
 

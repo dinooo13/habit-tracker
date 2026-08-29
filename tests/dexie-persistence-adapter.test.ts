@@ -170,6 +170,71 @@ describe('DexiePersistenceAdapter', () => {
     })
   })
 
+  describe('schema migration (#68)', () => {
+    beforeEach(() => {
+      clearSecurityLog()
+      vi.spyOn(console, 'info').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      clearSecurityLog()
+      vi.restoreAllMocks()
+    })
+
+    it('migrates a stored V1 payload, logs data.migrated, and does not quarantine', async () => {
+      await db.meta.put({ key: 'schemaVersion', value: 1 })
+      await db.meta.put({ key: 'settings', value: createEmptyAppData().settings })
+      // A valid V1 habit row (pre-pauses shape).
+      await db.habits.put({
+        id: 'habit_1',
+        name: 'Read',
+        type: 'build',
+        identityStatement: 'Reader',
+        scheduleWeekdays: [1],
+        reminderTime: null,
+        startDate: '2026-02-01',
+        archived: false,
+        createdAt: '2026-02-01T00:00:00.000Z',
+        updatedAt: '2026-02-01T00:00:00.000Z',
+      } as never)
+
+      const loaded = await adapter.load()
+
+      expect(loaded.schemaVersion).toBe(2)
+      expect(loaded.habits).toHaveLength(1)
+      expect(loaded.habits[0]?.pauses).toEqual([])
+
+      const events = recentSecurityEvents()
+      expect(events.some(event => event.type === 'data.migrated' && event.level === 'info')).toBe(true)
+      expect(await adapter.loadQuarantine()).toBeNull()
+    })
+
+    it('quarantines a future-version payload with a readable unsupported-version reason', async () => {
+      await db.meta.put({ key: 'schemaVersion', value: 99 })
+      await db.meta.put({ key: 'settings', value: createEmptyAppData().settings })
+
+      const loaded = await adapter.load()
+      expect(loaded).toEqual(createEmptyAppData())
+
+      const record = await adapter.loadQuarantine()
+      expect(record).not.toBeNull()
+      expect(record?.reason).toContain('99')
+      expect(record?.reason.toLowerCase()).toContain('cannot read')
+
+      const events = recentSecurityEvents()
+      expect(
+        events.some(
+          event =>
+            event.type === 'data.validation_failed'
+            && event.level === 'error'
+            && (event.detail ?? '').includes('unsupported-version'),
+        ),
+      ).toBe(true)
+    })
+  })
+
   it('upgrades a v1 database to the v2 schema without destroying existing data', async () => {
     // Seed valid data through the adapter (registers the v2 schema), then reopen a
     // fresh adapter over the same database name to exercise the Dexie upgrade path.

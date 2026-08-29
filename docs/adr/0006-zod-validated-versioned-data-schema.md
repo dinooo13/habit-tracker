@@ -36,3 +36,4 @@ introduced with an upgrade step keyed off the version number.
 - `app/types/app-data.ts` — `AppDataV1`, `APP_DATA_SCHEMA_VERSION`, domain types.
 - `app/utils/persistence/storage-schema.ts` — Zod schema, parse, empty-state fallback.
 - `tests/storage-schema.test.ts` — validation behavior.
+- The migration seam this version field opens is now a version-keyed registry behind a discriminated parse result; see ADR-0022.

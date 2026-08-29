@@ -73,8 +73,10 @@ Defined in `app/types/app-data.ts`:
   plus optional `lastExportedAt` / `backupNudgeSnoozedUntil` (both nullable, defaulted) that
   drive the dashboard backup nudge.
 - **`AppDataV2`** — the persisted envelope: `{ schemaVersion: 2, habits, entries, suggestions, settings }`.
-  Loaded/imported V1 payloads (and legacy `localStorage`) migrate up via a one-way Zod-validated
-  `migrateToV2` in `parseAppData` (ADR-0010).
+  Loaded/imported payloads flow through `parseAppDataResult` — a discriminated
+  `ok | migrated | unrecoverable` result — where a version-keyed migration registry upgrades V1
+  payloads (and legacy `localStorage`) via the one-way `migrateToV2` `v1->v2` step; `parseAppData`
+  is a thin throwing wrapper (ADR-0022, ADR-0010).
 
 See `docs/glossary.md` for the domain vocabulary.
 

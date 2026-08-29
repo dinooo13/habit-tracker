@@ -17,6 +17,7 @@ export type SecurityEventType
     | 'data.import'
     | 'data.export'
     | 'data.delete'
+    | 'data.migrated'
     | 'data.validation_failed'
     | 'storage.quota_low'
     | 'storage.write_failed'

@@ -3,10 +3,12 @@ import type { AppData, Habit } from '~/types/app-data'
 import { APP_DATA_SCHEMA_VERSION, COLLECTION_LIMITS, DEFAULT_SETTINGS } from '~/types/app-data'
 import {
   backupFilename,
+  describeImportOutcome,
   extractImportedHabits,
   mergeHabitsForImport,
   serializeBackup,
 } from '~/utils/persistence/backup'
+import type { ParseAppDataResult } from '~/utils/persistence/storage-schema'
 
 function validHabit(overrides: Partial<Habit> = {}): Habit {
   return {
@@ -148,6 +150,42 @@ describe('mergeHabitsForImport (#69)', () => {
     const imported = [validHabit({ id: 'a', name: 'Renamed' })]
     mergeHabitsForImport(existing, imported)
     expect(existing[0]?.name).toBe('Read')
+  })
+})
+
+describe('describeImportOutcome (#68)', () => {
+  it('reports a clean ok result as a generic success', () => {
+    const result: ParseAppDataResult = { status: 'ok', data: emptyAppData(), sourceVersion: APP_DATA_SCHEMA_VERSION }
+    expect(describeImportOutcome(result)).toEqual({
+      ok: true,
+      title: 'Import complete',
+      description: 'Backup data has been restored.',
+    })
+  })
+
+  it('notes the schema upgrade for a migrated result', () => {
+    const result: ParseAppDataResult = { status: 'migrated', data: emptyAppData(), sourceVersion: 1, steps: ['v1->v2'] }
+    const outcome = describeImportOutcome(result)
+    expect(outcome.ok).toBe(true)
+    expect(outcome.title).toBe('Import complete')
+    expect(outcome.description).toContain('Upgraded from schema v1')
+  })
+
+  it('gives actionable copy for an unsupported (newer) version', () => {
+    const result: ParseAppDataResult = { status: 'unrecoverable', reason: 'unsupported-version', message: 'x', sourceVersion: 99 }
+    const outcome = describeImportOutcome(result)
+    expect(outcome.ok).toBe(false)
+    expect(outcome.title).toBe('Import failed')
+    expect(outcome.description).toContain('newer version of the app')
+  })
+
+  it('gives generic invalid-file copy for other unrecoverable reasons', () => {
+    for (const reason of ['invalid-shape', 'oversized', 'migration-failed'] as const) {
+      const result: ParseAppDataResult = { status: 'unrecoverable', reason, message: 'x', sourceVersion: undefined }
+      const outcome = describeImportOutcome(result)
+      expect(outcome.ok, reason).toBe(false)
+      expect(outcome.description, reason).toBe('The file is not valid AppData JSON.')
+    }
   })
 })
 

@@ -1,6 +1,11 @@
 import type { AppData, Habit } from '~/types/app-data'
 import { nowIso } from '~/utils/domain/date'
-import { assertRawHabitLimits, parseAppData, parseLenientHabit } from '~/utils/persistence/storage-schema'
+import {
+  assertRawHabitLimits,
+  parseAppDataResult,
+  parseLenientHabit,
+  type ParseAppDataResult,
+} from '~/utils/persistence/storage-schema'
 
 /**
  * Pure backup import/export/merge helpers extracted from `settings.vue` (issue #69).
@@ -24,11 +29,13 @@ import { assertRawHabitLimits, parseAppData, parseLenientHabit } from '~/utils/p
  * Returns an empty array when no habits-array shape is present.
  */
 export function extractImportedHabits(payload: unknown): Habit[] {
-  try {
-    return parseAppData(payload).habits
-  }
-  catch {
-    // Not a full backup envelope — continue with habits-only payload formats.
+  // A full-backup envelope (V2 or a migratable V1) yields its habits directly.
+  // Anything unrecoverable falls through to the habits-only formats below — the
+  // oversized case then re-throws in `assertRawHabitLimits` so the caller
+  // surfaces it, exactly as before (issue #68).
+  const result = parseAppDataResult(payload)
+  if (result.status !== 'unrecoverable') {
+    return result.data.habits
   }
 
   const rawHabits = Array.isArray(payload)
@@ -110,4 +117,41 @@ export function serializeBackup(data: AppData): string {
 /** The download filename for a backup taken on the given local date key. */
 export function backupFilename(dateKey: string): string {
   return `habit-tracker-${dateKey}.json`
+}
+
+/**
+ * Map a full-backup {@link ParseAppDataResult} to the toast copy shown by the
+ * settings import flow (issue #68). Pure and framework-free so the copy decision
+ * is unit-testable without a Nuxt component test — the page keeps the toast
+ * side effect at the call site.
+ *
+ * - `ok` → success, generic restore copy.
+ * - `migrated` → success, noting the schema upgrade so the user knows the file
+ *   was an older backup.
+ * - `unsupported-version` → failure, the actionable "newer version of the app"
+ *   copy rather than a generic parse error.
+ * - any other unrecoverable reason → failure, generic invalid-file copy.
+ */
+export function describeImportOutcome(result: ParseAppDataResult): { ok: boolean, title: string, description: string } {
+  if (result.status === 'ok') {
+    return { ok: true, title: 'Import complete', description: 'Backup data has been restored.' }
+  }
+
+  if (result.status === 'migrated') {
+    return {
+      ok: true,
+      title: 'Import complete',
+      description: `Backup data has been restored. Upgraded from schema v${result.sourceVersion}.`,
+    }
+  }
+
+  if (result.reason === 'unsupported-version') {
+    return {
+      ok: false,
+      title: 'Import failed',
+      description: 'This backup was created by a newer version of the app and cannot be imported.',
+    }
+  }
+
+  return { ok: false, title: 'Import failed', description: 'The file is not valid AppData JSON.' }
 }

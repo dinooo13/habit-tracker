@@ -48,3 +48,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0019](0019-quarantine-invalid-stored-data-on-load-failure.md) | Quarantine invalid stored data on load failure | Accepted |
 | [0020](0020-production-smoke-tests-with-build-sha-stamping.md) | Production deployment smoke tests with build-SHA stamping | Accepted |
 | [0021](0021-factory-manifest-descriptive-source-of-truth.md) | Factory manifest as the descriptive source of truth for the agent pipeline | Accepted |
+| [0022](0022-version-keyed-schema-migration-registry.md) | Version-keyed schema-migration registry with a discriminated parse result | Accepted |

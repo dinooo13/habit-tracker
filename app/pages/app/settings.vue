@@ -3,8 +3,8 @@ import { Time } from '@internationalized/date'
 import type { ChipProps, SelectItem } from '@nuxt/ui'
 import type { AppData, PrimaryColor } from '~/types/app-data'
 import { MAX_IMPORT_FILE_BYTES } from '~/types/app-data'
-import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
-import { backupFilename, extractImportedHabits, mergeHabitsForImport, serializeBackup } from '~/utils/persistence/backup'
+import { createEmptyAppData, parseAppDataResult } from '~/utils/persistence/storage-schema'
+import { backupFilename, describeImportOutcome, extractImportedHabits, mergeHabitsForImport, serializeBackup } from '~/utils/persistence/backup'
 import { buildCurrentHabitsPrompt, buildGettingStartedPrompt } from '~/utils/domain/ai-prompts'
 import { formatTimeString, parseTimeString, todayDateKey } from '~/utils/domain/date'
 import { safeJsonParse } from '~/utils/persistence/safe-json'
@@ -259,9 +259,19 @@ async function confirmImport(): Promise<void> {
       })
     }
     else {
-      const parsed = parseAppData(payload)
+      // parseAppDataResult never throws: branch on the discriminated status and
+      // surface the specific copy (a newer-version backup vs. a broken file) via
+      // the pure describeImportOutcome helper (issue #68).
+      const result = parseAppDataResult(payload)
+      const outcome = describeImportOutcome(result)
 
-      lifecycle.replaceAppData(parsed)
+      if (result.status === 'unrecoverable') {
+        logSecurityEvent('data.validation_failed', 'warn', result.reason)
+        toast.add({ title: outcome.title, description: outcome.description, color: 'error' })
+        return
+      }
+
+      lifecycle.replaceAppData(result.data)
       lifecycle.reconcileDerivedState()
 
       await persistence.save(lifecycle.snapshotAppData())
@@ -269,12 +279,9 @@ async function confirmImport(): Promise<void> {
 
       syncDailyReviewTimeFromSettings()
 
-      logSecurityEvent('data.import', 'info', `full backup: ${parsed.habits.length} habits restored`)
-      toast.add({
-        title: 'Import complete',
-        description: 'Backup data has been restored.',
-        color: 'success',
-      })
+      const migrationNote = result.status === 'migrated' ? ` (migrated ${result.steps.join(', ')})` : ''
+      logSecurityEvent('data.import', 'info', `full backup: ${result.data.habits.length} habits restored${migrationNote}`)
+      toast.add({ title: outcome.title, description: outcome.description, color: 'success' })
     }
 
     importModalOpen.value = false

@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
 import type { PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
 import { nowIso } from '~/utils/domain/date'
-import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
+import { createEmptyAppData, parseAppDataResult } from '~/utils/persistence/storage-schema'
 import { recordSecurityEvent } from '~/utils/observability/security-log'
 
 export const DATABASE_NAME = 'habit-tracker'
@@ -124,19 +124,33 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
       settings: settingsRecord?.value,
     }
 
-    try {
-      return parseAppData(rawPayload)
-    }
-    catch (error) {
-      const reason = error instanceof Error ? error.message : 'Stored AppData failed validation'
-      // Stored data failed Zod validation. Before falling back to empty state,
-      // preserve the raw payload in the quarantine table so a later save (which
-      // never touches that table) can't clobber the recoverable data — the user
-      // gets an export/recover path via the load-time recovery banner (issue #66,
-      // ADR-0019). Keep the SEC-16 log so the reset stays observable.
-      await this.quarantinePayload(rawPayload, reason)
-      recordSecurityEvent('data.validation_failed', 'error', reason)
-      return createEmptyAppData()
+    // `parseAppDataResult` never throws (issue #68, ADR-0022) — branch on the
+    // discriminated status instead of a try/catch.
+    const result = parseAppDataResult(rawPayload)
+
+    switch (result.status) {
+      case 'ok':
+        return result.data
+
+      case 'migrated':
+        // A stored payload was upgraded to the current schema. Record it in the
+        // SEC-16 buffer so a silent boot-time migration is visible when
+        // debugging a report. No write happens during load(): the upgraded
+        // envelope reaches disk through the normal debounced save (ADR-0004),
+        // keeping the read path side-effect-free apart from quarantine.
+        recordSecurityEvent('data.migrated', 'info', `Stored data migrated: ${result.steps.join(', ')}`)
+        return result.data
+
+      case 'unrecoverable':
+        // Stored data could not be validated/migrated. Before falling back to
+        // empty state, preserve the raw payload in the quarantine table so a
+        // later save (which never touches that table) can't clobber the
+        // recoverable data — the user gets an export/recover path via the
+        // load-time recovery banner (issue #66, ADR-0019). Keep the SEC-16 log
+        // so the reset stays observable.
+        await this.quarantinePayload(rawPayload, result.message)
+        recordSecurityEvent('data.validation_failed', 'error', `${result.reason}: ${result.message}`)
+        return createEmptyAppData()
     }
   }
 

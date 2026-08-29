@@ -14,9 +14,9 @@ ping-pong is driven by the **PR** label alone. This split-brain was previously t
 source of stuck items.
 
 ```
-ISSUE:  (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
-                   └─▶ duplicate (no status) / blocked (missing info or dependency)
-                                             └─ dependency blockers all closed → needs-plan
+ISSUE:  draft ──human removes the label──▶ (new, no status) ──triage──▶ needs-plan ──planner──▶ needs-plan-review ──human──▶ agent-ready ──implementer──▶ in-progress ──(PR merges, Closes #N)──▶ closed
+        (human-only,                                  └─▶ duplicate (no status) / blocked (missing info or dependency)
+         no queue)                                                              └─ dependency blockers all closed → needs-plan
 
 PR:     in-progress (draft) ──implementer: gates green──▶ needs-review ──reviewer: approve──▶ needs-qa ──qa: pass──▶ approved ──▶ human merges
                     ▲                                          │                                 │
@@ -36,7 +36,8 @@ Queues:
 
 - **triage routine** → open issues with **no** `status:` label and no `duplicate` label,
   plus open issues labeled `status: blocked`; the triage agent decides whether a blocked
-  issue is eligible for dependency rechecking
+  issue is eligible for dependency rechecking; open issues labeled `status: draft` are
+  excluded from the query and, as a second line of defence, skipped by the agent
 - **planner routine** → open issues labeled `status: needs-plan`
 - **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
@@ -113,12 +114,13 @@ agent files, not the routine.
 > You are a non-interactive orchestrator for `dinooo13/habit-tracker`. Build the queue from
 > two searches: (1) every open issue that has no `status:` label and no `duplicate` label
 > (`search_issues`:
-> `repo:dinooo13/habit-tracker is:issue is:open -label:"status: needs-plan"
-> -label:"status: needs-plan-review" -label:"status: agent-ready"
-> -label:"status: in-progress" -label:"status: needs-review" -label:"status: blocked"
-> -label:duplicate`); and (2) every open issue labeled `status: blocked`. For the second
-> result set, let the triage agent determine whether dependency rechecking applies. If both
-> searches are empty, report "nothing to triage" and stop. For each, spawn one
+> `repo:dinooo13/habit-tracker is:issue is:open -label:"status: draft"
+> -label:"status: needs-plan" -label:"status: needs-plan-review"
+> -label:"status: agent-ready" -label:"status: in-progress"
+> -label:"status: needs-review" -label:"status: blocked" -label:duplicate`); and
+> (2) every open issue labeled `status: blocked`. For the second result set, let the
+> triage agent determine whether dependency rechecking applies. If both searches are
+> empty, report "nothing to triage" and stop. For each, spawn one
 > fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — one agent per
 > issue, never reused. Collect only each verdict. Finish with a summary: queued for
 > planning, unblocked, duplicates, blocked (missing information or dependency), skipped.
@@ -202,3 +204,6 @@ will fail with `403 host_not_allowed`.
 Two gates are deliberately human: promoting a plan (`status: needs-plan-review` →
 `status: agent-ready` on the issue) and merging a PR labeled `status: approved` — the
 signal that both code review and QA have passed. Everything else runs unattended.
+
+Beyond the two gates, one state is entirely human-owned: `status: draft` (pre-pipeline,
+requirements still being written). Agents neither set, clear, nor act on it.

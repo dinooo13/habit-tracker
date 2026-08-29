@@ -56,6 +56,10 @@
   description: "Duplicate of an existing issue (linked in a comment)"
 
 # --- status: where it stands ---
+# `status: draft` is the one human-only state: agents never apply, remove, or act on it.
+- name: "status: draft"
+  color: "9e9e9e"
+  description: "Human-only: idea still being drafted — outside the agent pipeline"
 - name: "status: blocked"
   color: "d93f0b"
   description: "Blocked by something else"

@@ -50,3 +50,4 @@ pattern. Never edit an accepted ADR to reverse it — add a new one and mark the
 | [0021](0021-factory-manifest-descriptive-source-of-truth.md) | Factory manifest as the descriptive source of truth for the agent pipeline | Accepted |
 | [0022](0022-version-keyed-schema-migration-registry.md) | Version-keyed schema-migration registry with a discriminated parse result | Accepted |
 | [0023](0023-declared-idempotency-guards-for-factory-stages.md) | Declared, machine-checked idempotency guards for every factory stage | Accepted |
+| [0024](0024-revision-guarded-saves-with-cross-tab-merge.md) | Revision-guarded saves with deterministic cross-tab merge | Accepted |

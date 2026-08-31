@@ -83,7 +83,7 @@ export async function seedData(page: Page, data: AppData): Promise<void> {
  */
 export function readPersistedStore<T = Record<string, unknown>>(
   page: Page,
-  store: 'habits' | 'entries' | 'suggestions',
+  store: 'habits' | 'entries' | 'suggestions' | 'meta',
 ): Promise<T[]> {
   return page.evaluate(
     ({ databaseName, storeName }) => {

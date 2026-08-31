@@ -23,6 +23,8 @@ export type SecurityEventType
     | 'storage.write_failed'
     | 'storage.unavailable'
     | 'storage.recovered'
+    | 'storage.conflict_merged'
+    | 'storage.conflict_detected'
     | 'pwa.update.available'
     | 'pwa.update.applied'
 

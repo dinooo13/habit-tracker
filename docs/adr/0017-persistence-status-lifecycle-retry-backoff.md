@@ -94,3 +94,7 @@ Supporting decisions:
   ADR-0014 (utility taxonomy), ADR-0015 (app-data lifecycle). SEC-18; issues #65, #73.
 - ADR-0019 (quarantine invalid stored data on load failure) — adds a load-time recovery banner on
   the same indicator surface and hardens the open-failure path this ADR introduced.
+- [ADR-0024](0024-revision-guarded-saves-with-cross-tab-merge.md) (revision-guarded saves with
+  cross-tab merge) — closes the "cross-tab save coordination is out of scope" note here, adds the
+  `createPersistenceSaver` conflict short-circuit, and keeps the conflict state off the four-state
+  `PersistenceStatus` (in `useCrossTabSync`, mirroring ADR-0019's reasoning).

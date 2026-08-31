@@ -57,7 +57,14 @@ e2e/
   run date.
 - **Persistence** — the bootstrap save is debounced (800ms) and flushed on
   `visibilitychange → hidden`. Persistence specs trigger that flush and poll IndexedDB
-  (`readPersistedStore`) so a reload never races the write.
+  (`readPersistedStore`, which also reads the `meta` store for the revision) so a reload never
+  races the write.
+- **Two tabs, one context (cross-tab, #67)** — cross-tab specs open a *second* page in the **same**
+  `BrowserContext` via `page.context().newPage()`, because two `browser.newContext()` calls get
+  separate storage partitions and would never share the IndexedDB database or the
+  `BroadcastChannel` — so they cannot reproduce the bug. The two pages share auth (the dummy-auth
+  `localStorage` flag is context-wide), the database, and the "saved" broadcast, letting a spec drive
+  an edit in one tab and observe the other stay fresh (or prompt on a real collision).
 - **Selectors** — prefer `getByRole` / `getByLabel` / `getByText`. Queue and habit cards
   carry a marker class (`.queue-card`, `.habit-card`) because Nuxt UI's `UCard` does not
   forward `data-*` attributes (it does forward `:class`).
@@ -75,6 +82,7 @@ e2e/
 | `settings.spec.ts` | Export/import (full + habits-only), invalid file, delete, demo data. |
 | `insights.spec.ts` | Insights sections; theme/accent color apply + persist. |
 | `persistence.spec.ts` | Create/status changes survive reload; auth flag survives. |
+| `cross-tab.spec.ts` | Two tabs, one context: non-overlapping edits both survive; an idle tab picks up a peer write; a same-record collision prompts and the newer data survives (#67). |
 | `mobile-pwa.spec.ts` | PWA manifest/service worker; mobile bottom-nav. |
 
 ### The `@production` subset

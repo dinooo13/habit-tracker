@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { AppData, CoachingSuggestion, Habit, HabitEntry } from '~/types/app-data'
-import type { PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
+import type { LoadedAppData, PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
+import { StaleWriteError } from '~/utils/persistence/persistence-adapter'
 import { nowIso } from '~/utils/domain/date'
 import { createEmptyAppData, parseAppDataResult } from '~/utils/persistence/storage-schema'
 import { recordSecurityEvent } from '~/utils/observability/security-log'
@@ -9,6 +10,10 @@ export const DATABASE_NAME = 'habit-tracker'
 
 const SCHEMA_VERSION_META_KEY = 'schemaVersion'
 const SETTINGS_META_KEY = 'settings'
+// The monotonic cross-tab revision counter (issue #67, ADR-0024). Stored as a
+// third `meta` row, absent-means-zero for every pre-#67 install, so no
+// schemaVersion or Dexie store-version bump is needed.
+const REVISION_META_KEY = 'revision'
 
 // Fixed primary key for the quarantine table so a clear-then-put keeps exactly
 // one (newest-only) record — quarantined payloads consume quota, so we never
@@ -73,13 +78,26 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
     this.db = db
   }
 
-  async save(payload: AppData): Promise<void> {
+  async save(payload: AppData, expectedRevision: number | null): Promise<number> {
     // `payload` is already plain, proxy-free, structured-clonable `AppData`
     // (guaranteed by the store `snapshot()` contract — ADR-0004), so it is
     // written straight into IndexedDB with no serialization pass here.
     const { db } = this
 
-    await db.transaction('rw', db.habits, db.entries, db.suggestions, db.meta, async () => {
+    // The compare-and-swap runs *inside* the existing `rw` transaction
+    // (issue #67, ADR-0024). IndexedDB serialises transactions across tabs, so
+    // read-check-write is atomic with zero extra locking: a stale write aborts
+    // the transaction before anything is cleared.
+    return db.transaction('rw', db.habits, db.entries, db.suggestions, db.meta, async () => {
+      const storedRevision = ((await db.meta.get(REVISION_META_KEY))?.value as number | undefined) ?? 0
+
+      if (expectedRevision !== null && storedRevision !== expectedRevision) {
+        // Aborts the transaction — nothing is written.
+        throw new StaleWriteError(expectedRevision, storedRevision)
+      }
+
+      const nextRevision = storedRevision + 1
+
       await Promise.all([db.habits.clear(), db.entries.clear(), db.suggestions.clear()])
       await Promise.all([
         db.habits.bulkPut(payload.habits),
@@ -88,8 +106,11 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         db.meta.bulkPut([
           { key: SCHEMA_VERSION_META_KEY, value: payload.schemaVersion },
           { key: SETTINGS_META_KEY, value: payload.settings },
+          { key: REVISION_META_KEY, value: nextRevision },
         ]),
       ])
+
+      return nextRevision
     })
   }
 
@@ -97,9 +118,13 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
     return Boolean(await this.db.meta.get(SCHEMA_VERSION_META_KEY))
   }
 
-  async load(): Promise<AppData> {
+  async readRevision(): Promise<number> {
+    return ((await this.db.meta.get(REVISION_META_KEY))?.value as number | undefined) ?? 0
+  }
+
+  async load(): Promise<LoadedAppData> {
     const { db } = this
-    const [habits, entries, suggestions, schemaVersionRecord, settingsRecord] = await db.transaction(
+    const [habits, entries, suggestions, schemaVersionRecord, settingsRecord, revisionRecord] = await db.transaction(
       'r',
       [db.habits, db.entries, db.suggestions, db.meta],
       () =>
@@ -109,11 +134,17 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
           db.suggestions.toArray(),
           db.meta.get(SCHEMA_VERSION_META_KEY),
           db.meta.get(SETTINGS_META_KEY),
+          db.meta.get(REVISION_META_KEY),
         ]),
     )
 
+    // Absent revision row ⇒ 0 (pre-#67 install). Returned in every branch,
+    // including quarantine, so a later save overwrites the already-quarantined
+    // payload rather than being rejected as stale.
+    const revision = (revisionRecord?.value as number | undefined) ?? 0
+
     if (!schemaVersionRecord) {
-      return createEmptyAppData()
+      return { data: createEmptyAppData(), revision }
     }
 
     const rawPayload = {
@@ -130,7 +161,7 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
 
     switch (result.status) {
       case 'ok':
-        return result.data
+        return { data: result.data, revision }
 
       case 'migrated':
         // A stored payload was upgraded to the current schema. Record it in the
@@ -139,7 +170,7 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         // envelope reaches disk through the normal debounced save (ADR-0004),
         // keeping the read path side-effect-free apart from quarantine.
         recordSecurityEvent('data.migrated', 'info', `Stored data migrated: ${result.steps.join(', ')}`)
-        return result.data
+        return { data: result.data, revision }
 
       case 'unrecoverable':
         // Stored data could not be validated/migrated. Before falling back to
@@ -150,7 +181,7 @@ export class DexiePersistenceAdapter implements PersistenceAdapter {
         // so the reset stays observable.
         await this.quarantinePayload(rawPayload, result.message)
         recordSecurityEvent('data.validation_failed', 'error', `${result.reason}: ${result.message}`)
-        return createEmptyAppData()
+        return { data: createEmptyAppData(), revision }
     }
   }
 

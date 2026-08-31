@@ -40,16 +40,61 @@ export interface QuarantineRecord {
   payload: unknown
 }
 
+/**
+ * The result of {@link PersistenceAdapter.load}: the validated app data plus the
+ * revision of the payload just read. The revision is storage-level metadata
+ * (a `meta` row), **not** part of `AppData` — a monotonic counter that lets a
+ * later save detect that another tab moved the stored data ahead of this one
+ * (issue #67, ADR-0024). `0` when nothing (or no revision) is stored.
+ */
+export interface LoadedAppData {
+  data: AppData
+  revision: number
+}
+
+/**
+ * Thrown by {@link PersistenceAdapter.save} when the caller's `expectedRevision`
+ * no longer matches the stored revision — another tab wrote in between. Carries
+ * **only** the revisions (not the current payload): re-validating a whole
+ * envelope under a write lock is avoided, and the caller has to re-`load()` for
+ * the merge anyway (issue #67, ADR-0024).
+ */
+export class StaleWriteError extends Error {
+  readonly expectedRevision: number
+  readonly currentRevision: number
+
+  constructor(expectedRevision: number, currentRevision: number) {
+    super(`Stale write: expected revision ${expectedRevision}, but storage is at ${currentRevision}`)
+    this.name = 'StaleWriteError'
+    this.expectedRevision = expectedRevision
+    this.currentRevision = currentRevision
+  }
+}
+
 export interface PersistenceAdapter {
   /**
-   * Read and validate the persisted payload, or empty state when absent/corrupt.
-   * On a validation failure the raw payload is quarantined (see
-   * {@link QuarantineRecord}) rather than silently discarded.
+   * Read and validate the persisted payload, or empty state when absent/corrupt,
+   * together with the stored {@link LoadedAppData.revision}. On a validation
+   * failure the raw payload is quarantined (see {@link QuarantineRecord}) rather
+   * than silently discarded, and the stored revision is still returned so a
+   * subsequent save can legitimately overwrite the quarantined payload.
    */
-  load(): Promise<AppData>
-  /** Replace the persisted payload wholesale with plain, structured-clonable `AppData`. */
-  save(payload: AppData): Promise<void>
-  /** Remove all persisted data (including any quarantined payload — delete-all is a full wipe). */
+  load(): Promise<LoadedAppData>
+  /**
+   * Replace the persisted payload wholesale with plain, structured-clonable
+   * `AppData`, guarded by a revision compare-and-swap (issue #67, ADR-0024).
+   *
+   * When `expectedRevision` is a number the write is rejected with a
+   * {@link StaleWriteError} unless the stored revision still equals it; on
+   * success the stored revision is advanced by one. `expectedRevision === null`
+   * **force-writes** — an authoritative whole-envelope replacement (import,
+   * delete-all, demo, legacy migration) that adopts the new revision regardless
+   * of what a peer tab did. Returns the new stored revision.
+   */
+  save(payload: AppData, expectedRevision: number | null): Promise<number>
+  /** Cheap freshness probe: the stored revision without reading the collections. */
+  readRevision(): Promise<number>
+  /** Remove all persisted data (including any quarantined payload — delete-all is a full wipe; resets the revision to 0). */
   clear(): Promise<void>
   /** Whether the backend already holds a payload (drives one-time legacy migration). */
   hasData(): Promise<boolean>

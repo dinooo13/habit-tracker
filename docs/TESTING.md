@@ -96,9 +96,17 @@ Tests live in `tests/`:
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
   `fake-indexeddb`, exercised through the `PersistenceAdapter` interface),
   `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration), and
-  `persistence-saver.test.ts` (the framework-free retry/backoff save loop and
-  `loadAppDataSafely` empty-state fallback from
+  `persistence-saver.test.ts` (the framework-free retry/backoff save loop, the cross-tab conflict
+  short-circuit, and `loadAppDataSafely` empty-state fallback from
   `app/utils/persistence/persistence-saver.ts`, ADR-0017).
+- **Cross-tab conflict protection (ADR-0024, #67)** — the pure, deterministic pieces live in the
+  fast `unit` project: `merge-app-data.test.ts` (the three-way `mergeAppData` rules — merge vs.
+  conflict per habit/entry/suggestion/settings), `save-broadcast.test.ts` (the `BroadcastChannel`
+  wrapper self-filtering + null-channel no-op), and `use-cross-tab-sync.test.ts`
+  (`createCrossTabSync` guarded-save merge/retry/conflict/livelock and freshness logic, driven with
+  injected fakes — no Nuxt runtime). The `dexie-persistence-adapter.test.ts` suite also covers the
+  revision guard (compare-and-swap, `StaleWriteError`, force-write, pre-revision install, `clear()`
+  reset). DOM-driven triggers (`start()` + `visibilitychange`) are in the `nuxt` project.
 - **Backup & AI prompts** — `backup.test.ts` (pure `extractImportedHabits` /
   `mergeHabitsForImport` / `serializeBackup` / `backupFilename` from
   `app/utils/persistence/backup.ts`) and `ai-prompts.test.ts` (the deterministic prompt
@@ -113,15 +121,17 @@ Rendered tests live in `tests/nuxt/` (the `nuxt` project):
   from `use-demo-data` loading the `tests/fixtures/` sample into the Nuxt-provided stores).
 
 - **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`)
-  and `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill and
-  degraded-mode recovery banner, ADR-0017).
+  and `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill,
+  degraded-mode recovery banner (ADR-0017), and the cross-tab conflict banner + "Updated from
+  another tab" pill (ADR-0024)).
 - **Pages** — `insights-page.test.ts` (two due habit-days with one completion render a 50%
   seven-day completion rate).
 - **Lifecycle** — `app-data-lifecycle.test.ts` (`useAppDataLifecycle` snapshot/replace/reconcile
   over the Nuxt-provided Pinia stores, ADR-0015).
 - **Composables** — `use-clipboard.test.ts` (the `useClipboard` copy helper used by the
-  settings AI-prompt actions) and `use-storage-health.test.ts` (the `useStorageHealth`
-  persistence-status lifecycle transitions and their security-log events, ADR-0017).
+  settings AI-prompt actions), `use-storage-health.test.ts` (the `useStorageHealth`
+  persistence-status lifecycle transitions and their security-log events, ADR-0017), and
+  `use-cross-tab-sync-triggers.test.ts` (the `start()` + `visibilitychange` freshness probe, #67).
 - **Persistence (browser APIs)** — `export-backup.test.ts` (`downloadBackup`, which runs in
   the `nuxt` project because it touches `Blob`/`URL`/anchor download).
 

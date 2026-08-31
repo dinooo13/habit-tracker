@@ -9,6 +9,7 @@ import {
   migrateLegacyLocalStorage,
 } from '~/utils/persistence/legacy-migration'
 import type { PersistenceAdapter } from '~/utils/persistence/persistence-adapter'
+import { StaleWriteError } from '~/utils/persistence/persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
 
 const FIXTURE_PATH = 'tests/fixtures/habit-tracker-6-weeks.json'
@@ -32,16 +33,27 @@ function createMemoryStorage(initial: Record<string, string> = {}) {
 /** Minimal in-memory adapter — proves migration is backend-independent. */
 function createFakeAdapter(seed?: AppData): PersistenceAdapter {
   let data: AppData | null = seed ?? null
+  let revision = 0
 
   return {
-    load: async () => data ?? createEmptyAppData(),
-    save: async (payload) => {
+    load: async () => ({ data: data ?? createEmptyAppData(), revision }),
+    reload: async () => ({ data: data ?? createEmptyAppData(), revision }),
+    readRevision: async () => revision,
+    save: async (payload, expectedRevision) => {
+      if (expectedRevision !== null && expectedRevision !== revision) {
+        throw new StaleWriteError(expectedRevision, revision)
+      }
       data = payload
+      revision += 1
+      return revision
     },
     clear: async () => {
       data = null
+      revision = 0
     },
     hasData: async () => data !== null,
+    loadQuarantine: async () => null,
+    clearQuarantine: async () => {},
   }
 }
 
@@ -71,7 +83,7 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
     expect(storage.has(LEGACY_STORAGE_KEY)).toBe(false)
     expect(storage.has(LEGACY_LAST_VALID_STORAGE_KEY)).toBe(false)
 
-    const loaded = await adapter.load()
+    const loaded = (await adapter.load()).data
     expect(loaded.habits).toHaveLength(fixture.habits.length)
     expect(loaded.entries).toHaveLength(fixture.entries.length)
   })
@@ -86,12 +98,12 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
 
     expect(migrated).toBe(true)
-    expect((await adapter.load()).habits).toHaveLength(fixture.habits.length)
+    expect((await adapter.load()).data.habits).toHaveLength(fixture.habits.length)
   })
 
   it('does not overwrite existing backend data with legacy payloads', async () => {
     const existing = createEmptyAppData()
-    await adapter.save(existing)
+    await adapter.save(existing, null)
 
     const storage = createMemoryStorage({
       [LEGACY_STORAGE_KEY]: JSON.stringify(readFixture()),
@@ -101,7 +113,7 @@ describe('migrateLegacyLocalStorage (Dexie adapter)', () => {
 
     expect(migrated).toBe(false)
     expect(storage.has(LEGACY_STORAGE_KEY)).toBe(false)
-    expect(await adapter.load()).toEqual(existing)
+    expect((await adapter.load()).data).toEqual(existing)
   })
 
   it('skips migration when no legacy data exists', async () => {
@@ -124,7 +136,7 @@ describe('migrateLegacyLocalStorage (backend-agnostic)', () => {
 
     expect(migrated).toBe(true)
     expect(storage.has(LEGACY_STORAGE_KEY)).toBe(false)
-    expect((await adapter.load()).habits).toHaveLength(fixture.habits.length)
+    expect((await adapter.load()).data.habits).toHaveLength(fixture.habits.length)
   })
 
   it('leaves a seeded adapter untouched', async () => {
@@ -136,6 +148,6 @@ describe('migrateLegacyLocalStorage (backend-agnostic)', () => {
     const migrated = await migrateLegacyLocalStorage(adapter, storage)
 
     expect(migrated).toBe(false)
-    expect(await adapter.load()).toEqual(createEmptyAppData())
+    expect((await adapter.load()).data).toEqual(createEmptyAppData())
   })
 })

@@ -97,6 +97,19 @@ The domain vocabulary used throughout the code, mostly borrowed from James Clear
   instead of being discarded (issue #66, ADR-0019). A load-time recovery banner — **Export preserved
   data** / **Dismiss** — lets the user export the raw JSON or clear it. Tracked by `useDataRecovery()`,
   distinct from the save-time persistence status above.
+- **Revision** — a monotonic counter stored in the Dexie `meta` table (absent ⇒ `0`), advanced by
+  one on every successful save (issue #67, ADR-0024). Not part of `AppData` and never in a backup
+  file; it exists purely to detect that another tab moved the stored data ahead of this one.
+- **Stale write** — a save whose `expectedRevision` no longer matches the stored revision because
+  another tab wrote in between. The Dexie compare-and-swap aborts it with a `StaleWriteError` (never
+  a blind overwrite), and the cross-tab sync re-loads and merges rather than clobbering.
+- **Base snapshot** — the envelope a tab last observed as *stored*, kept in memory by
+  `useCrossTabSync()`. It is the common ancestor for the deterministic three-way merge
+  (`base` / `ours` / `theirs`) that resolves a stale write.
+- **Cross-tab conflict** — two tabs changed the *same* record (a habit, or a `habitId:date` entry)
+  in incompatible ways, so the merge cannot proceed (issue #67, ADR-0024). Auto-save suspends and a
+  conflict banner offers **Export this tab's data** and **Reload with latest** — the newer stored
+  data is never silently discarded. Non-overlapping edits, suggestions, and settings never conflict.
 - **Persistence health panel** — a read-only **Storage & diagnostics** card on the Settings page
   (issue #73, ADR-0017) that surfaces the session diagnostics `useStorageHealth()` already
   computes but never showed: the persistence status and last-save time, the persistent-storage

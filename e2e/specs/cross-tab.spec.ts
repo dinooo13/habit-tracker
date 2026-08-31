@@ -20,22 +20,8 @@ async function renameHabit(page: Page, from: string, to: string): Promise<void> 
   await form.submit()
 }
 
-// A fast, single-click same-record edit (no navigation) — commits well within a
-// peer tab's 800ms debounce window, unlike the multi-step form rename.
-async function archiveHabit(page: Page, name: string): Promise<void> {
-  await page.locator('.habit-card').filter({ hasText: name }).getByRole('button', { name: 'Archive' }).click()
-}
-
 function habitNames(page: Page): Promise<string[]> {
   return readPersistedStore<{ name: string }>(page, 'habits').then(rows => rows.map(row => row.name))
-}
-
-function habitRows(page: Page): Promise<{ name: string, archived: boolean }[]> {
-  return readPersistedStore<{ name: string, archived: boolean }>(page, 'habits')
-}
-
-function archivedFocusBlock(rows: { name: string, archived: boolean }[]): boolean | undefined {
-  return rows.find(row => row.name === 'Focus block')?.archived
 }
 
 test.describe('Cross-tab conflict protection (#67)', () => {
@@ -101,37 +87,38 @@ test.describe('Cross-tab conflict protection (#67)', () => {
     await page2.goto('/app/habits')
     await expect(page2.locator('.habit-card').filter({ hasText: 'Focus block' })).toBeVisible()
 
-    // Tab B renames the habit but does NOT flush: its 800ms debounced guarded save
-    // is now pending on the stored revision, so the tab is dirty and a peer write
-    // is deferred rather than silently applied over the unsaved edit.
+    // Pre-open Tab A's edit form for the habit (no mutation yet), so Tab A's
+    // commit below is just fill+submit. That lands the peer write well inside Tab
+    // B's 800ms debounce window; a full navigate-then-edit could outrun it and let
+    // Tab B's own debounce save first, so there'd be no concurrent divergence.
+    const formA = new HabitFormPage(page)
+    await page.locator('.habit-card').filter({ hasText: 'Focus block' }).getByRole('link', { name: 'Edit' }).click()
+    await expect(page.getByLabel('Habit name')).toHaveValue('Focus block')
+
+    // Tab B renames the habit and stays dirty: its 800ms debounced guarded save is
+    // now pending on the stored revision, so a peer write is deferred (not silently
+    // applied) while the edit is unsaved.
     await renameHabit(page2, 'Focus block', 'B version')
 
-    // Tab A changes the SAME habit a different way (archive) and flushes. Archive
-    // is a single click with no navigation, so it commits well within Tab B's
-    // 800ms window — the stored revision moves ahead while Tab B is still pending
-    // on the old one. (Two slow form renames would let Tab B's own debounce commit
-    // first, serialising the edits so no genuine collision ever occurs.)
-    await archiveHabit(page, 'Focus block')
+    // Tab A commits a conflicting rename of the SAME habit and flushes — the stored
+    // revision moves ahead while Tab B is still pending on the old one.
+    await formA.setName('A version')
+    await formA.submit()
     await flushSave(page)
-    await expect.poll(() => habitRows(page).then(archivedFocusBlock)).toBe(true)
+    await expect.poll(() => habitNames(page)).toContain('A version')
 
-    // Tab B's still-pending debounced save now lands on the stale revision → the
-    // same habit was changed in both tabs (renamed here, archived there) → a
-    // genuine three-way collision, which suspends auto-save and shows the banner.
-    // No explicit flush: the teardown flush uses a fire-and-forget save that drops
-    // a stale write silently, so the debounced guarded save is what surfaces it.
+    // Tab B's still-pending debounced save then lands on the stale revision → the
+    // same record was changed in both tabs → a genuine collision, which suspends
+    // auto-save and shows the banner. (No explicit flush here: the teardown flush
+    // uses a fire-and-forget save that drops a stale write silently — and would
+    // cancel this pending debounce — so it is the guarded save that surfaces it.)
     await expect(page2.getByText('Another tab changed the same things')).toBeVisible({ timeout: 15_000 })
 
-    // The newer data is never discarded: storage still holds A's version (archived,
-    // and never renamed to Tab B's value, whose save stayed suspended).
-    await expect.poll(() => habitRows(page2).then(rows => rows.map(row => row.name))).not.toContain('B version')
-    await expect.poll(() => habitRows(page2).then(archivedFocusBlock)).toBe(true)
+    // The newer data is never discarded: storage still holds A's version.
+    await expect.poll(() => habitNames(page2)).toContain('A version')
 
-    // Reload with latest lands Tab B on the winning version: its rename is gone and
-    // A's archived habit is what remains.
+    // Reload with latest lands tab B on the winning version.
     await page2.getByRole('button', { name: 'Reload with latest' }).click()
-    await expect(page2.locator('.habit-card').filter({ hasText: 'B version' })).toHaveCount(0)
-    await page2.getByRole('checkbox', { name: 'Show archived habits' }).check()
-    await expect(page2.locator('.habit-card').filter({ hasText: 'Focus block' })).toBeVisible()
+    await expect(page2.locator('.habit-card').filter({ hasText: 'A version' })).toBeVisible()
   })
 })

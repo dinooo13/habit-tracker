@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref, toRaw, type Ref } from 'vue'
 import type { AppData } from '~/types/app-data'
 import { nowIso } from '~/utils/domain/date'
 import type { LoadedAppData } from '~/utils/persistence/persistence-adapter'
@@ -117,8 +117,22 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
     )
   }
 
+  /**
+   * The merge ancestor must be an immutable, independent copy: the four Pinia
+   * stores `hydrate()` by sharing the incoming record objects (a shallow array
+   * copy — ADR-0004/ADR-0015), so any data object that is also handed to
+   * `replaceAppData` still shares its habit/entry objects with the reactive
+   * store. Holding that object directly as `base` let a later in-place edit
+   * (e.g. `habit.name = …`) mutate the ancestor, collapsing the three-way merge
+   * to a two-way one that can never see a same-record collision (issue #67). So
+   * every `base` assignment goes through a structural clone that no store shares.
+   */
+  function detach(data: AppData): AppData {
+    return structuredClone(toRaw(data))
+  }
+
   function prime(baseData: AppData, revision: number): void {
-    base = baseData
+    base = detach(baseData)
     knownRevision = revision
   }
 
@@ -128,7 +142,7 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
     for (let attempt = 0; attempt < MAX_MERGE_ATTEMPTS; attempt++) {
       try {
         const revision = await deps.saveEnvelope(ours, knownRevision)
-        base = ours
+        base = detach(ours)
         knownRevision = revision
         broadcast.post(revision)
         return
@@ -153,7 +167,7 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
         // revision. `applyRemote` cancels the echoed debounced save.
         deps.applyRemote(result.data)
         deps.reconcile()
-        base = fresh.data
+        base = detach(fresh.data)
         knownRevision = fresh.revision
         ours = deps.snapshot()
         log('storage.conflict_merged', 'info', `Merged a stale save onto revision ${fresh.revision}`)
@@ -168,7 +182,7 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
 
   async function saveAuthoritative(payload: AppData): Promise<number> {
     const revision = await deps.saveEnvelope(payload, null)
-    base = payload
+    base = detach(payload)
     knownRevision = revision
     broadcast.post(revision)
     return revision
@@ -177,7 +191,7 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
   async function saveFinal(payload: AppData): Promise<boolean> {
     try {
       const revision = await deps.saveEnvelope(payload, knownRevision)
-      base = payload
+      base = detach(payload)
       knownRevision = revision
       broadcast.post(revision)
       return true
@@ -211,7 +225,7 @@ export function createCrossTabSync(deps: CrossTabSyncDeps): CrossTabSync {
 
     const fresh = await deps.loadFresh()
     deps.applyRemote(fresh.data)
-    base = fresh.data
+    base = detach(fresh.data)
     knownRevision = fresh.revision
     lastRemoteAppliedAt.value = nowIso()
   }

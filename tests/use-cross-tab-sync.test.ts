@@ -199,6 +199,36 @@ describe('createCrossTabSync (#67)', () => {
       await expect(sync.saveGuarded(appData([]))).rejects.toThrow('disk on fire')
       expect(sync.conflict.value).toBeNull()
     })
+
+    it('keeps the merge ancestor independent of an in-place edit to its source object (#67)', async () => {
+      // The four Pinia stores hydrate() by sharing the incoming record objects
+      // (a shallow array copy), so the object handed to prime() is the very one a
+      // later edit mutates in place. If the ancestor is not an independent copy it
+      // collapses to equal `ours`, and a genuine same-record collision is silently
+      // merged away instead of prompting — the exact regression this guards.
+      const shared = habit('h1', { name: 'Focus block' })
+      const priming = appData([shared])
+
+      const theirs = appData([habit('h1', { name: 'A version', updatedAt: '2026-08-02T00:00:00.000Z' })])
+      const deps = baseDeps({
+        saveEnvelope: vi.fn(async (_p: AppData, expected: number | null) => {
+          throw new StaleWriteError(expected ?? 0, 1)
+        }),
+        loadFresh: vi.fn().mockResolvedValue({ data: theirs, revision: 1 }),
+      })
+      const sync = createCrossTabSync(deps)
+      sync.prime(priming, 0)
+
+      // Simulate the store's in-place edit on the SHARED habit after priming.
+      shared.name = 'B version'
+      shared.updatedAt = '2026-08-03T00:00:00.000Z'
+
+      // `ours` carries that same edit; `theirs` changed the same habit differently.
+      const ours = appData([habit('h1', { name: 'B version', updatedAt: '2026-08-03T00:00:00.000Z' })])
+
+      await expect(sync.saveGuarded(ours)).rejects.toBeInstanceOf(AppDataConflictError)
+      expect(sync.conflict.value).not.toBeNull()
+    })
   })
 
   describe('saveAuthoritative', () => {

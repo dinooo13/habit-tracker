@@ -1,4 +1,6 @@
 import type { AppData } from '~/types/app-data'
+import type { LoadedAppData } from '~/utils/persistence/persistence-adapter'
+import { AppDataConflictError } from '~/utils/persistence/merge-app-data'
 import { MAX_SAVE_RETRIES, isQuotaExceededError, nextRetryDelay } from '~/utils/observability/storage-health'
 
 // Injectable timer seam so the retry loop can be driven by fake timers in the
@@ -18,6 +20,16 @@ export interface PersistenceSaverDeps {
   markUnavailable: (reason: string) => void
   /** Run after a successful write (e.g. re-check quota). Optional. */
   onSaved?: () => void
+  /**
+   * A cross-tab conflict is **not** a storage failure, so it must not drive the
+   * retry/backoff loop or the `unavailable` banner (issue #67, ADR-0024). When
+   * `isConflictError(error)` is true the loop calls {@link onConflict}, resets,
+   * and stops — mirroring the quota short-circuit. Defaults to
+   * `e instanceof AppDataConflictError`.
+   */
+  isConflictError?: (error: unknown) => boolean
+  /** Invoked once when a save fails with a conflict. Optional. */
+  onConflict?: (error: unknown) => void
   /** Override the quota-error predicate (defaults to {@link isQuotaExceededError}). */
   isQuotaError?: (error: unknown) => boolean
   /** Override the backoff schedule (defaults to {@link nextRetryDelay}). */
@@ -50,6 +62,7 @@ export interface PersistenceSaver {
  */
 export function createPersistenceSaver(deps: PersistenceSaverDeps): PersistenceSaver {
   const isQuotaError = deps.isQuotaError ?? isQuotaExceededError
+  const isConflictError = deps.isConflictError ?? (error => error instanceof AppDataConflictError)
   const delayFor = deps.delayFor ?? nextRetryDelay
   const maxRetries = deps.maxRetries ?? MAX_SAVE_RETRIES
   const schedule = deps.setTimeoutFn ?? ((fn, ms) => setTimeout(fn, ms))
@@ -81,6 +94,17 @@ export function createPersistenceSaver(deps: PersistenceSaverDeps): PersistenceS
       })
       .catch((error) => {
         if (activeGeneration !== generation) {
+          return
+        }
+
+        // A cross-tab conflict is not a write failure: hand it to the conflict
+        // handler and stop, before touching the failure/backoff machinery
+        // (issue #67, ADR-0024). `markSaved` is deliberately not called, so
+        // `lastSavedAt` keeps telling the truth about the last real write.
+        if (isConflictError(error)) {
+          deps.onConflict?.(error)
+          attempt = 0
+          cancelRetries()
           return
         }
 
@@ -119,9 +143,11 @@ export function createPersistenceSaver(deps: PersistenceSaverDeps): PersistenceS
   return { save, cancelRetries }
 }
 
-/** Outcome of {@link loadAppDataSafely}: the data to hydrate plus whether the read failed. */
+/** Outcome of {@link loadAppDataSafely}: the data to hydrate, its revision, and whether the read failed. */
 export interface SafeLoadResult {
   data: AppData
+  /** The stored cross-tab revision (issue #67, ADR-0024); `0` on a failed open. */
+  revision: number
   /**
    * `true` when the underlying read threw (DB open/read failure), so the caller
    * can suppress the debounced auto-save watcher and avoid clobbering data that
@@ -140,15 +166,16 @@ export interface SafeLoadResult {
  * bootstrap can suppress the auto-save watcher on an open failure (issue #66).
  */
 export async function loadAppDataSafely(
-  load: () => Promise<AppData>,
+  load: () => Promise<LoadedAppData>,
   onUnavailable: (reason: string) => void,
   fallback: () => AppData,
 ): Promise<SafeLoadResult> {
   try {
-    return { data: await load(), failed: false }
+    const { data, revision } = await load()
+    return { data, revision, failed: false }
   }
   catch {
     onUnavailable('load-failed')
-    return { data: fallback(), failed: true }
+    return { data: fallback(), revision: 0, failed: true }
   }
 }

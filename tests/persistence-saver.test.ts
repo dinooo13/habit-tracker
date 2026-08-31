@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppData } from '~/types/app-data'
 import { APP_DATA_SCHEMA_VERSION, DEFAULT_SETTINGS } from '~/types/app-data'
 import { createPersistenceSaver, loadAppDataSafely } from '~/utils/persistence/persistence-saver'
+import { AppDataConflictError } from '~/utils/persistence/merge-app-data'
 
 function appData(overrides: Partial<AppData> = {}): AppData {
   return {
@@ -95,6 +96,23 @@ describe('createPersistenceSaver (#65)', () => {
     expect(deps.markUnavailable).toHaveBeenCalledWith('quota')
   })
 
+  it('short-circuits a cross-tab conflict without touching the failure machinery (#67)', async () => {
+    const save = vi.fn().mockRejectedValue(new AppDataConflictError([]))
+    const onConflict = vi.fn()
+    const deps = makeDeps(save, { onConflict })
+    const saver = createPersistenceSaver(deps)
+
+    saver.save(appData())
+    await vi.runAllTimersAsync()
+
+    // A conflict is not a storage failure: no retry, no unavailable, no false save.
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(onConflict).toHaveBeenCalledTimes(1)
+    expect(deps.reportWriteFailure).not.toHaveBeenCalled()
+    expect(deps.markUnavailable).not.toHaveBeenCalled()
+    expect(deps.markSaved).not.toHaveBeenCalled()
+  })
+
   it('supersedes an in-progress retry with the latest snapshot and resets attempts', async () => {
     const first = appData({ habits: [] })
     const second = appData({ entries: [] })
@@ -120,17 +138,18 @@ describe('createPersistenceSaver (#65)', () => {
 })
 
 describe('loadAppDataSafely (#65)', () => {
-  it('returns the loaded data with failed:false on success without marking unavailable', async () => {
+  it('returns the loaded data and revision with failed:false on success without marking unavailable', async () => {
     const onUnavailable = vi.fn()
     const loaded = appData({ suggestions: [] })
-    const result = await loadAppDataSafely(() => Promise.resolve(loaded), onUnavailable, () => appData())
+    const result = await loadAppDataSafely(() => Promise.resolve({ data: loaded, revision: 7 }), onUnavailable, () => appData())
 
     expect(result.data).toBe(loaded)
+    expect(result.revision).toBe(7)
     expect(result.failed).toBe(false)
     expect(onUnavailable).not.toHaveBeenCalled()
   })
 
-  it('falls back to empty state, marks unavailable, and reports failed:true when the load throws', async () => {
+  it('falls back to empty state at revision 0, marks unavailable, and reports failed:true when the load throws', async () => {
     const onUnavailable = vi.fn()
     const fallback = appData()
     const result = await loadAppDataSafely(
@@ -140,6 +159,7 @@ describe('loadAppDataSafely (#65)', () => {
     )
 
     expect(result.data).toBe(fallback)
+    expect(result.revision).toBe(0)
     expect(result.failed).toBe(true)
     expect(onUnavailable).toHaveBeenCalledWith('load-failed')
   })

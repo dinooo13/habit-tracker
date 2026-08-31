@@ -68,4 +68,7 @@ load → hydrate → reconcile → persist flow in `bootstrap.client.ts` are unt
 - `app/composables/use-persistence.ts` — interface-dependent orchestration.
 - `tests/dexie-persistence-adapter.test.ts`, `tests/legacy-migration.test.ts`.
 - Supersedes no ADR; refines [ADR-0002](0002-local-first-storage-with-indexeddb-dexie.md).
+- Extended by [ADR-0024](0024-revision-guarded-saves-with-cross-tab-merge.md) — `save` takes an
+  `expectedRevision`, `load` returns `{ data, revision }`, and `readRevision()` is added for the
+  cross-tab revision guard.
 - Tracking: issue #13.

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter, HabitDatabase } from '~/utils/persistence/dexie-persistence-adapter'
+import { StaleWriteError } from '~/utils/persistence/persistence-adapter'
 import { createEmptyAppData, parseAppData } from '~/utils/persistence/storage-schema'
 import { clearSecurityLog, recentSecurityEvents } from '~/utils/observability/security-log'
 
@@ -16,6 +17,10 @@ describe('DexiePersistenceAdapter', () => {
   let db: HabitDatabase
   let adapter: DexiePersistenceAdapter
 
+  async function loadData(target: DexiePersistenceAdapter = adapter): Promise<AppData> {
+    return (await target.load()).data
+  }
+
   beforeEach(() => {
     db = new HabitDatabase()
     adapter = new DexiePersistenceAdapter(db)
@@ -27,17 +32,17 @@ describe('DexiePersistenceAdapter', () => {
 
   it('returns empty app data before anything is saved', async () => {
     expect(await adapter.hasData()).toBe(false)
-    expect(await adapter.load()).toEqual(createEmptyAppData())
+    expect(await loadData()).toEqual(createEmptyAppData())
   })
 
   it('round-trips a full payload through save and load', async () => {
     const fixture = readFixture()
 
-    await adapter.save(fixture)
+    await adapter.save(fixture, null)
 
     expect(await adapter.hasData()).toBe(true)
 
-    const loaded = await adapter.load()
+    const loaded = await loadData()
     expect(loaded.schemaVersion).toBe(fixture.schemaVersion)
     expect(loaded.settings).toEqual(fixture.settings)
     expect(loaded.habits).toHaveLength(fixture.habits.length)
@@ -51,21 +56,21 @@ describe('DexiePersistenceAdapter', () => {
   })
 
   it('replaces previous data on save instead of merging', async () => {
-    await adapter.save(readFixture())
+    await adapter.save(readFixture(), null)
 
     const empty = createEmptyAppData()
-    await adapter.save(empty)
+    await adapter.save(empty, null)
 
-    expect(await adapter.load()).toEqual(empty)
+    expect(await loadData()).toEqual(empty)
   })
 
   it('clears all stored data', async () => {
-    await adapter.save(readFixture())
+    await adapter.save(readFixture(), null)
 
     await adapter.clear()
 
     expect(await adapter.hasData()).toBe(false)
-    expect(await adapter.load()).toEqual(createEmptyAppData())
+    expect(await loadData()).toEqual(createEmptyAppData())
   })
 
   it('falls back to empty state and logs when stored data fails validation (SEC-16)', async () => {
@@ -77,7 +82,7 @@ describe('DexiePersistenceAdapter', () => {
     await db.meta.put({ key: 'schemaVersion', value: 1 })
     await db.habits.put({ id: 'broken' } as never)
 
-    const result = await adapter.load()
+    const result = await loadData()
 
     expect(result).toEqual(createEmptyAppData())
 
@@ -86,6 +91,73 @@ describe('DexiePersistenceAdapter', () => {
 
     clearSecurityLog()
     vi.restoreAllMocks()
+  })
+
+  // ── Revision guard (issue #67, ADR-0024) ───────────────────────────────────
+  describe('revision guard (#67)', () => {
+    it('starts at 0 and increments on each save', async () => {
+      expect(await adapter.readRevision()).toBe(0)
+      expect((await adapter.load()).revision).toBe(0)
+
+      const first = await adapter.save(createEmptyAppData(), 0)
+      expect(first).toBe(1)
+      expect(await adapter.readRevision()).toBe(1)
+      expect((await adapter.load()).revision).toBe(1)
+
+      const second = await adapter.save(createEmptyAppData(), 1)
+      expect(second).toBe(2)
+    })
+
+    it('rejects a stale save without overwriting the stored data', async () => {
+      const a = readFixture()
+      await adapter.save(a, 0)
+
+      const b = createEmptyAppData()
+      await expect(adapter.save(b, 0)).rejects.toBeInstanceOf(StaleWriteError)
+
+      // The rejected write left the transaction aborted — `a` is still stored.
+      expect((await loadData()).habits).toHaveLength(a.habits.length)
+      expect(await adapter.readRevision()).toBe(1)
+    })
+
+    it('carries the expected and current revisions on the error', async () => {
+      await adapter.save(createEmptyAppData(), 0)
+      await expect(adapter.save(createEmptyAppData(), 0)).rejects.toMatchObject({
+        expectedRevision: 0,
+        currentRevision: 1,
+      })
+    })
+
+    it('force-writes (expectedRevision: null) regardless of the stored revision', async () => {
+      await adapter.save(createEmptyAppData(), 0)
+      const fixture = readFixture()
+
+      const revision = await adapter.save(fixture, null)
+
+      expect(revision).toBe(2)
+      expect((await loadData()).habits).toHaveLength(fixture.habits.length)
+    })
+
+    it('treats a pre-revision install as revision 0 and lets a guarded save succeed', async () => {
+      // Seed a valid V2 payload with no `revision` meta row (a pre-#67 install).
+      const fixture = readFixture()
+      await db.meta.put({ key: 'schemaVersion', value: fixture.schemaVersion })
+      await db.meta.put({ key: 'settings', value: fixture.settings })
+      for (const habit of fixture.habits) {
+        await db.habits.put(habit)
+      }
+
+      const loaded = await adapter.load()
+      expect(loaded.revision).toBe(0)
+
+      await expect(adapter.save(createEmptyAppData(), 0)).resolves.toBe(1)
+    })
+
+    it('resets the revision to 0 on clear()', async () => {
+      await adapter.save(createEmptyAppData(), 0)
+      await adapter.clear()
+      expect(await adapter.readRevision()).toBe(0)
+    })
   })
 
   describe('quarantine (#66)', () => {
@@ -104,7 +176,7 @@ describe('DexiePersistenceAdapter', () => {
       await db.meta.put({ key: 'schemaVersion', value: 1 })
       await db.habits.put({ id: 'broken' } as never)
 
-      const result = await adapter.load()
+      const result = await loadData()
       expect(result).toEqual(createEmptyAppData())
 
       const record = await adapter.loadQuarantine()
@@ -134,7 +206,7 @@ describe('DexiePersistenceAdapter', () => {
     })
 
     it('does not quarantine when valid data round-trips', async () => {
-      await adapter.save(readFixture())
+      await adapter.save(readFixture(), null)
       await adapter.load()
 
       expect(await adapter.loadQuarantine()).toBeNull()
@@ -146,13 +218,13 @@ describe('DexiePersistenceAdapter', () => {
       await adapter.load()
       expect(await adapter.loadQuarantine()).not.toBeNull()
 
-      await adapter.save(createEmptyAppData())
+      await adapter.save(createEmptyAppData(), null)
 
       expect(await adapter.loadQuarantine()).not.toBeNull()
     })
 
     it('clearQuarantine() removes the record; other data is untouched', async () => {
-      await adapter.save(readFixture())
+      await adapter.save(readFixture(), null)
       await db.quarantine.put({ id: 'latest', capturedAt: '2026-01-01T00:00:00.000Z', reason: 'x', payload: {} })
 
       await adapter.clearQuarantine()
@@ -200,7 +272,7 @@ describe('DexiePersistenceAdapter', () => {
         updatedAt: '2026-02-01T00:00:00.000Z',
       } as never)
 
-      const loaded = await adapter.load()
+      const loaded = await loadData()
 
       expect(loaded.schemaVersion).toBe(2)
       expect(loaded.habits).toHaveLength(1)
@@ -215,7 +287,7 @@ describe('DexiePersistenceAdapter', () => {
       await db.meta.put({ key: 'schemaVersion', value: 99 })
       await db.meta.put({ key: 'settings', value: createEmptyAppData().settings })
 
-      const loaded = await adapter.load()
+      const loaded = await loadData()
       expect(loaded).toEqual(createEmptyAppData())
 
       const record = await adapter.loadQuarantine()
@@ -239,13 +311,13 @@ describe('DexiePersistenceAdapter', () => {
     // Seed valid data through the adapter (registers the v2 schema), then reopen a
     // fresh adapter over the same database name to exercise the Dexie upgrade path.
     const fixture = readFixture()
-    await adapter.save(fixture)
+    await adapter.save(fixture, null)
     db.close()
 
     const reopened = new HabitDatabase()
     const reopenedAdapter = new DexiePersistenceAdapter(reopened)
     try {
-      const loaded = await reopenedAdapter.load()
+      const loaded = await loadData(reopenedAdapter)
       expect(loaded.habits).toHaveLength(fixture.habits.length)
       expect(loaded.entries).toHaveLength(fixture.entries.length)
       expect(loaded.settings).toEqual(fixture.settings)

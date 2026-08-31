@@ -1,8 +1,13 @@
 import type { AppData } from '~/types/app-data'
 import { DexiePersistenceAdapter } from '~/utils/persistence/dexie-persistence-adapter'
 import { migrateLegacyLocalStorage } from '~/utils/persistence/legacy-migration'
-import type { PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
+import type { LoadedAppData, PersistenceAdapter, QuarantineRecord } from '~/utils/persistence/persistence-adapter'
 import { createEmptyAppData } from '~/utils/persistence/storage-schema'
+
+/** Empty {@link LoadedAppData} for the SSR/no-client fallback. */
+function emptyLoaded(): LoadedAppData {
+  return { data: createEmptyAppData(), revision: 0 }
+}
 
 let defaultAdapter: PersistenceAdapter | null = null
 
@@ -21,21 +26,48 @@ function getDefaultAdapter(): PersistenceAdapter {
  * empty-state fallback live here, so adapters can assume a client environment.
  */
 export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()) {
-  async function load(): Promise<AppData> {
+  async function load(): Promise<LoadedAppData> {
     if (!import.meta.client) {
-      return createEmptyAppData()
+      return emptyLoaded()
     }
 
     await migrateLegacyLocalStorage(adapter, window.localStorage)
     return adapter.load()
   }
 
-  async function save(payload: AppData): Promise<void> {
+  /**
+   * Re-read the stored envelope without the one-time legacy-`localStorage`
+   * migration step (issue #67, ADR-0024). Used by the cross-tab sync to pick up
+   * a peer tab's write or to fetch `theirs` for a merge.
+   */
+  async function reload(): Promise<LoadedAppData> {
     if (!import.meta.client) {
-      return
+      return emptyLoaded()
     }
 
-    await adapter.save(payload)
+    return adapter.load()
+  }
+
+  /** Cheap stored-revision probe for the freshness check (issue #67, ADR-0024). */
+  async function readRevision(): Promise<number> {
+    if (!import.meta.client) {
+      return 0
+    }
+
+    return adapter.readRevision()
+  }
+
+  /**
+   * Persist `payload`, guarded by `expectedRevision` (issue #67, ADR-0024):
+   * `null` force-writes; a number rejects with `StaleWriteError` unless the
+   * stored revision still matches. Returns the new stored revision.
+   */
+  async function save(payload: AppData, expectedRevision: number | null): Promise<number> {
+    if (!import.meta.client) {
+      return 0
+    }
+
+    return adapter.save(payload, expectedRevision)
   }
 
   async function clear(): Promise<void> {
@@ -64,6 +96,8 @@ export function usePersistence(adapter: PersistenceAdapter = getDefaultAdapter()
 
   return {
     load,
+    reload,
+    readRevision,
     save,
     clear,
     loadQuarantine,

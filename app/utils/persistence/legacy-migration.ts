@@ -62,7 +62,9 @@ export async function migrateLegacyLocalStorage(
     return false
   }
 
-  await adapter.save(legacy)
+  // Authoritative force-write (expectedRevision: null) — a one-time legacy
+  // import into an empty backend (issue #67, ADR-0024).
+  await adapter.save(legacy, null)
   storage.removeItem(LEGACY_STORAGE_KEY)
   storage.removeItem(LEGACY_LAST_VALID_STORAGE_KEY)
   return true

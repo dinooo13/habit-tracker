@@ -16,7 +16,7 @@ const settingsStore = useSettingsStore()
 const habitsStore = useHabitsStore()
 
 const reminderEngine = useReminderEngine()
-const persistence = usePersistence()
+const sync = useCrossTabSync()
 const lifecycle = useAppDataLifecycle()
 const toast = useToast()
 const demoData = useDemoData()
@@ -248,7 +248,7 @@ async function confirmImport(): Promise<void> {
 
       const { mergedHabits, addedCount, updatedCount } = mergeHabitsForImport(habitsStore.snapshot(), importedHabits)
       habitsStore.hydrate(mergedHabits)
-      await persistence.save(lifecycle.snapshotAppData())
+      await sync.saveAuthoritative(lifecycle.snapshotAppData())
       void storageHealth.checkQuota()
 
       logSecurityEvent('data.import', 'info', `habits-only: ${addedCount} added, ${updatedCount} updated`)
@@ -274,7 +274,7 @@ async function confirmImport(): Promise<void> {
       lifecycle.replaceAppData(result.data)
       lifecycle.reconcileDerivedState()
 
-      await persistence.save(lifecycle.snapshotAppData())
+      await sync.saveAuthoritative(lifecycle.snapshotAppData())
       void storageHealth.checkQuota()
 
       syncDailyReviewTimeFromSettings()
@@ -310,7 +310,7 @@ async function deleteAllData(withBackup: boolean): Promise<void> {
     backupNudge.markExported()
   }
   syncDailyReviewTimeFromSettings()
-  await persistence.save(lifecycle.snapshotAppData())
+  await sync.saveAuthoritative(lifecycle.snapshotAppData())
   void storageHealth.checkQuota()
   notificationPermission.value = reminderEngine.currentPermission()
   deleteAllModalOpen.value = false

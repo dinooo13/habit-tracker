@@ -3,6 +3,7 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import PersistenceStatusIndicator from '~/components/PersistenceStatusIndicator.vue'
 import { useStorageHealth } from '~/composables/use-storage-health'
 import { useDataRecovery } from '~/composables/use-data-recovery'
+import { resetCrossTabSync, useCrossTabSync } from '~/composables/use-cross-tab-sync'
 import { nowIso } from '~/utils/domain/date'
 import { clearSecurityLog, recentSecurityEvents } from '~/utils/observability/security-log'
 
@@ -34,6 +35,7 @@ describe('PersistenceStatusIndicator (#65)', () => {
     health.status.value = 'ok'
     health.lastSavedAt.value = null
     useDataRecovery().quarantine.value = null
+    resetCrossTabSync()
     loadQuarantine.mockReset()
     clearQuarantine.mockReset()
   })
@@ -114,6 +116,40 @@ describe('PersistenceStatusIndicator (#65)', () => {
     expect(wrapper.text()).toContain('being saved to this device')
     expect(wrapper.text()).toContain('Export backup')
     expect(wrapper.text()).toContain('Retry now')
+  })
+
+  describe('cross-tab conflict (#67)', () => {
+    it('renders the conflict banner with Export/Reload actions and keeps other banners in order', async () => {
+      useDataRecovery().quarantine.value = { capturedAt: nowIso(), reason: 'bad data' }
+      useCrossTabSync().conflict.value = [
+        { kind: 'habit', key: 'h1', label: 'Morning run', cause: 'both-modified' },
+      ]
+
+      const wrapper = await mountSuspended(PersistenceStatusIndicator)
+      expect(wrapper.text()).toContain('Another tab changed the same things')
+      expect(wrapper.text()).toContain('Morning run')
+      expect(wrapper.text()).toContain('Export this tab')
+      expect(wrapper.text()).toContain('Reload with latest')
+      // The quarantine banner still renders alongside it.
+      expect(wrapper.text()).toContain('Export preserved data')
+    })
+
+    it('shows the "Updated from another tab" pill and auto-hides it after 10s', async () => {
+      vi.useFakeTimers()
+      try {
+        const wrapper = await mountSuspended(PersistenceStatusIndicator)
+        useCrossTabSync().lastRemoteAppliedAt.value = nowIso()
+        await wrapper.vm.$nextTick()
+        expect(wrapper.text()).toContain('Updated from another tab')
+
+        vi.advanceTimersByTime(10_000)
+        await wrapper.vm.$nextTick()
+        expect(wrapper.text()).not.toContain('Updated from another tab')
+      }
+      finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   describe('data-recovery banner (#66)', () => {

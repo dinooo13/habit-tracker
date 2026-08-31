@@ -115,6 +115,17 @@ lifecycle seam shared by bootstrap, settings import/delete-all, and demo hydrati
 is state-only; UI side effects and `persistence.save()` stay at each call site
 (see [adr/0015](adr/0015-app-data-lifecycle-composable.md)).
 
+Every write is **revision-guarded** (see [adr/0024](adr/0024-revision-guarded-saves-with-cross-tab-merge.md)).
+The Dexie `meta` table holds a monotonic `revision` counter alongside `schemaVersion`; `load()`
+returns `{ data, revision }`, and `save(payload, expectedRevision)` compares-and-swaps the revision
+*inside* the write transaction. Bootstrap routes the debounced save through
+`useCrossTabSync().saveGuarded`, which passes the tab's last-observed revision: if another tab moved
+the stored revision ahead, the write aborts with a `StaleWriteError`, the sync re-loads and runs the
+pure three-way `mergeAppData(base, ours, theirs)`, and only a same-record collision is escalated to
+the user. Authoritative whole-envelope replacements (import, delete-all, demo, legacy migration) go
+through `saveAuthoritative`, which **force-writes** (`expectedRevision: null`) and adopts the new
+revision. See *Cross-tab sync* under Resilience below.
+
 ### Day rollover
 
 `ensureMissedEntries`/`reconcileMissingSuggestions` above run at startup, but an installed PWA
@@ -180,6 +191,20 @@ Two cross-cutting, client-only flows guard the local-first model:
   read-only in-memory mode, suppressing the debounced auto-save watcher (while keeping "Retry now"
   live) so a broken read never clobbers stored data. See
   [ADR-0019](adr/0019-quarantine-invalid-stored-data-on-load-failure.md).
+- **Cross-tab sync (issue #67).** Two tabs on the same IndexedDB database were last-writer-wins: a
+  stale tab's debounced save silently reverted the other's edits. `useCrossTabSync()`
+  (`createCrossTabSync(deps)` factory + singleton, the `use-reminder-engine.ts` pattern) closes that
+  window. Every save is revision-guarded (above); a stale write re-loads and runs the pure,
+  deterministic `mergeAppData(base, ours, theirs)` (`app/utils/persistence/merge-app-data.ts`) —
+  habits keyed by `id`, entries by `habitId:date`, suggestions grouped by `entryId`, settings per
+  field — so non-overlapping edits merge silently and only a same-record collision prompts. Idle tabs
+  stay fresh: a `BroadcastChannel('habit-tracker:persistence')` "saved" ping
+  (`app/utils/persistence/save-broadcast.ts`), plus a `focus`/`visibilitychange` re-check and a 30s
+  visible-only poll, re-hydrate a clean tab; a dirty tab defers to the guard. On a real collision the
+  bootstrap watcher suspends auto-save and `PersistenceStatusIndicator.vue` shows a third banner —
+  **Export this tab's data** / **Reload with latest** — so the newer stored data is never silently
+  discarded. Merges/collisions emit `storage.conflict_merged` / `storage.conflict_detected`. See
+  [ADR-0024](adr/0024-revision-guarded-saves-with-cross-tab-merge.md).
 - **Service-worker update prompt (SEC-14).** With `registerType: 'prompt'`, a new worker is
   precached but held; `usePwaUpdate()` (wrapping `$pwa.needRefresh`) drives a reload banner in
   the app layout and applies the waiting worker only on user confirmation.

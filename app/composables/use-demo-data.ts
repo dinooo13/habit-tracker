@@ -22,12 +22,14 @@ export async function fetchDemoPayload(fetchImpl: typeof fetch, fixtureUrl = DEM
  */
 export async function hydrateDemoPayload(payload: AppData): Promise<void> {
   const lifecycle = useAppDataLifecycle()
-  const persistence = usePersistence()
+  const sync = useCrossTabSync()
 
   lifecycle.replaceAppData(payload)
   lifecycle.reconcileDerivedState()
 
-  await persistence.save(lifecycle.snapshotAppData())
+  // A deliberate whole-envelope replacement — force-write and adopt the new
+  // revision so it wins over any peer tab's incidental edit (issue #67, ADR-0024).
+  await sync.saveAuthoritative(lifecycle.snapshotAppData())
 }
 
 export function useDemoData() {

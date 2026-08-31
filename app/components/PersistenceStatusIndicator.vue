@@ -14,6 +14,7 @@ const SUCCESS_AUTOHIDE_MS = 10_000
 
 const storageHealth = useStorageHealth()
 const dataRecovery = useDataRecovery()
+const sync = useCrossTabSync()
 const lifecycle = useAppDataLifecycle()
 const backupNudge = useBackupNudge()
 const { logSecurityEvent } = useSecurityLog()
@@ -27,10 +28,22 @@ let clockTimer: ReturnType<typeof setInterval> | null = null
 const successHidden = ref(false)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
+// Cross-tab silent-refresh pill (issue #67, ADR-0024): shown briefly after a peer
+// tab's write is applied here, then auto-hidden like the success pill.
+const remoteHidden = ref(true)
+let remoteHideTimer: ReturnType<typeof setTimeout> | null = null
+
 function clearHideTimer(): void {
   if (hideTimer !== null) {
     clearTimeout(hideTimer)
     hideTimer = null
+  }
+}
+
+function clearRemoteHideTimer(): void {
+  if (remoteHideTimer !== null) {
+    clearTimeout(remoteHideTimer)
+    remoteHideTimer = null
   }
 }
 
@@ -48,6 +61,7 @@ onBeforeUnmount(() => {
     clockTimer = null
   }
   clearHideTimer()
+  clearRemoteHideTimer()
 })
 
 const status = computed(() => storageHealth.status.value)
@@ -57,6 +71,39 @@ const isUnavailable = computed(() => status.value === 'unavailable')
 // to load and its raw payload was preserved in quarantine. Distinct from the
 // save-time `unavailable` banner above; both can share this surface.
 const hasQuarantine = computed(() => dataRecovery.quarantine.value !== null)
+
+// Cross-tab conflict banner (issue #67, ADR-0024): shown when two tabs changed
+// the same record incompatibly. Auto-save is suspended by bootstrap while this is
+// non-null; the only ways out are export + reload.
+const hasConflict = computed(() => sync.conflict.value !== null)
+
+const conflictDescription = computed(() => {
+  const conflicts = sync.conflict.value ?? []
+  if (!conflicts.length) {
+    return 'Another tab changed the same data while you were editing here. Saving from this tab is paused so nothing is overwritten.'
+  }
+  const others = conflicts.length - 1
+  const lead = others > 0
+    ? `“${conflicts[0]?.label}” and ${others} other ${others === 1 ? 'record' : 'records'}`
+    : `“${conflicts[0]?.label}”`
+  const verb = conflicts.length === 1 ? 'was' : 'were'
+  return `${lead} ${verb} changed in another tab while you were editing here. Saving from this tab is paused so nothing is overwritten.`
+})
+
+// Show the "Updated from another tab" pill whenever a remote apply stamps a fresh
+// time, then auto-hide it after the same delay as the success pill.
+watch(
+  () => sync.lastRemoteAppliedAt.value,
+  (value) => {
+    clearRemoteHideTimer()
+    if (value && import.meta.client) {
+      remoteHidden.value = false
+      remoteHideTimer = setTimeout(() => {
+        remoteHidden.value = true
+      }, SUCCESS_AUTOHIDE_MS)
+    }
+  },
+)
 
 // Whenever the status settles on `ok` (or a fresh save stamps a new lastSavedAt),
 // show the pill and schedule it to fade after SUCCESS_AUTOHIDE_MS. Leaving `ok`
@@ -94,6 +141,11 @@ const pill = computed<{ text: string, tone: 'ok' | 'warn' } | null>(() => {
     // The banner carries the message; keep the header pill silent.
     return null
   }
+  // Ranked below "Retrying…" and above "Saved · …": a silent background refresh
+  // gets a brief, quiet acknowledgement (issue #67, ADR-0024).
+  if (sync.lastRemoteAppliedAt.value && !remoteHidden.value) {
+    return { text: 'Updated from another tab', tone: 'ok' }
+  }
   if (savedLabel.value && !successHidden.value) {
     return { text: `Saved · ${savedLabel.value}`, tone: 'ok' }
   }
@@ -114,6 +166,14 @@ function exportBackup(): void {
 
 function retryNow(): void {
   storageHealth.requestRetry()
+}
+
+// Conflict recovery: export this tab's version first (nothing is discarded
+// silently), then reload so the newer stored data wins (issue #67, ADR-0024).
+function reloadWithLatest(): void {
+  if (import.meta.client) {
+    window.location.reload()
+  }
 }
 
 async function exportPreserved(): Promise<void> {
@@ -147,6 +207,21 @@ async function dismissRecovery(): Promise<void> {
       :actions="[
         { label: 'Export preserved data', color: 'warning', variant: 'solid', onClick: exportPreserved },
         { label: 'Dismiss', color: 'neutral', variant: 'ghost', onClick: dismissRecovery },
+      ]"
+    />
+
+    <UAlert
+      v-if="hasConflict"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-git-merge"
+      class="rounded-none"
+      title="Another tab changed the same things"
+      :description="conflictDescription"
+      aria-live="polite"
+      :actions="[
+        { label: 'Export this tab\'s data', color: 'warning', variant: 'solid', onClick: exportBackup },
+        { label: 'Reload with latest', color: 'neutral', variant: 'ghost', onClick: reloadWithLatest },
       ]"
     />
 

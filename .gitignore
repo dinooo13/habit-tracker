@@ -32,3 +32,7 @@ test-results
 .env
 .env.*
 !.env.example
+
+# Claude Code local tooling (agent worktrees, skill caches)
+/.claude/worktrees/
+/.claude/skills/

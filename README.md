@@ -81,7 +81,7 @@ app/
 ├── layouts/               # default (public) + app (authenticated shell)
 ├── components/            # HabitForm, ReflectionModal, MobileBottomNav, BrandLogo, PersistenceStatusIndicator, PersistenceHealthPanel
 ├── stores/                # Pinia: habits, entries, coach, settings
-├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-data-recovery, use-clipboard, use-clock
+├── composables/           # use-app-data-lifecycle, use-habit-actions, use-persistence, use-reminder-engine, use-dummy-auth, use-demo-data, use-backup-nudge, use-pwa-update, use-security-log, use-storage-health, use-data-recovery, use-clipboard, use-clock, use-cross-tab-sync
 ├── utils/                 # by intent: domain/, persistence/, ui/, auth/, observability/ (ADR-0014)
 ├── types/                 # app-data (domain model), navigation
 ├── middleware/            # auth.global (route protection + legacy redirects)
@@ -132,6 +132,9 @@ Significant decisions are recorded as ADRs in [`docs/adr/`](docs/adr/):
 19. [Quarantine invalid stored data on load failure](docs/adr/0019-quarantine-invalid-stored-data-on-load-failure.md)
 20. [Production deployment smoke tests with build-SHA stamping](docs/adr/0020-production-smoke-tests-with-build-sha-stamping.md)
 21. [Factory manifest as the descriptive source of truth for the agent pipeline](docs/adr/0021-factory-manifest-descriptive-source-of-truth.md)
+22. [Version-keyed schema-migration registry with a discriminated parse result](docs/adr/0022-version-keyed-schema-migration-registry.md)
+23. [Declared, machine-checked idempotency guards for every factory stage](docs/adr/0023-declared-idempotency-guards-for-factory-stages.md)
+24. [Revision-guarded saves with deterministic cross-tab merge](docs/adr/0024-revision-guarded-saves-with-cross-tab-merge.md)
 
 ## Contributing & workflow
 

@@ -146,9 +146,10 @@ worktree isolation, and push notifications.
 
 - Rebaser runs at 16:15; reviewer runs at 06:00 and 16:00. Rebaser never precedes a review,
   which inverts the documented ordering. (Verified and tracked in #85.)
-- Model configuration is split across two layers: routines pin `claude-opus-4-8` (triage
-  pins `claude-sonnet-5`), while only `rebaser.md` declares a model in frontmatter.
-  (Verified and tracked in #85.)
+- Model configuration is split across two layers: routines pin a model, while only
+  `rebaser.md` declared one in frontmatter. (Verified and tracked in #85; **fixed** — every
+  agent file now pins the same full model id as its stage's `runtime.model`, and the
+  contract test asserts they agree.)
 - `implementer.md` and `docs-auditor.md` declare no `tools:` list, while the other five
   enumerate theirs — the two agents that write code and push branches are the ones with the
   loosest declaration.

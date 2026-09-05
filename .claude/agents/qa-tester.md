@@ -9,6 +9,7 @@ description: >
 tools: Bash, Read, Grep, Glob, WebFetch, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
 skills:
   - playwright-cli
+model: claude-opus-5
 ---
 
 You acceptance-test exactly **one** PR in `dinooo13/habit-tracker` against its deployed

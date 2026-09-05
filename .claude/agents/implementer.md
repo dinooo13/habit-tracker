@@ -5,6 +5,7 @@ description: >
   and a pull request whose body carries the live progress checklist. Invoke with either
   an issue number to start ("Implement issue #42") or an open PR number to resume
   ("Resume PR #43"). Requires an approved plan comment on the issue.
+model: claude-opus-5
 ---
 
 You implement exactly **one** issue in `dinooo13/habit-tracker`, end-to-end. One issue →

@@ -6,6 +6,7 @@ description: >
   "Triage issue #42". Labels and comments only — never changes code, never closes
   issues.
 tools: Read, Grep, Glob, mcp__github__issue_read, mcp__github__list_issues, mcp__github__search_issues, mcp__github__issue_write, mcp__github__add_issue_comment, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__pull_request_read, mcp__github__search_code
+model: claude-sonnet-5
 ---
 
 You triage exactly **one** issue in `dinooo13/habit-tracker` — the front door of the

@@ -9,15 +9,18 @@
 # the repo. See `.factory/README.md` for the sync convention and the deferred
 # authoritative-sync script.
 #
-# The manifest is DESCRIPTIVE: it records what is true, including two known drifts
-# (issue #85 §1) — the rebaser's absent model pin and the docs-auditor's daily (not
-# weekly) cron. The gaps are the point; the contract test is green because the
-# divergence is declared, not hidden. The third original drift — `idempotency.kind:
-# none` where a stage had no guard — is closed by #86 / ADR-0023: every stage now
+# The manifest is DESCRIPTIVE: it records what is true, including one known drift
+# (issue #85 §1) — the docs-auditor's daily (not weekly) cron. The gaps are the point;
+# the contract test is green because the divergence is declared, not hidden. Two of
+# the original drifts are closed. `idempotency.kind: none` where a stage had no guard
+# is closed by #86 / ADR-0023: every stage now
 # declares a guard `kind` (no `none`), a machine-checked `note`, and its `marker`
 # resolves against the top-level `markers:` registry (one producer, ≥1 consumer). The
 # guards are advisory, not exclusive — they narrow the duplicate-work window to
-# read-queue → write-claim; a single scheduler stays a standing constraint.
+# read-queue → write-claim; a single scheduler stays a standing constraint. The
+# rebaser's absent model pin is closed too: every agent file now carries a `model:`
+# in its frontmatter equal to its stage's `runtime.model` here, and the contract test
+# asserts the pair agree, so a model bump in one place without the other fails the build.
 
 version: 2
 
@@ -136,7 +139,7 @@ stages:
         plan comment exists and no newer human comment changed the requirements.
     runtime:
       schedule: "0 23 * * *"
-      model: claude-opus-4-8
+      model: claude-fable-5-1
       enabled: true
       environment: standard
     order_after:
@@ -167,7 +170,7 @@ stages:
         `routine:dev-progress` section in the PR body.
     runtime:
       schedule: "0 2,11,21 * * *"
-      model: claude-opus-4-8
+      model: claude-opus-5
       enabled: true
       environment: standard
     order_after:
@@ -199,11 +202,8 @@ stages:
         bounce / self-resolution record (registered in `markers:` as an implementer
         work source), not a per-run skip guard, so `marker` is empty here.
     runtime:
-      # DRIFT (issue #85 §1.3): the live routine has no model pin (empty → env
-      # default), while .claude/agents/rebaser.md frontmatter declares `model: sonnet`.
-      # Recorded as-is; reconciliation is a deferred runtime-sync operation.
       schedule: "15 16 * * *"
-      model: ""
+      model: claude-sonnet-5
       enabled: true
       environment: standard
     order_after:
@@ -233,7 +233,7 @@ stages:
         comment and flipping the label.
     runtime:
       schedule: "0 6,16 * * *"
-      model: claude-opus-4-8
+      model: claude-opus-5
       enabled: true
       environment: standard
     order_after:
@@ -266,7 +266,7 @@ stages:
         with the recorded verdict after a mid-run death.
     runtime:
       schedule: "0 7,17 * * *"
-      model: claude-opus-4-8
+      model: claude-opus-5
       enabled: true
       environment: standard
     order_after:
@@ -304,7 +304,7 @@ stages:
       # DRIFT (issue #85 §1.2): documented as "(e.g. weekly)" but the live cron is
       # daily. Recorded as-is.
       schedule: "0 16 * * *"
-      model: claude-opus-4-8
+      model: claude-opus-5
       enabled: true
       environment: standard
     order_after: []

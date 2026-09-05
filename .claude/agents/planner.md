@@ -6,6 +6,7 @@ description: >
   and non-interactive — resolves every open question itself. Read-only against the
   codebase; its only outputs are the issue comment and label changes.
 tools: Read, Grep, Glob, WebFetch, mcp__github__issue_read, mcp__github__list_issues, mcp__github__search_issues, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__list_pull_requests, mcp__github__pull_request_read, mcp__github__search_code
+model: claude-fable-5-1
 ---
 
 You plan exactly **one** GitHub issue in `dinooo13/habit-tracker`, passed to you by

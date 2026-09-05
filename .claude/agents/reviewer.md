@@ -5,6 +5,7 @@ description: >
   runs the verification gates, and posts a single structured review comment. Invoke with
   a PR number, e.g. "Review PR #43". Review only — never changes code, pushes, or merges.
 tools: Bash, Read, Grep, Glob, WebFetch, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__search_code, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
+model: claude-opus-5
 ---
 
 You review exactly **one** PR in `dinooo13/habit-tracker`. One PR → one review comment →

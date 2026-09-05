@@ -7,8 +7,8 @@ import { parse } from 'yaml'
 // Static contract test for the agent-factory manifest (.factory/factory.yml,
 // ADR-0021, ADR-0023). It guards the manifest against itself and against the repo —
 // no network, no routines API. The suite is green because the manifest is
-// DESCRIPTIVE: the two remaining known drifts and the one knowingly unrealized
-// ordering (reviewer.order_after rebaser) are declared, not hidden.
+// DESCRIPTIVE: the one remaining known drift (docs-auditor's daily cron) and the one
+// knowingly unrealized ordering (reviewer.order_after rebaser) are declared, not hidden.
 //
 // What it enforces:
 //   1. every `agent` / `prompt` path resolves to a file that exists (and prompts
@@ -32,7 +32,10 @@ import { parse } from 'yaml'
 //      marker declares one (T4/T9); and
 //   9. every marker's `routine:{name}` family is grounded by grep in its producer and
 //      in every consumer agent file (T7), with the family/placeholder extractors
-//      carrying their own negative-case proofs (T10).
+//      carrying their own negative-case proofs (T10); and
+//  10. every stage pins a non-empty `runtime.model`, and its agent file's frontmatter
+//      `model:` is the identical full id — the model lives in two layers (routine +
+//      agent file) and this keeps them from drifting apart again.
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 const abs = (rel: string): string => join(repoRoot, rel)
@@ -438,5 +441,40 @@ describe('factory manifest — schedules respect the one-hour minimum (§3.7)', 
         `${stage.name} schedule "${stage.runtime.schedule}" runs sub-hourly`,
       ).toBeGreaterThanOrEqual(MIN_CRON_INTERVAL_MINUTES)
     }
+  })
+})
+
+/** The YAML frontmatter block of an agent file (between the leading `---` fences). */
+function agentFrontmatter(path: string): Record<string, unknown> {
+  const source = readFileSync(abs(path), 'utf8')
+  const match = /^---\n([\s\S]*?)\n---\n/.exec(source)
+  if (match === null) {
+    throw new Error(`${path} has no frontmatter block`)
+  }
+  return parse(match[1]!) as Record<string, unknown>
+}
+
+describe('factory manifest — agent frontmatter model equals the routine model', () => {
+  // Full ids only (`claude-opus-5`, not `opus`): an alias floats to whatever the
+  // runtime resolves it to, so it cannot be compared against the routine's pin.
+  const FULL_MODEL_ID = /^claude-[a-z0-9-]+$/
+
+  it('every stage pins a full model id in runtime.model', () => {
+    for (const stage of stages) {
+      expect(stage.runtime.model, `${stage.name} runtime.model is not a full id`).toMatch(FULL_MODEL_ID)
+    }
+  })
+
+  it('every agent file declares the same model as its stage', () => {
+    for (const stage of stages) {
+      const frontmatter = agentFrontmatter(stage.agent)
+      expect(frontmatter.model, `${stage.agent} frontmatter model ≠ ${stage.name} runtime.model`).toBe(stage.runtime.model)
+    }
+  })
+
+  it('is a real guard: an alias in the frontmatter would not match the pinned id', () => {
+    expect(FULL_MODEL_ID.test('sonnet')).toBe(false)
+    expect(FULL_MODEL_ID.test('')).toBe(false)
+    expect(FULL_MODEL_ID.test('claude-sonnet-5')).toBe(true)
   })
 })

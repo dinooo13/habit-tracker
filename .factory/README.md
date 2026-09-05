@@ -18,16 +18,21 @@ configuration — can be compared mechanically instead of by eye. See
 
 ## The manifest is descriptive
 
-`factory.yml` records **what is true**, including two known divergences (issue #85 §1):
+`factory.yml` records **what is true**, including one known divergence (issue #85 §1):
 
-- the rebaser's live `model` is empty (env default) while its agent frontmatter says
-  `model: sonnet`; and
 - the docs-auditor's cron is daily, though older prose called it weekly.
 
-The third original drift — `idempotency.kind: none` where a stage had no per-run guard
-(triage) — is **closed** by #86 / ADR-0023: `none` is gone from the enum, every stage
-declares a guard `kind` and a `note`, and every stage `marker` resolves against the
-top-level `markers:` registry. The guards are advisory, not exclusive.
+Two of the original drifts are **closed**:
+
+- `idempotency.kind: none` where a stage had no per-run guard (triage) — closed by #86 /
+  ADR-0023: `none` is gone from the enum, every stage declares a guard `kind` and a `note`,
+  and every stage `marker` resolves against the top-level `markers:` registry. The guards
+  are advisory, not exclusive.
+- the rebaser's empty live `model` versus its frontmatter `model: sonnet` — closed by
+  pinning every agent file: each `.claude/agents/{stage}.md` frontmatter carries a full
+  `model:` id equal to its stage's `runtime.model`, and the contract test asserts the pair
+  agree. A model bump therefore touches the agent file and the manifest in one diff, and the
+  manifest edit carries the sync obligation below.
 
 `prompts/rebaser.md` likewise records the **live (stale)** routine text: it predates conflict
 self-resolution, so its summary vocabulary has no `self-resolved` bucket and it says "Never

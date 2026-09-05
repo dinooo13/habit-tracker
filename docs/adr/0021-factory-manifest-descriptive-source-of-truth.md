@@ -102,3 +102,9 @@ against itself and against the repo. No runner, no scheduler, no behavior change
 - `tests/factory-contract.test.ts` — the static drift guard.
 - `.claude/agents/README.md`, `.claude/agents/rebaser.md` — the corrected ordering claims.
 - Issue #85; follow-up #86 (idempotency implementation).
+
+## Addendum (2026-09-05)
+
+The rebaser model drift is closed: every `.claude/agents/{stage}.md` now carries a full
+`model:` id in its frontmatter equal to its stage's `runtime.model`, and the contract test
+asserts the pair agree. The docs-auditor's daily cron remains the one declared drift.

@@ -7,7 +7,7 @@ description: >
   label including `status: approved`); big or ambiguous conflicts and red gates bounce
   the PR back to the implementer. Invoke with a PR number, e.g. "Rebase PR #43".
 tools: Bash, Read, Grep, Glob, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
-model: sonnet
+model: claude-sonnet-5
 effort: medium
 ---
 

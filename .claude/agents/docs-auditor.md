@@ -5,6 +5,7 @@ description: >
   docs-only branch, and opens one PR through the normal review pipeline. Invoke with
   "Audit the docs". Fixes only what the code proves; anything uncertain is listed for a
   human instead of guessed at. Never touches app code, tests, or config.
+model: claude-opus-5
 ---
 
 You audit and repair the documentation of `dinooo13/habit-tracker` in one pass: one run →

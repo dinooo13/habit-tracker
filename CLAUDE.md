@@ -27,7 +27,9 @@ diagrams and `docs/adr/` for the recorded design decisions.
 
 CI (`.github/workflows/ci.yml`, Node 22) runs **`npm run lint` + `npm test` +
 `npm run typecheck`** (test job — lint runs first so cheap static failures stop the job
-early) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
+early) and **`npm run generate`** (build job) on every push to `main` and every PR, plus
+**`npm run test:e2e`** (e2e job — Playwright, skipped on docs-only changes via the
+`changes.outputs.site` filter). Locally,
 treat `npm run lint`, `npm run test`, `npm run typecheck`, and `npm run build` as the
 definition of done — run them before considering work complete. Linting/formatting is owned
 by `@nuxt/eslint` (flat config + ESLint Stylistic); see ADR-0013. After a push to `main`

@@ -92,7 +92,9 @@ Tests live in `tests/`:
 - **Utilities** — `date.test.ts`, `weekdays.test.ts`, `atomic-rules.test.ts`,
   `route-mapping.test.ts`, `dummy-auth.test.ts`, `id.test.ts`, `demo-data-generator.test.ts`,
   `safe-json.test.ts`, `security-log.test.ts`, `storage-health.test.ts`.
-- **Schema & validation** — `storage-schema.test.ts`.
+- **Schema & validation** — `storage-schema.test.ts` and `schema-migrations.test.ts`
+  (`runMigrationChain` + `assertMigrationRegistryInvariants`, the pure version-agnostic
+  migration engine behind `parseAppDataResult`, ADR-0022).
 - **Persistence** — `dexie-persistence-adapter.test.ts` (Dexie round-trips via
   `fake-indexeddb`, exercised through the `PersistenceAdapter` interface),
   `legacy-migration.test.ts` (backend-agnostic legacy-localStorage migration), and
@@ -113,6 +115,12 @@ Tests live in `tests/`:
   builders in `app/utils/domain/ai-prompts.ts`).
 - **Features** — `pause-mode.test.ts` (pause ranges: due/streak/coaching exclusion) and
   `backup-nudge.test.ts` (`computeBackupNudge` thresholds and snooze).
+- **Build & CI helpers** — `build-version.test.ts` (`resolveCommitSha`, the build-SHA stamp
+  written into `version.json`, ADR-0020), `summarize-playwright-failures.test.ts` (the
+  failure-summary helper the `production-smoke` issue step uses), and `e2e-url.test.ts`
+  (`appRoutePattern`, the trailing-slash-tolerant URL matcher shared by the e2e specs).
+- **Agent factory** — `factory-contract.test.ts`, the static contract test guarding
+  `.factory/factory.yml` against itself and the repo (ADR-0021, ADR-0023).
 - **Fixtures** — `fixture-data.test.ts` validates the sample data.
 
 Rendered tests live in `tests/nuxt/` (the `nuxt` project):
@@ -120,18 +128,27 @@ Rendered tests live in `tests/nuxt/` (the `nuxt` project):
 - **Demo data** — `demo-data-loader.test.ts` (`fetchDemoPayload` / `hydrateDemoPayload`
   from `use-demo-data` loading the `tests/fixtures/` sample into the Nuxt-provided stores).
 
-- **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`)
-  and `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill,
+- **Components** — `habit-form.test.ts` (empty-weekday submission warns and emits no `submit`),
+  `persistence-status-indicator.test.ts` (the `PersistenceStatusIndicator` save pill,
   degraded-mode recovery banner (ADR-0017), and the cross-tab conflict banner + "Updated from
-  another tab" pill (ADR-0024)).
+  another tab" pill (ADR-0024)), and `persistence-health-panel.test.ts` (the Settings
+  **Storage & diagnostics** card, issue #73).
 - **Pages** — `insights-page.test.ts` (two due habit-days with one completion render a 50%
   seven-day completion rate).
 - **Lifecycle** — `app-data-lifecycle.test.ts` (`useAppDataLifecycle` snapshot/replace/reconcile
   over the Nuxt-provided Pinia stores, ADR-0015).
 - **Composables** — `use-clipboard.test.ts` (the `useClipboard` copy helper used by the
   settings AI-prompt actions), `use-storage-health.test.ts` (the `useStorageHealth`
-  persistence-status lifecycle transitions and their security-log events, ADR-0017), and
-  `use-cross-tab-sync-triggers.test.ts` (the `start()` + `visibilitychange` freshness probe, #67).
+  persistence-status lifecycle transitions and their security-log events, ADR-0017),
+  `use-cross-tab-sync-triggers.test.ts` (the `start()` + `visibilitychange` freshness probe, #67),
+  and `use-data-recovery.test.ts` (the load-time quarantine recovery banner state, #66/ADR-0019).
+- **Day clock & rollover (ADR-0018)** — `clock.test.ts` (the `useClock` singleton, its midnight
+  timer and `visibilitychange`/`focus` re-check), `clock-rollover-consumers.test.ts` (the
+  day-scoped views that read the reactive `todayKey`), and `bootstrap-rollover.test.ts` (the
+  bootstrap `onRollover` → `reconcileDerivedState` wiring).
+- **Reminders** — `reminder-engine.test.ts` (clock-driven rollover in `useReminderEngine`) and
+  `reminder-engine-factory.test.ts` (`createReminderEngine` with injected clock/notifier/`now`,
+  no `Notification` stub and no fake timers).
 - **Persistence (browser APIs)** — `export-backup.test.ts` (`downloadBackup`, which runs in
   the `nuxt` project because it touches `Blob`/`URL`/anchor download).
 

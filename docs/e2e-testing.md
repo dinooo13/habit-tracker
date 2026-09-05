@@ -40,6 +40,7 @@ e2e/
     seed.ts       # IndexedDB seeding + auth helpers + persisted-store readers
     fixtures.ts   # custom test fixtures: authedPage, seed()
     constants.ts  # standalone copies of app constants (decoupled from Nuxt)
+    url.ts        # appRoutePattern — trailing-slash-tolerant in-app URL matcher
     pages/        # lightweight page objects (Dashboard, HabitForm, Settings)
 ```
 

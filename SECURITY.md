@@ -37,9 +37,6 @@ priority hardening items — tracked in [issue #1](https://github.com/dinooo13/h
 
 - **Real authentication** (an identity provider with server-side session validation) — or
   remove the auth gate entirely rather than imply protection (SEC-01, SEC-02).
-- **Disable devtools and PWA `devOptions` in production builds** (SEC-10).
-- **Add security headers** (CSP, `X-Frame-Options`, `X-Content-Type-Options`, etc.) via the
-  hosting platform or Nitro middleware (SEC-11).
 - Consider encrypting data at rest and clearing data on logout for shared devices (SEC-05,
   SEC-13).
 
@@ -56,6 +53,18 @@ Findings from the review that have since been mitigated within the local-first m
   driving unbounded work or storage. An over-limit import is rejected as a whole — never
   partially merged or truncated — and current data is left unchanged. See
   `app/types/app-data.ts`, `app/utils/persistence/storage-schema.ts`, and `app/pages/app/settings.vue`.
+- **Dev-only tooling gated out of production builds (SEC-10).** Nuxt DevTools
+  (`devtools: { enabled: isDev }`) and the PWA `devOptions` are both keyed to
+  `NODE_ENV !== 'production'`, so `nuxt build` / `nuxt generate` never ship them. See
+  `nuxt.config.ts`.
+- **HTTP security headers (SEC-11).** The generated `.htaccess` sets `Content-Security-Policy`
+  (self-origin scripts/styles/images/fonts/connect/worker/manifest, `object-src 'none'`,
+  `frame-ancestors 'none'`; `'unsafe-inline'` is still required for Nuxt/Vite's inline
+  bootstrap and Nuxt UI's injected styles), `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and HSTS. The
+  file is rendered from `public/.htaccess.tpl` into `.output/public/` by the `nitro:init`
+  close hook in `nuxt.config.ts` and mirrored to the host by `deploy-production`. Apache
+  `mod_headers` must be enabled on the host for the headers to take effect.
 - **Session timeout (SEC-03).** The dummy-auth session now has an absolute 7-day expiry stamp;
   expired/malformed sessions read as logged-out and clear their stale keys. See
   [ADR-0011](docs/adr/0011-absolute-session-timeout-for-dummy-auth.md). *(This is hygiene, not

@@ -58,7 +58,8 @@ Queues:
   approve). PRs with no preview deployment (e.g. docs-only) are marked
   `status: approved` directly — QA not applicable.
 - **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
-  docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit -->`)
+  docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit base=… -->`,
+  keyed on the `origin/main` head the audit ran against)
 
 Dependency blocks are label-only: triage sets `status: blocked` while any explicit prerequisite
 is open and, on a later run, replaces it with `status: needs-plan` once every prerequisite is

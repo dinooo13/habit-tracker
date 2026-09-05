@@ -26,6 +26,10 @@ flowchart TD
 
   subgraph Composables["Composables (app/composables)"]
     persistence["use-persistence"]
+    lifecycle["use-app-data-lifecycle"]
+    actions["use-habit-actions"]
+    crosstab["use-cross-tab-sync"]
+    health["use-storage-health"]
     reminders["use-reminder-engine"]
     auth["use-dummy-auth"]
     demo["use-demo-data"]
@@ -43,12 +47,15 @@ flowchart TD
     end
     subgraph UPersist["persistence/"]
       schema["storage-schema (Zod: strict + lenient import)"]
+      migrations["schema-migrations (version-keyed engine)"]
       backupmod["backup (pure import/export/merge)"]
+      saver["persistence-saver (retry/backoff)"]
+      mergemod["merge-app-data (three-way merge)"]
       adapter["persistence-adapter (interface)"]
       dexie["dexie-persistence-adapter (Dexie)"]
     end
     subgraph UOther["ui/ · auth/ · observability/"]
-      other["primary-color · dummy-auth · route-mapping · security-log · storage-health"]
+      other["primary-color · dummy-auth · route-mapping · security-log · storage-health · build-version"]
     end
   end
 
@@ -246,7 +253,9 @@ legacy top-level paths (e.g. `/habits` → `/app/habits`) via `app/utils/auth/ro
 
 ## Deployment & CI
 
-`.github/workflows/ci.yml` runs test + build on every push and PR. On a push to `main` with
+`.github/workflows/ci.yml` runs test (`npm run lint` + `npm test` + `npm run typecheck`) and
+build (`npm run generate`) on every push and PR, plus a Playwright `e2e` job gated on the
+`changes.outputs.site` filter (so docs-only changes skip it). On a push to `main` with
 site changes, `deploy-production` mirrors the `.output/public` artifact to
 `habits.fmeyer.dev` over FTPS. Every generated build stamps its commit SHA into
 `.output/public/version.json` (`{ commit, builtAt }`) via the `nitro:init` close hook in

@@ -38,7 +38,7 @@ with no backend and no account required.
 | Validation | Zod `4` |
 | PWA | `@vite-pwa/nuxt` |
 | Dates | `@internationalized/date` + local date-key helpers |
-| Testing | Vitest `4` + `fake-indexeddb` |
+| Testing | Vitest `4` + `fake-indexeddb`; Playwright `1.61` for E2E |
 
 ## Getting started
 
@@ -60,6 +60,9 @@ npm run preview      # Serve the production build locally
 npm run generate     # Static SPA generation — CI uses this to produce the deployable output
 npm run test         # Run the Vitest suite once
 npm run test:watch   # Vitest in watch mode
+npm run test:unit    # Vitest, Node project only (pure logic)
+npm run test:nuxt    # Vitest, Nuxt-runtime project only (rendered components/pages)
+npm run test:e2e     # Playwright end-to-end suite
 npm run lint         # Lint all code with ESLint (read-only check)
 npm run lint:fix     # Apply safe ESLint/Stylistic autofixes
 npm run typecheck    # nuxt typecheck (vue-tsc)
@@ -150,6 +153,10 @@ Nuxt-runtime `nuxt` project (happy-dom) for rendered components/pages — with `
 for storage. They live in `tests/` (rendered tests under `tests/nuxt/`) and cover the stores,
 utilities, schema validation, and Dexie round-trips, with fixtures in `tests/fixtures/`. Run
 `npm run test`. See [`docs/TESTING.md`](docs/TESTING.md) for conventions.
+
+End-to-end coverage runs on **Playwright** (`npm run test:e2e`) against a locally built and
+served copy of the app — route guards, real IndexedDB round-trips, cross-tab behavior, and
+the PWA shell. Specs live in `e2e/`; see [`docs/e2e-testing.md`](docs/e2e-testing.md).
 
 ## Security
 

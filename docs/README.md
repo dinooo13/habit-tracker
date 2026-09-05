@@ -12,6 +12,7 @@ Project documentation for the Atomic Habit Tracker.
 | [TESTING.md](TESTING.md) | Testing stack, coverage, and conventions. |
 | [e2e-testing.md](e2e-testing.md) | End-to-end (Playwright) suite: commands, layout, and coverage. |
 | [adr/](adr/) | Architecture Decision Records — the *why* behind the significant choices. |
+| [FACTORY-GOAL.md](FACTORY-GOAL.md) | Direction (not a plan) for evolving the agent pipeline into a portable software factory. |
 
 ## See also
 

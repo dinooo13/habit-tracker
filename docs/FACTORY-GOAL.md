@@ -120,10 +120,11 @@ worktree isolation, and push notifications.
 ## Constraints and traps
 
 - **Never run cloud routines and a second scheduler against the same repo simultaneously.**
-  Reviewer and QA are protected by `<!-- routine:* sha={head} -->` idempotency markers.
-  Triage, planner, and implementer are not, and would double-spawn — two branches, two PRs,
-  one issue. Generalizing that marker pattern to every stage is a prerequisite for any
-  second execution path, and is worth doing even if we never leave the cloud (filed as #86).
+  Every stage now declares an idempotency guard in `.factory/factory.yml` (#86, ADR-0023) —
+  reviewer and QA per head SHA, triage by comment fingerprint, planner end-of-run,
+  implementer and rebaser structurally. But the guards are **advisory**: they narrow the
+  duplicate-work window to read-queue → write-claim rather than closing it, so a single
+  scheduler remains a standing constraint.
 - A stage run should reconstruct everything it needs from the tracker. Run logs are the one
   deliberate exception; if any other design needs local state, that is a signal the design
   is wrong.
@@ -136,7 +137,7 @@ worktree isolation, and push notifications.
   a QA stage that silently skips its browser walkthrough and reports a pass is the failure
   mode to design against.
 - Whether one factory tick with declared stage order, or per-stage schedules, better serves
-  the mix of cadences (implementer runs more often than reviewer; docs-auditor is weekly).
+  the mix of cadences (implementer runs three times a day, reviewer twice, docs-auditor once).
 - What eligibility for full auto looks like in practice — an explicit label, or derived from
   effort and type.
 - Whether `factory/` lives inside `.claude/` or beside it, given that stage definitions are

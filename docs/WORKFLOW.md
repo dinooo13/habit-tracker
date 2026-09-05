@@ -27,6 +27,7 @@ When an issue comes in, label it. Every issue should get at least a **type** and
 | **effort** | `effort: small`, `effort: medium`, `effort: large` | Rough size (mirrors the issue's *Effort* field). |
 | **status** | `status: draft`, `status: blocked`, `status: in-progress`, `status: needs-plan`, `status: needs-plan-review`, `status: agent-ready` (issues); `status: needs-review`, `status: needs-qa`, `status: approved` (PRs) | Where it stands. Issues: `draft` = human-only, pre-pipeline — agents ignore it entirely; `needs-plan-review` = plan awaits human approval. PRs: `needs-review` → `needs-qa` → `approved` (ready for human merge). |
 | **area** | `area: persistence`, `area: coaching`, `area: ui`, `area: pwa`, `area: auth`, `area: analytics`, `area: factory` | Part of the app affected — except `factory`, which is the agent pipeline itself. |
+| **misc** | `duplicate` | Duplicate of an existing issue (the original is linked in a comment). Applied by triage instead of a `status:` label, which keeps the issue out of every queue. |
 
 Use the namespaced `type: enhancement` / `type: security` labels; the bare legacy
 `enhancement` / `security` labels are not part of the taxonomy and no longer exist on the repo.
@@ -96,6 +97,11 @@ A change is done when all of the following hold (this is also the CI gate —
 - Tests are added or updated for any behavior change (see [TESTING.md](TESTING.md)).
 - Documentation is updated when relevant — including a new **ADR** when the change is
   structural.
+
+CI runs the same four gates (its build job runs `npm run generate`, the deployable form of
+`npm run build`) and adds a Playwright `e2e` job on any change that touches the site
+(`app/`, `public/`, `e2e/`, or the root configs) — docs-only PRs skip it. See
+[e2e-testing.md](e2e-testing.md).
 
 ## 6. Automation pipeline
 

@@ -14,6 +14,7 @@ diagrams and `docs/adr/` for the recorded design decisions.
 
 | Command | What it does |
 | --- | --- |
+| `scripts/setup-agent-env.sh [--no-browser]` | Provision a working environment: dependencies (required) plus browser tooling (best-effort). Idempotent. Called by the devcontainer, the `SessionStart` hook, and the cloud routines. |
 | `npm install` | Install dependencies (runs `nuxt prepare` via `postinstall`). |
 | `npm run dev` | Start the dev server with HMR. |
 | `npm run test` | Run the Vitest suite once (`vitest run`). |
@@ -26,10 +27,16 @@ diagrams and `docs/adr/` for the recorded design decisions.
 
 CI (`.github/workflows/ci.yml`, Node 22) runs **`npm run lint` + `npm test` +
 `npm run typecheck`** (test job — lint runs first so cheap static failures stop the job
-early) and **`npm run generate`** (build job) on every push to `main` and every PR. Locally,
+early) and **`npm run generate`** (build job) on every push to `main` and every PR, plus
+**`npm run test:e2e`** (e2e job — Playwright, skipped on docs-only changes via the
+`changes.outputs.site` filter). Locally,
 treat `npm run lint`, `npm run test`, `npm run typecheck`, and `npm run build` as the
 definition of done — run them before considering work complete. Linting/formatting is owned
-by `@nuxt/eslint` (flat config + ESLint Stylistic); see ADR-0013.
+by `@nuxt/eslint` (flat config + ESLint Stylistic); see ADR-0013. After a push to `main`
+deploys to production, a `production-smoke` job polls the build-SHA stamp
+(`.output/public/version.json`) until the deployed commit is live, then runs the
+`@production`-tagged Playwright subset against `habits.fmeyer.dev`, filing a bug issue on
+failure (ADR-0020).
 
 ## Architecture map
 
@@ -41,8 +48,8 @@ Application source lives under `app/` (the Nuxt 4 app directory).
 | `app/layouts/` | `default.vue` (public) and `app.vue` (authenticated shell + nav). |
 | `app/components/` | `HabitForm.vue`, `ReflectionModal.vue`, `MobileBottomNav.vue`, `BrandLogo.vue`, `PersistenceStatusIndicator.vue` (app-shell save status + recovery banner, ADR-0017), `PersistenceHealthPanel.vue` (Settings storage & diagnostics card, ADR-0017). |
 | `app/stores/` | Pinia stores: `habits.ts`, `entries.ts`, `coach.ts`, `settings.ts`. |
-| `app/composables/` | `use-persistence.ts`, `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings), `use-data-recovery.ts` (load-time quarantine recovery banner state, ADR-0019), `use-clipboard.ts` (settings clipboard-copy helper), `use-clock.ts` (central reactive day-clock: `todayKey` + `onRollover` for midnight rollover, ADR-0018). |
-| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`ai-prompts.ts`, `atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `stats.ts`, `weekdays.ts`), `persistence/` (`backup.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `safe-json.ts`, `persistence-saver.ts`, `export-backup.ts`), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`, `build-version.ts`). |
+| `app/composables/` | `use-persistence.ts`, `use-app-data-lifecycle.ts` (single snapshot/replace/reconcile lifecycle, ADR-0015), `use-habit-actions.ts` (cross-store entry↔suggestion transactions, ADR-0016), `use-reminder-engine.ts`, `use-dummy-auth.ts`, `use-demo-data.ts`, `use-backup-nudge.ts` (dashboard backup nudge, issue #8), `use-pwa-update.ts` (SW update prompt), `use-security-log.ts` (SEC-16), `use-storage-health.ts` (SEC-18 quota/write warnings + persistence status lifecycle `ok\|saving\|failed\|unavailable`, ADR-0017), `use-data-recovery.ts` (load-time quarantine recovery banner state, ADR-0019), `use-clipboard.ts` (settings clipboard-copy helper), `use-clock.ts` (central reactive day-clock: `todayKey` + `onRollover` for midnight rollover, ADR-0018), `use-cross-tab-sync.ts` (`createCrossTabSync(deps)` factory + singleton: revision-guarded saves, deterministic cross-tab merge, freshness refresh + conflict state, ADR-0024). |
+| `app/utils/` | Pure helpers grouped by intent (ADR-0014), imported explicitly (no barrels/auto-import): `domain/` (`ai-prompts.ts`, `atomic-rules.ts`, `date.ts`, `demo-data-generator.ts`, `id.ts`, `stats.ts`, `weekdays.ts`), `persistence/` (`backup.ts`, `persistence-adapter.ts`, `dexie-persistence-adapter.ts`, `legacy-migration.ts`, `storage-schema.ts`, `schema-migrations.ts` (pure version-agnostic migration engine, ADR-0022), `safe-json.ts`, `persistence-saver.ts` (retry/backoff loop + `loadAppDataSafely`, ADR-0017), `export-backup.ts`, `merge-app-data.ts` (pure three-way cross-tab merge, ADR-0024), `save-broadcast.ts` (`BroadcastChannel` "saved" ping, ADR-0024)), `ui/` (`primary-color.ts`), `auth/` (`dummy-auth.ts`, `route-mapping.ts`), `observability/` (`security-log.ts`, `storage-health.ts`, `build-version.ts` (build-SHA stamp for `version.json`, ADR-0020)). |
 | `app/types/` | `app-data.ts` (domain model + constants), `navigation.ts`. |
 | `app/middleware/` | `auth.global.ts` — route protection + legacy URL redirects. |
 | `app/plugins/` | `bootstrap.client.ts` — startup: load → hydrate → reconcile → persist. |
@@ -100,7 +107,13 @@ stay at the call sites.
 
 `app/plugins/bootstrap.client.ts` on startup:
 1. `usePersistence().load()` reads from IndexedDB (Dexie), migrating any legacy
-   `localStorage` payload on first run.
+   `localStorage` payload on first run. If the stored payload fails Zod validation, the
+   adapter first preserves the raw payload in a dedicated Dexie `quarantine` table (newest-only,
+   never cleared by normal saves) so a later save can't clobber it, then returns empty state;
+   `useDataRecovery().refresh()` surfaces the recovery banner (ADR-0019). An IndexedDB *open*
+   failure (vs. a validation failure) is caught by `loadAppDataSafely` → `{ data, failed }`, and
+   bootstrap suppresses the debounced auto-save watcher while keeping "Retry now" live so a broken
+   read never clobbers recoverable data.
 2. `replaceAppData(loaded)` hydrates the four stores and applies the primary color.
 3. `reconcileDerivedState(todayDateKey())` backfills missed entries then reconciles suggestions.
 4. Deep-`watch`es a combined snapshot (`snapshotAppData()`) and persists it **debounced at 800ms**,
@@ -108,6 +121,14 @@ stay at the call sites.
 5. Starts `useClock()` (after the snapshot watch) and registers
    `onRollover((key) => reconcileDerivedState(key))`, so a local-midnight rollover while the app
    is open backfills missed entries + coaching and the mutations reach the debounced save (ADR-0018).
+6. Starts `useCrossTabSync()` (after the clock, ADR-0024). Every save is **revision-guarded**: the
+   `meta.revision` counter is compared-and-swapped inside the Dexie write transaction, and a stale
+   write (another tab moved ahead) is re-loaded and **deterministically three-way-merged**
+   (`mergeAppData`) — non-overlapping edits merge silently, only a same-record collision suspends
+   auto-save and shows the conflict banner. Idle tabs stay fresh via a `BroadcastChannel` "saved"
+   ping plus a focus/visibility + 30s-visible-only poll. **Authoritative** whole-envelope writes
+   (import, delete-all, demo, legacy migration) **force-write** (`expectedRevision: null`); every
+   other write is revision-guarded.
 
 ## Guardrails / gotchas
 
@@ -124,6 +145,11 @@ stay at the call sites.
   `app/layouts/app.vue` (`app/composables/use-pwa-update.ts`). See ADR-0008.
 - **Dummy-auth sessions expire.** An absolute 7-day expiry stamp lives in its own
   `localStorage` key outside the `AppDataV2` envelope (`app/utils/auth/dummy-auth.ts`); see ADR-0011.
+- **Every save is revision-guarded (ADR-0024).** `persistence.save(payload, expectedRevision)` takes
+  an explicit revision: `null` force-writes (authoritative whole-envelope replacements only), a number
+  is compared-and-swapped in the Dexie transaction and rejects stale writes with `StaleWriteError`.
+  Route ordinary saves through `useCrossTabSync().saveGuarded` and authoritative ones through
+  `saveAuthoritative`; do not call the adapter's blind-overwrite path directly.
 - **Nuxt UI documentation contract.** When using Nuxt UI components, defer to
   <https://ui.nuxt.com/llms.txt> and its linked `raw/docs/...` pages for exact props/slots/events.
   Those raw docs are the source of truth when there is ambiguity.
@@ -136,6 +162,9 @@ stay at the call sites.
 - Security posture: `SECURITY.md`
 - Architecture decisions: `docs/adr/`
 - Development workflow (issues → branches → PRs, labels): `docs/WORKFLOW.md`
+- Agent factory: `.claude/agents/` (per-item agents + pipeline README), `.codex/agents/`
+  (the Codex mirror), and `.factory/` (`factory.yml` machine-readable manifest + verbatim
+  routine prompts, guarded by `tests/factory-contract.test.ts`, ADR-0021)
 
 ## Contributing flow (brief)
 

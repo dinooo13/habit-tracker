@@ -28,6 +28,9 @@ test-results
 /.playwright-cli
 /.playwright
 
+# Locally materialized Claude Code skill cache (not project content)
+/.claude/skills/
+
 # Local env files
 .env
 .env.*

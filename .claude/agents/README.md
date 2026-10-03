@@ -3,16 +3,17 @@
 Seven repo-committed agents (`triage`, `planner`, `implementer`, `rebaser`, `reviewer`,
 `qa-tester`, `docs-auditor`) drive the issue → plan → PR → review factory described in
 [`docs/WORKFLOW.md`](../../docs/WORKFLOW.md).
-Each agent handles **one** work item with fresh context; the cloud **routines**
-(claude.ai/code/routines) are thin orchestrators that only build the queue, spawn one
-agent per item, and summarize. All per-item logic lives here, versioned and reviewable.
+Each agent handles **one** work item with fresh context; the T3 Code **scheduled tasks**
+(one fresh top-level thread per run, prompt = `.factory/prompts/{stage}.md`) are thin
+orchestrators that only build the queue, spawn one agent per item, and summarize. All
+per-item logic lives here, versioned and reviewable.
 
 The pipeline is also described machine-readably in
 [`.factory/factory.yml`](../../.factory/factory.yml) — a descriptive manifest of every
 stage's queue, label transitions, idempotency guard, and live schedule/model, plus a
-top-level `markers:` registry (ADR-0023), guarded by a contract test (ADR-0021, ADR-0023).
-This README stays the human-facing architecture; the manifest is what a machine diffs
-against the live routine config.
+top-level `markers:` registry (ADR-0023), guarded by a contract test (ADR-0021, ADR-0023,
+ADR-0025). This README stays the human-facing architecture; the manifest is what a machine
+diffs against the live T3 task config.
 
 ## Label state machine
 
@@ -41,23 +42,23 @@ PR (stale vs main):
 
 Queues:
 
-- **triage routine** → open issues with **no** `status:` label and no `duplicate` label,
+- **triage task** → open issues with **no** `status:` label and no `duplicate` label,
   plus open issues labeled `status: blocked`; the triage agent decides whether a blocked
   issue is eligible for dependency rechecking; open issues labeled `status: draft` are
   excluded from the query and, as a second line of defence, skipped by the agent
-- **planner routine** → open issues labeled `status: needs-plan`
-- **implementer routine** → open PRs labeled `status: in-progress` (resume), then open
+- **planner task** → open issues labeled `status: needs-plan`
+- **implementer task** → open PRs labeled `status: in-progress` (resume), then open
   issues labeled `status: agent-ready` without an open PR (start)
-- **rebaser routine** → open PRs labeled `status: needs-review`, `status: needs-qa`, or
+- **rebaser task** → open PRs labeled `status: needs-review`, `status: needs-qa`, or
   `status: approved` that are behind `origin/main` (the need check runs in the agent:
   current branches, docs-only drift, drafts, and fork PRs are skips, not work;
   `status: in-progress` and `status: blocked` are excluded — the implementer owns those)
-- **reviewer routine** → open PRs labeled `status: needs-review` without a
+- **reviewer task** → open PRs labeled `status: needs-review` without a
   `<!-- routine:code-review sha={head} -->` comment for the current head SHA
-- **qa routine** → open PRs labeled `status: needs-qa` (set by the reviewer on
+- **qa task** → open PRs labeled `status: needs-qa` (set by the reviewer on
   approve). PRs with no preview deployment (e.g. docs-only) are marked
   `status: approved` directly — QA not applicable.
-- **docs-audit routine** → no queue; one whole-repo audit per run, feeding one
+- **docs-audit task** → no queue; one whole-repo audit per run, feeding one
   docs-only PR into the reviewer queue (marker `<!-- routine:docs-audit base=… -->`,
   keyed on the `origin/main` head the audit ran against)
 
@@ -88,6 +89,10 @@ audit is distinguishable from a current one), `<!-- routine:rebase -->` (rebaser
 demotion, **or self-resolution audit** comment on the PR — no per-SHA variant: rebaser
 idempotency is structural, a rebased branch is no longer behind).
 
+The `routine:` prefix in marker ids is a stable identifier kept for backward compatibility
+with existing comments and the ADR-0023 producer/consumer check; it does not refer to
+claude.ai routines.
+
 The whole marker graph — one producer and ≥1 consumers per marker — is recorded
 machine-readably in the [`.factory/factory.yml`](../../.factory/factory.yml) `markers:`
 registry, and each stage's guard `kind` / `marker` / `note` sits in its `idempotency`
@@ -105,10 +110,10 @@ morning. The re-run always happens; only its latency differs by stage.
 ## Environment
 
 `scripts/setup-agent-env.sh` is the one environment contract, shared by every caller:
-the cloud routines (which run it as their setup step), `.devcontainer/devcontainer.json`
-(`postCreateCommand`), the `SessionStart` hook in `.claude/settings.json`
-(with `--no-browser`), and humans on a fresh checkout. It is idempotent — a warm
-environment costs ~0.2s.
+every T3 thread via the `SessionStart` hook in `.claude/settings.json` (with
+`--no-browser`, including scheduled runs), the qa-tester task prompt (full browser
+tooling, by path), `.devcontainer/devcontainer.json` (`postCreateCommand`), and humans on
+a fresh checkout. It is idempotent — a warm environment costs ~0.2s.
 
 Two tiers, deliberately:
 
@@ -120,58 +125,67 @@ Two tiers, deliberately:
   and lets CI's `e2e` job cover the suite (`implementer.md` §5), and the qa-tester cannot
   run at all and must report rather than fake a pass.
 
-Editing the script changes the repo half only. The cloud routines invoke it by path, so a
-rename or a new required flag needs a matching routine edit in the claude.ai/code UI.
+Editing the script changes the repo half only. The qa-tester prompt in
+`.factory/prompts/qa-tester.md` invokes it by path, so a rename or a new required flag
+needs a matching prompt-file edit **and** a T3 task update (`.factory/README.md` sync
+convention).
 
-## Routine prompts
+## Task prompts
 
-Each routine's orchestrator prompt is kept **verbatim** in its own file under
+Each task's orchestrator prompt is kept **verbatim** in its own file under
 [`.factory/prompts/`](../../.factory/prompts/) — one file per stage, holding only the exact
-text configured in the routine (ADR-0021). Keep them thin: anything per-item belongs in the
-agent files, not the routine. The cadences in the headings below are the **live crons**
-(UTC), also recorded in [`.factory/factory.yml`](../../.factory/factory.yml).
+text set as the task prompt (ADR-0021, ADR-0025). Keep them thin: anything per-item belongs
+in the agent files, not the task. The cadences in the headings below are the **live run
+times**, machine-local (the host runs UTC), also recorded in
+[`.factory/factory.yml`](../../.factory/factory.yml) as `runtime.runs`. A stage with
+several times is several tasks sharing one prompt.
 
-### Triage routine (22:01 UTC daily)
+### Triage task (22:01 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/triage.md`](../../.factory/prompts/triage.md)
 
-### Planner routine (23:00 UTC daily)
+### Planner task (23:00 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/planner.md`](../../.factory/prompts/planner.md)
 
-### Implementer routine (02:00, 11:00, 21:00 UTC daily)
+### Implementer task (02:00, 11:00, 21:00 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/implementer.md`](../../.factory/prompts/implementer.md)
 
-### Rebaser routine (16:15 UTC daily)
+### Rebaser task (16:15 daily, machine-local; host runs UTC)
 
-[`.factory/prompts/rebaser.md`](../../.factory/prompts/rebaser.md) — records the **live**
-routine text, which lags the agent's current self-resolution wording (no `self-resolved`
-summary bucket; "Never resolve conflicts, review, merge, or push to main yourself" rather
-than "…conflicts *you are not confident about*"). The agent file `rebaser.md` governs
-behavior; re-aligning the routine is a deferred sync op — see
-[`.factory/README.md`](../../.factory/README.md).
+[`.factory/prompts/rebaser.md`](../../.factory/prompts/rebaser.md)
 
-The routine passes every candidate; the *agent* performs the cheap behind/need check in
-git — keeping the routine thin per the rule above. Run it once per cycle, after the
-implementer routine and any human merges — not per merge — so a merge burst costs each
+The task passes every candidate; the *agent* performs the cheap behind/need check in
+git — keeping the task thin per the rule above. Run it once per cycle, after the
+implementer task and any human merges — not per merge — so a merge burst costs each
 stale PR a single rebase.
 
-### Reviewer routine (06:00, 16:00 UTC daily)
+### Reviewer task (06:00, 16:00 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/reviewer.md`](../../.factory/prompts/reviewer.md)
 
-### QA routine (07:00, 17:00 UTC daily)
+### QA task (07:00, 17:00 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/qa-tester.md`](../../.factory/prompts/qa-tester.md)
 
-Note: the routine's cloud environment must allow the domain
-`preview.habits.fmeyer.dev` in its network access settings, or every preview fetch
-will fail with `403 host_not_allowed`.
+Note: the task runs on the maintainer's machine, which must reach
+`preview.habits.fmeyer.dev`; there is no network allowlist to configure.
 
-### Docs-audit routine (16:00 UTC daily)
+### Docs-audit task (16:00 daily, machine-local; host runs UTC)
 
 [`.factory/prompts/docs-auditor.md`](../../.factory/prompts/docs-auditor.md)
+
+### Managing the tasks
+
+The eleven tasks (one per `runtime.runs` entry) are created with `schedule_task`, listed
+with `list_scheduled_tasks`, changed with `update_scheduled_task`, removed with
+`delete_scheduled_task`, and smoke-tested with `run_scheduled_task_now` — all from a T3
+thread in the `habit-tracker` T3 project, since those tools exist nowhere else. All eleven
+were created **disabled**; a human enables them after a manual run and mirrors the flip
+into `factory.yml`. Runs happen only while T3 is up on the host, and each run starts a
+fresh top-level thread in a new worktree branched from `origin/main`. See
+[`.factory/README.md`](../../.factory/README.md) for the sync convention.
 
 ## Humans in the loop
 

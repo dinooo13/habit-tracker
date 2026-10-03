@@ -1,18 +1,17 @@
-# Agent factory manifest (ADR-0021, ADR-0023).
+# Agent factory manifest (ADR-0021, ADR-0023, ADR-0025).
 #
 # A DESCRIPTIVE, machine-checked map of the seven-stage agent pipeline as it
-# exists today — no runner, no scheduler. `.claude/agents/*.md` hold the per-item
-# behavior; `.claude/agents/README.md` holds the architecture and label state
-# machine; the claude.ai routine configuration holds the live schedules, models, and
-# enabled state. This file records all of it in one place so nothing has to be
-# compared by eye, and `tests/factory-contract.test.ts` checks it against itself and
-# the repo. See `.factory/README.md` for the sync convention and the deferred
+# exists today — no runner, no scheduler of its own. `.claude/agents/*.md` hold the
+# per-item behavior; `.claude/agents/README.md` holds the architecture and label state
+# machine; the T3 Code scheduled tasks in the `habit-tracker` T3 project hold the live
+# schedules and enabled state. This file records all of it in one place so nothing has
+# to be compared by eye, and `tests/factory-contract.test.ts` checks it against itself
+# and the repo. See `.factory/README.md` for the sync convention and the deferred
 # authoritative-sync script.
 #
-# The manifest is DESCRIPTIVE: it records what is true, including one known drift
-# (issue #85 §1) — the docs-auditor's daily (not weekly) cron. The gaps are the point;
-# the contract test is green because the divergence is declared, not hidden. Two of
-# the original drifts are closed. `idempotency.kind: none` where a stage had no guard
+# The manifest is DESCRIPTIVE: it records what is true. As of #123 there is NO declared
+# drift — all three of the original ones (issue #85 §1) are closed.
+# `idempotency.kind: none` where a stage had no guard
 # is closed by #86 / ADR-0023: every stage now
 # declares a guard `kind` (no `none`), a machine-checked `note`, and its `marker`
 # resolves against the top-level `markers:` registry (one producer, ≥1 consumer). The
@@ -21,12 +20,29 @@
 # rebaser's absent model pin is closed too: every agent file now carries a `model:`
 # in its frontmatter equal to its stage's `runtime.model` here, and the contract test
 # asserts the pair agree, so a model bump in one place without the other fails the build.
+# The docs-auditor's daily-vs-weekly cadence is closed by #123 / ADR-0025: the daily
+# cadence was carried into its T3 task deliberately and no prose claims weekly any more.
 
-version: 2
+version: 3
 
-# The orchestrator's tool list, identical across all seven routines. Recorded once
-# here rather than per stage (it is the routine's list, not the agent's — the agents
-# declare their own narrower `tools:` in frontmatter) until it starts to differ.
+# Where the stages actually run (issue #123, ADR-0025). One block, not per stage: every
+# stage runs the same way and only its times, model pin, and enabled state differ.
+scheduler:
+  kind: t3-scheduled-task          # T3 Code scheduled tasks on the maintainer's machine
+  project: habit-tracker           # T3 project the tasks are scoped to (T3 app state, not the repo)
+  task_name: "habit-tracker | {stage} {time}"   # one task per runs[] entry; `time` is HH:MM
+  timezone: machine-local          # the host runs UTC, so the times below equal the old UTC crons
+  thread: fresh                    # bindToCurrentThread: false — new top-level thread per run
+  worktree: origin/main            # each run gets a new T3 worktree branched from origin/main
+  prompt_source: .factory/prompts/{stage}.md   # the task prompt is this file's text verbatim
+  model: inherited                 # orchestrator provider/model come from the creating thread;
+                                   # per-stage models apply via each agent file's frontmatter pin
+  runs_only_while_host_up: true    # no runs while T3 is not running on the host
+
+# The orchestrator thread's tool set. T3 has no per-task tool allowlist; a scheduled run
+# inherits its tools from the thread that created the task. Recorded once because it is
+# the same for all seven stages (and it is the orchestrator's list, not the agent's — the
+# agents declare their own narrower `tools:` in frontmatter); `gh` is reached through `Bash`.
 allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, WebFetch, WebSearch]
 
 # Marker registry (ADR-0023). The whole HTML-comment marker graph in one place: each
@@ -83,6 +99,16 @@ markers:
       Bounce / demotion / self-resolution audit comment — an implementer work source,
       deliberately NOT a skip guard (rebaser idempotency is structural).
 
+# Per-stage `runtime:` fields (ADR-0025):
+#   runs    — machine-local HH:MM times; ONE T3 scheduled task per entry, named
+#             `habit-tracker | {stage} HH:MM`. Eleven tasks across the seven stages; the
+#             contract test asserts that total, so a changed task count is a visible edit.
+#   model   — the per-item agent's model pin; the contract test asserts it equals that
+#             agent file's frontmatter `model:`. T3 has no per-task model field, so the
+#             orchestrator's own model is inherited (see `scheduler.model`) and unrecorded.
+#   enabled — descriptive. All eleven tasks were created DISABLED on 2026-10-03; a human
+#             enables them from a T3 thread (`update_scheduled_task`) after a manual
+#             `run_scheduled_task_now` test and mirrors the flip into this field.
 stages:
   - name: triage
     agent: .claude/agents/triage.md
@@ -110,10 +136,9 @@ stages:
         is cheaper than a missed triage. Legacy untyped `routine:triage` comments match
         by prefix and keep guarding.
     runtime:
-      schedule: "1 22 * * *"
+      runs: ["22:01"]
       model: claude-sonnet-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after: []
     concurrency: 1
     wip_limit: null
@@ -138,10 +163,9 @@ stages:
         must be revisited before a second *mutating* execution path exists. Skips when a
         plan comment exists and no newer human comment changed the requirements.
     runtime:
-      schedule: "0 23 * * *"
+      runs: ["23:00"]
       model: claude-fable-5-1
-      enabled: true
-      environment: standard
+      enabled: false
     order_after:
       - stage: triage
         realized: true      # triage 22:01 precedes planner 23:00 (same cycle)
@@ -169,10 +193,9 @@ stages:
         dedupe check looks for exactly that PR (`Closes #N`), then resumes from the
         `routine:dev-progress` section in the PR body.
     runtime:
-      schedule: "0 2,11,21 * * *"
+      runs: ["02:00", "11:00", "21:00"]
       model: claude-opus-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after:
       - stage: triage
         realized: true      # overnight chain: triage 22:01 → implementer 02:00
@@ -202,10 +225,9 @@ stages:
         bounce / self-resolution record (registered in `markers:` as an implementer
         work source), not a per-run skip guard, so `marker` is empty here.
     runtime:
-      schedule: "15 16 * * *"
+      runs: ["16:15"]
       model: claude-sonnet-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after:
       - stage: implementer
         realized: true      # implementer 11:00 precedes rebaser 16:15 (same cycle)
@@ -232,10 +254,9 @@ stages:
         disagrees with the recorded verdict when a prior run died between posting the
         comment and flipping the label.
     runtime:
-      schedule: "0 6,16 * * *"
+      runs: ["06:00", "16:00"]
       model: claude-opus-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after:
       - stage: implementer
         realized: true       # implementer 02:00/11:00 precede reviewer 06:00/16:00
@@ -265,10 +286,9 @@ stages:
         re-QA at the new head is correct. Self-heal reconciles a label that disagrees
         with the recorded verdict after a mid-run death.
     runtime:
-      schedule: "0 7,17 * * *"
+      runs: ["07:00", "17:00"]
       model: claude-opus-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after:
       - stage: reviewer
         realized: true       # reviewer 06:00/16:00 precede qa 07:00/17:00
@@ -299,14 +319,11 @@ stages:
         equals current `origin/main` is a skip; a stale one is refreshed in place; none
         means a new branch. One open audit PR at a time stays the structural invariant;
         the base SHA is what distinguishes a current audit from a stale one, making the
-        daily cron a genuine no-op when `main` has not moved.
+        daily run a genuine no-op when `main` has not moved.
     runtime:
-      # DRIFT (issue #85 §1.2): documented as "(e.g. weekly)" but the live cron is
-      # daily. Recorded as-is.
-      schedule: "0 16 * * *"
+      runs: ["16:00"]
       model: claude-opus-5
-      enabled: true
-      environment: standard
+      enabled: false
     order_after: []
     concurrency: 1
     wip_limit: null

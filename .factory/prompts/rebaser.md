@@ -9,3 +9,8 @@ reused; agents may run in parallel (branches are independent). Collect only each
 Finish with a summary: rebased (label kept / self-resolved / demoted to needs-qa), bounced
 to in-progress (big conflict or red gates), skipped (current / docs-only drift / draft).
 Never resolve conflicts yourself, never review, merge, or push to main.
+
+Last step, also after an early stop (e.g. an empty queue): if nothing from this run
+needs a human (no blocker, error, or failed agent), settle this T3 thread with the T3
+Code MCP tool `t3_thread_organize` (action "settle", no threadId). Otherwise leave it
+unsettled and say what needs attention.

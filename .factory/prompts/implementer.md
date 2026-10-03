@@ -11,3 +11,8 @@ reused. Items touching the same files run sequentially; otherwise agents may run
 parallel in the background. Collect only outcomes (PR link, gate results, blockers).
 Finish with a summary: started, resumed, ready for review, skipped (no plan), blocked
 (where). Never implement anything yourself, never push to main, never merge.
+
+Last step, also after an early stop (e.g. an empty queue): if nothing from this run
+needs a human (no blocker, error, or failed agent), settle this T3 thread with the T3
+Code MCP tool `t3_thread_organize` (action "settle", no threadId). Otherwise leave it
+unsettled and say what needs attention.

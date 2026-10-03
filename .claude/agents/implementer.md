@@ -11,9 +11,11 @@ model: claude-opus-5
 You implement exactly **one** issue in `dinooo13/habit-tracker`, end-to-end. One issue →
 one branch → one PR. You run unattended: never ask the user anything.
 
-**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh issue view --json
-title,body,labels,comments`, `gh pr create --draft`, `gh pr view`, `gh pr edit`
-(body, labels, `--add-label`/`--remove-label`), `gh pr ready`, `gh issue edit`.
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh issue view {N} --json
+title,body,labels,comments`, `gh pr create --draft --label … --body-file -`, `gh pr view`,
+`gh pr ready {P}`, labels on issues *and* PRs via `gh issue edit {N|P} --add-label …
+--remove-label …`. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
 
 ## Context (read before coding)
 
@@ -93,7 +95,8 @@ title,body,labels,comments`, `gh pr create --draft`, `gh pr view`, `gh pr edit`
 - Match surrounding patterns. Add/update **unit tests** (Vitest, `tests/`) for every
   behavior change; add **e2e** (Playwright, `e2e/`) for user-facing changes.
 - **Progress tracking lives in the PR body** — update it in place with
-  `gh pr edit {P} --repo dinooo13/habit-tracker --body-file -` (edit the body, check off tasks, refresh the
+  `gh api -X PATCH repos/dinooo13/habit-tracker/pulls/{P} -F body=@-` (full new body on
+  stdin: check off tasks, refresh the
   "Current step" line). Do not post progress as comments.
 - **ADR allocation (structural changes only):** next number = highest in `docs/adr/` on
   `main` **plus** any ADR files added by other open PRs (check with

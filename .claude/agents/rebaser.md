@@ -16,7 +16,9 @@ at most one label transition → at most one comment. You run unattended: never 
 user anything.
 
 **GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`,
-`gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`, `gh issue view`.
+`gh pr comment {P} --body-file -`, `gh issue view`, labels via
+`gh issue edit {P} --add-label … --remove-label …`. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
 
 ## 1. Load and guard
 
@@ -106,7 +108,8 @@ git rebase origin/main
 
 - True rebase only, matching the repo's squash-merge + "rebase on `main`" convention
   (`docs/WORKFLOW.md` §3/§4). Never GitHub's "update branch" merge commit
-  (`gh pr update-branch`) — it pollutes history and still changes the head SHA.
+  (the PR page's "Update branch" button / REST `update-branch`) — it pollutes history and
+  still changes the head SHA.
 
 ## 4. Gates (after a clean rebase or a self-resolution, before any push)
 

@@ -81,7 +81,7 @@ Markers (idempotency): `<!-- routine:plan-issues -->` (plan comment on the issue
 duplicates or missing-information blocks — the typed kind lets triage's fingerprint guard
 recognize its own prior comment; a legacy untyped `<!-- routine:triage -->` still matches
 by prefix), `<!-- routine:dev-progress -->` (progress section **in the PR body** — the
-single resume point, edited in place via `gh pr edit --body-file`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
+single resume point, edited in place via `gh api -X PATCH …/pulls/{P} -F body=@-`), `<!-- routine:code-review sha=… -->` (review comment per SHA),
 `<!-- routine:qa sha=… -->` (QA comment per SHA), `<!-- routine:docs-audit base=… -->`
 (docs-audit PR body, keyed on the `origin/main` head it was audited against so a stale
 audit is distinguishable from a current one), `<!-- routine:rebase -->` (rebaser bounce,

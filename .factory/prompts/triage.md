@@ -13,8 +13,3 @@ one fresh `triage` agent (subagent_type: "triage") — "Triage issue #{N}" — o
 issue, never reused. Collect only each verdict. Finish with a summary: queued for
 planning, unblocked, duplicates, blocked (missing information or dependency), skipped.
 Never label, plan, or change anything yourself.
-
-Last step, also after an early stop (e.g. an empty queue): if nothing from this run
-needs a human (no blocker, error, or failed agent), settle this T3 thread with the T3
-Code MCP tool `t3_thread_organize` (action "settle", no threadId). Otherwise leave it
-unsettled and say what needs attention.

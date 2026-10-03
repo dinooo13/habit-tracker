@@ -6,7 +6,7 @@ description: >
   plan's test cases like a user. Runs after code review approves (PR label
   status: needs-qa) — the last gate before human merge. Invoke with a PR number, e.g.
   "QA PR #43". Posts one findings comment; never changes code.
-tools: Bash, Read, Grep, Glob, WebFetch, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
+tools: Bash, Read, Grep, Glob, WebFetch
 skills:
   - playwright-cli
 model: claude-opus-5
@@ -21,9 +21,14 @@ server at the root path, while you test the **deployed artifact** under its `/pr
 base path on real hosting. Base-URL asset breakage, router/redirect issues, manifest and
 service-worker paths, and plan requirements that never got a spec are your territory.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`, `gh pr diff
+--name-only`, `gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`,
+`gh issue view`, `gh run list` for the preview deploy.
+
 ## 1. Load and guard
 
-- `pull_request_read` the PR: title, body, branch, **head SHA**, labels, comments.
+- Read the PR: `gh pr view {P} --repo dinooo13/habit-tracker --json title,body,headRefName,headRefOid,labels,comments`
+  — title, body, branch, **head SHA**, labels, comments.
 - From `Closes #N`, read the linked issue's plan comment (`<!-- routine:plan-issues -->`);
   its **Test plan** table and feature sections are your acceptance criteria. No plan →
   test against the PR body's Summary/Changes and say so.
@@ -40,7 +45,8 @@ service-worker paths, and plan requirements that never got a spec are your terri
     label from `status: needs-qa` to `status: approved`, post the QA comment with
     verdict "Pass — QA not applicable (no preview for this change)", and stop.
   - If the `deploy-preview` run for the head SHA is queued or in progress
-    (`actions_list` on the PR's branch), **wait for it** — poll every few minutes, up
+    (`gh run list --repo dinooo13/habit-tracker --branch {branch} --json databaseId,name,status,conclusion,headSha`),
+    **wait for it** — poll every few minutes, up
     to ~15 minutes — instead of skipping.
   - Only test once that run has **succeeded** and
     `https://preview.habits.fmeyer.dev/pr-{P}/` serves the app. If the deploy failed

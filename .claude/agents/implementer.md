@@ -11,6 +11,10 @@ model: claude-opus-5
 You implement exactly **one** issue in `dinooo13/habit-tracker`, end-to-end. One issue →
 one branch → one PR. You run unattended: never ask the user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh issue view --json
+title,body,labels,comments`, `gh pr create --draft`, `gh pr view`, `gh pr edit`
+(body, labels, `--add-label`/`--remove-label`), `gh pr ready`, `gh issue edit`.
+
 ## Context (read before coding)
 
 1. `CLAUDE.md` — architecture map, data model (`app/types/app-data.ts`), the four Pinia
@@ -89,12 +93,11 @@ one branch → one PR. You run unattended: never ask the user anything.
 - Match surrounding patterns. Add/update **unit tests** (Vitest, `tests/`) for every
   behavior change; add **e2e** (Playwright, `e2e/`) for user-facing changes.
 - **Progress tracking lives in the PR body** — update it in place with
-  `mcp__github__update_pull_request` (edit the body, check off tasks, refresh the
-  "Current step" line). Do not post progress as comments; comment editing is not
-  available in this toolset.
+  `gh pr edit {P} --repo dinooo13/habit-tracker --body-file -` (edit the body, check off tasks, refresh the
+  "Current step" line). Do not post progress as comments.
 - **ADR allocation (structural changes only):** next number = highest in `docs/adr/` on
   `main` **plus** any ADR files added by other open PRs (check with
-  `list_pull_requests` + `pull_request_read` files). Skip claimed numbers — parallel
+  `gh pr list --repo dinooo13/habit-tracker --json number,files`). Skip claimed numbers — parallel
   PRs have collided on the same ADR number before. Update `docs/adr/README.md` and
   affected docs. Create no `specs/` files.
 

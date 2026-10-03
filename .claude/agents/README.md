@@ -111,24 +111,23 @@ morning. The re-run always happens; only its latency differs by stage.
 
 `scripts/setup-agent-env.sh` is the one environment contract, shared by every caller:
 every T3 thread via the `SessionStart` hook in `.claude/settings.json` (with
-`--no-browser`, including scheduled runs), the qa-tester task prompt (full browser
-tooling, by path), `.devcontainer/devcontainer.json` (`postCreateCommand`), and humans on
-a fresh checkout. It is idempotent — a warm environment costs ~0.2s.
+`--no-browser`, including scheduled runs), `.devcontainer/devcontainer.json`
+(`postCreateCommand`), and humans on a fresh checkout. It is idempotent — a warm environment costs ~0.2s.
 
 Two tiers, deliberately:
 
 - **Required** — node ≥22 and `npm ci`. Failure exits non-zero; an agent that sees this
   must report a broken environment rather than proceeding or exiting silently.
-- **Best-effort** — `@playwright/cli`, the `playwright-cli` skill that `qa-tester`
-  declares, a chromium binary, and `.playwright/cli.config.json`. Failure prints
+- **Best-effort** — `@playwright/cli`, a chromium binary, and `.playwright/cli.config.json`. Failure prints
   **`PLAYWRIGHT_UNAVAILABLE`** and still exits 0: the implementer notes it in the PR body
   and lets CI's `e2e` job cover the suite (`implementer.md` §5), and the qa-tester cannot
   run at all and must report rather than fake a pass.
 
-Editing the script changes the repo half only. The qa-tester prompt in
-`.factory/prompts/qa-tester.md` invokes it by path, so a rename or a new required flag
-needs a matching prompt-file edit **and** a T3 task update (`.factory/README.md` sync
-convention).
+**Host prerequisite for QA.** Scheduled runs never install browser tooling: the
+qa-tester task only checks that `playwright-cli` is on the host and reports "browser
+unavailable" if not. On the factory host, `@playwright/cli` (global) and its Chromium are
+installed once by hand, or by running this script without `--no-browser`. The agent needs
+no skill: `playwright-cli --help` documents the commands.
 
 ## Task prompts
 

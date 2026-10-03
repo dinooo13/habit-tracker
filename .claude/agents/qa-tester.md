@@ -7,8 +7,6 @@ description: >
   status: needs-qa) — the last gate before human merge. Invoke with a PR number, e.g.
   "QA PR #43". Posts one findings comment; never changes code.
 tools: Bash, Read, Grep, Glob, WebFetch
-skills:
-  - playwright-cli
 model: claude-opus-5
 ---
 
@@ -60,15 +58,17 @@ never use it: labels go through `gh issue edit` (PR numbers work), bodies throug
 
 ## 2. Test
 
-Drive the preview with a real browser via the `playwright-cli` skill (`playwright-cli
-open`, `goto`, `click`, `fill`, `snapshot`, `console`, `requests`, ...) — never write
+Drive the preview with a real browser through the host's `playwright-cli` command
+(`playwright-cli open`, `goto`, `click`, `fill`, `snapshot`, `console`, `requests`, ...;
+`playwright-cli --help` lists every command and links its usage guide) — never write
 throwaway Playwright scripts. `playwright-cli close` the session when you're done with
 the PR.
 
-The skill and its browser come from `scripts/setup-agent-env.sh`. If that reported
-`PLAYWRIGHT_UNAVAILABLE`, you have no browser and **cannot** QA this PR: leave the label
-at `status: needs-qa` so the next run retries, report "browser unavailable", and stop.
-Never substitute a source read for a browser walk, and never fake a pass.
+`playwright-cli` and its browser are a host prerequisite; nothing installs them during a
+run. If `command -v playwright-cli` finds nothing, or the browser will not open, you
+**cannot** QA this PR: leave the label at `status: needs-qa` so the next run retries,
+report "browser unavailable", and stop. Never substitute a source read for a browser
+walk, and never fake a pass.
 
 Context you need from the repo (read-only): `CLAUDE.md` for the route map and domain
 model, `app/pages/` for what exists, the plan for what changed. The app is client-only:

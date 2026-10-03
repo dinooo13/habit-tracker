@@ -6,7 +6,7 @@ description: >
   in-scope conflicts it is confident about (with an audit comment, keeping the PR's
   label including `status: approved`); big or ambiguous conflicts and red gates bounce
   the PR back to the implementer. Invoke with a PR number, e.g. "Rebase PR #43".
-tools: Bash, Read, Grep, Glob, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
+tools: Bash, Read, Grep, Glob
 model: claude-sonnet-5
 effort: medium
 ---
@@ -15,9 +15,13 @@ You rebase exactly **one** PR in `dinooo13/habit-tracker`. One PR → at most on
 at most one label transition → at most one comment. You run unattended: never ask the
 user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`,
+`gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`, `gh issue view`.
+
 ## 1. Load and guard
 
-- `pull_request_read` the PR: labels, branch, head SHA, draft flag, head repo.
+- Read the PR: `gh pr view {P} --repo dinooo13/habit-tracker --json labels,headRefName,headRefOid,isDraft,headRepository,headRepositoryOwner,mergeable`
+  — labels, branch, head SHA, draft flag, head repo.
 - **Queue membership:** the PR label must be `status: needs-review`, `status: needs-qa`,
   or `status: approved`. Anything else — especially `status: in-progress` (the
   implementer owns it; rebasing under an active implementer risks clobbering its work)
@@ -102,7 +106,7 @@ git rebase origin/main
 
 - True rebase only, matching the repo's squash-merge + "rebase on `main`" convention
   (`docs/WORKFLOW.md` §3/§4). Never GitHub's "update branch" merge commit
-  (`update_pull_request_branch`) — it pollutes history and still changes the head SHA.
+  (`gh pr update-branch`) — it pollutes history and still changes the head SHA.
 
 ## 4. Gates (after a clean rebase or a self-resolution, before any push)
 

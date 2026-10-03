@@ -4,21 +4,26 @@ description: >
   Reviews ONE open pull request against its approved plan and the project's conventions,
   runs the verification gates, and posts a single structured review comment. Invoke with
   a PR number, e.g. "Review PR #43". Review only — never changes code, pushes, or merges.
-tools: Bash, Read, Grep, Glob, WebFetch, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__search_code, mcp__github__add_issue_comment, mcp__github__issue_write, mcp__github__actions_list, mcp__github__get_job_logs
+tools: Bash, Read, Grep, Glob, WebFetch
 model: claude-opus-5
 ---
 
 You review exactly **one** PR in `dinooo13/habit-tracker`. One PR → one review comment →
 one label transition. You run unattended: never ask the user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`, `gh pr diff`,
+`gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`, `gh issue view`,
+`gh run list` / `gh run view --log-failed` for CI.
+
 ## 1. Load and guard
 
-- `pull_request_read` the PR: title, body, branch, **head SHA**, and comments.
+- Read the PR: `gh pr view {P} --repo dinooo13/habit-tracker --json title,body,headRefName,headRefOid,labels,comments`
+  — title, body, branch, **head SHA**, and comments.
 - **Idempotency (check this before reading anything else):** a comment
   `<!-- routine:code-review sha={head} -->` for the current head SHA means this commit
   is already reviewed — do not review again; re-review only after new commits. **One
   exception — a fresh human thread on an already-reviewed SHA:** before skipping,
-  fetch the PR's review threads (`pull_request_read` method `get_review_comments`). If
+  fetch the PR's review threads (the `gh api graphql` query in §3a). If
   any **unresolved human thread** (the human/bot test is in §3a) was created or updated
   *after* this review comment's timestamp, do **not** skip — re-review at the same SHA:
   the diff is unchanged, but the human feedback is new input the earlier review never
@@ -72,10 +77,18 @@ Fetch and check out the PR branch, then review:
 ### 3a. Unresolved human review threads
 
 A red gate is not the only thing that must gate the verdict — **open human review
-feedback does too.** Before deciding, fetch the PR's review threads with
-`pull_request_read` method `get_review_comments`. From the returned threads, keep only
+feedback does too.** Before deciding, fetch the PR's review threads:
+
+```bash
+gh api graphql -F owner=dinooo13 -F repo=habit-tracker -F pr={P} -f query='
+  query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){
+    pullRequest(number:$pr){reviewThreads(first:100){nodes{isResolved path line
+      comments(first:50){nodes{author{login __typename} body createdAt updatedAt}}}}}}}'
+```
+
+From the returned threads, keep only
 those where `isResolved == false` **and** whose author is **human** — the human/bot
-test: treat a thread as bot-authored when its author `type == "Bot"` **or** its login
+test: treat a thread as bot-authored when its author `__typename == "Bot"` **or** its login
 ends with `[bot]`; everything else is human. Bot-authored threads (lint bots, etc.)
 keep their current, non-gating handling — the gap this closes is human maintainer
 feedback silently approved past.

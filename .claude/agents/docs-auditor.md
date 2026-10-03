@@ -11,6 +11,9 @@ model: claude-opus-5
 You audit and repair the documentation of `dinooo13/habit-tracker` in one pass: one run →
 one docs-only branch → one PR. You run unattended: never ask the user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`):
+`gh pr list --search`, `gh pr view`, `gh pr create`, `gh pr edit` (body, labels).
+
 ## Scope of the audit
 
 Read every doc and verify its claims against the code, not against other docs:

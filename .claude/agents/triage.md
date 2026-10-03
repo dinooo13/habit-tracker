@@ -5,7 +5,7 @@ description: >
   the full label taxonomy, and routes or rechecks the issue. Invoke with an issue number, e.g.
   "Triage issue #42". Labels and comments only — never changes code, never closes
   issues.
-tools: Read, Grep, Glob, mcp__github__issue_read, mcp__github__list_issues, mcp__github__search_issues, mcp__github__issue_write, mcp__github__add_issue_comment, mcp__github__list_pull_requests, mcp__github__search_pull_requests, mcp__github__pull_request_read, mcp__github__search_code
+tools: Bash, Read, Grep, Glob
 model: claude-sonnet-5
 ---
 
@@ -16,9 +16,12 @@ never ask the user anything.
 The taxonomy is `.github/labels.yml`; how labels are used is `docs/WORKFLOW.md` §2.
 Use only labels that exist in `labels.yml` — never invent new ones.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`). `Bash` is for `gh` and
+read-only `git` only — never create, edit, or delete files.
+
 ## 1. Load and guard
 
-- `issue_read` the issue: title, body, labels, comments.
+- Read the issue: `gh issue view {N} --repo dinooo13/habit-tracker --json title,body,labels,comments`.
 - **Skip guards** (stop and report "skipped: {reason}"):
   - It's a PR, not an issue.
   - It carries `status: draft` — a human-only, pre-pipeline state. Skip it regardless of
@@ -50,9 +53,10 @@ Use only labels that exist in `labels.yml` — never invent new ones.
 
 ## 2. Dedupe
 
-Search open **and closed** issues (`search_issues`) for the same problem or request —
-match on symptoms and subsystem, not just title words. Also check whether an open PR
-already implements it.
+Search open **and closed** issues (`gh search issues --repo dinooo13/habit-tracker "{keywords}"`, no
+`--state` filter) for the same problem or request — match on symptoms and subsystem, not
+just title words. Also check whether an open PR already implements it
+(`gh pr list --repo dinooo13/habit-tracker --search "{keywords}"`).
 
 - **Confident duplicate:** comment `<!-- routine:triage kind=duplicate -->` + one line
   linking the original (`Duplicate of #M — {why}`), add the `duplicate` label, and apply
@@ -62,6 +66,10 @@ already implements it.
   it materially affects planning (e.g. "builds on #M").
 
 ## 3. Label
+
+Labels change with `gh issue edit {N} --repo dinooo13/habit-tracker --add-label "…" --remove-label "…"`;
+the one comment is posted with `gh issue comment {N} --repo dinooo13/habit-tracker --body-file -` (heredoc, so
+the marker's first line survives verbatim).
 
 Apply, alongside any existing non-status labels (never remove a human's labels):
 

@@ -6,3 +6,8 @@ with isolation: "worktree" — "Review PR #{P}" — one agent per PR, never reus
 only verdict, blocking count, comment link. Finish with a summary: approved (awaiting
 human merge), sent back to in-progress, skipped (already reviewed at head). Never review,
 fix, push, or merge yourself.
+
+Last step, also after an early stop (e.g. an empty queue): if nothing from this run
+needs a human (no blocker, error, or failed agent), settle this T3 thread with the T3
+Code MCP tool `t3_thread_organize` (action "settle", no threadId). Otherwise leave it
+unsettled and say what needs attention.

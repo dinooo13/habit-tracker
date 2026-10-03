@@ -8,3 +8,8 @@ agent (subagent_type: "qa-tester") — "QA PR #{P}" — one agent per PR, never 
 Collect only verdict, blocking count, comment link. Finish with a summary: approved
 (passed / QA not applicable), issues found (sent back to in-progress), still waiting on a
 preview deploy. Never test, fix, push, or merge yourself.
+
+Last step, also after an early stop (e.g. an empty queue): if nothing from this run
+needs a human (no blocker, error, or failed agent), settle this T3 thread with the T3
+Code MCP tool `t3_thread_organize` (action "settle", no threadId). Otherwise leave it
+unsettled and say what needs attention.

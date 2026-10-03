@@ -14,7 +14,7 @@ diagrams and `docs/adr/` for the recorded design decisions.
 
 | Command | What it does |
 | --- | --- |
-| `scripts/setup-agent-env.sh [--no-browser]` | Provision a working environment: dependencies (required) plus browser tooling (best-effort). Idempotent. Called by the devcontainer, the `SessionStart` hook, and the T3 scheduled-task runs (via the `SessionStart` hook; the qa-tester task prompt runs it with browser tooling). |
+| `scripts/setup-agent-env.sh [--no-browser]` | Provision a working environment: dependencies (required) plus browser tooling (best-effort). Idempotent. Called by the devcontainer and the `SessionStart` hook (`--no-browser`, including T3 scheduled-task runs). QA needs `playwright-cli` + Chromium preinstalled on the host. |
 | `npm install` | Install dependencies (runs `nuxt prepare` via `postinstall`). |
 | `npm run dev` | Start the dev server with HMR. |
 | `npm run test` | Run the Vitest suite once (`vitest run`). |

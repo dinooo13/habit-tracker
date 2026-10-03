@@ -3,16 +3,17 @@
 # Provision an environment for working on habit-tracker.
 #
 # Callers: the T3 scheduled-task runs (via the Claude Code SessionStart hook in
-# .claude/settings.json, and the qa-tester task prompt by path for browser tooling),
-# .devcontainer postCreateCommand, and humans on a fresh checkout.
+# .claude/settings.json, with --no-browser), .devcontainer postCreateCommand, and
+# humans on a fresh checkout or a new factory host (full run installs the
+# playwright-cli + Chromium host prerequisite that the qa-tester relies on).
 #
 # Contract:
 #   exit 0        the repo is installable and the gates in docs/WORKFLOW.md §5 can run
 #   exit non-zero required setup failed — do not start work, report the failure
 #
 # Browser tooling is best-effort. If it cannot be provisioned the script prints
-# PLAYWRIGHT_UNAVAILABLE and still exits 0; agents key off that marker (see
-# .claude/agents/implementer.md §5 and .claude/agents/qa-tester.md §2).
+# PLAYWRIGHT_UNAVAILABLE and still exits 0; the implementer keys off that marker
+# (see .claude/agents/implementer.md §5).
 #
 # Usage: scripts/setup-agent-env.sh [--no-browser]
 
@@ -71,8 +72,6 @@ provision_browser() {
     npm install -g @playwright/cli@latest >/dev/null 2>&1 || return 1
   fi
 
-  # Installs the playwright-cli skill that .claude/agents/qa-tester.md declares.
-  playwright-cli install --skills >/dev/null 2>&1 || return 1
 
   # Prefer a browser the image already ships; otherwise download one matched to
   # the repo's own playwright version so npm run test:e2e uses the same binary.

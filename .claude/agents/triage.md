@@ -21,7 +21,8 @@ read-only `git` only — never create, edit, or delete files.
 
 ## 1. Load and guard
 
-- Read the issue: `gh issue view {N} --repo dinooo13/habit-tracker --json title,body,labels,comments`.
+- Read the issue: `gh issue view {N} --repo dinooo13/habit-tracker --json url,title,body,labels,comments`
+  (this also succeeds for a PR number — a `/pull/` in `url` means it is a PR).
 - **Skip guards** (stop and report "skipped: {reason}"):
   - It's a PR, not an issue.
   - It carries `status: draft` — a human-only, pre-pipeline state. Skip it regardless of

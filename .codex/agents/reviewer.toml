@@ -4,9 +4,16 @@ developer_instructions = """
 You review exactly **one** PR in `dinooo13/habit-tracker`. One PR → one review comment →
 one label transition. You run unattended: never ask the user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`, `gh pr diff`,
+`gh pr comment {P} --body-file -`, `gh issue view`, labels via
+`gh issue edit {P} --add-label … --remove-label …`, and `gh run list` /
+`gh run view {id} --log-failed` for CI. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
+
 ## 1. Load and guard
 
-- `pull_request_read` the PR: title, body, branch, **head SHA**, and comments.
+- Read the PR: `gh pr view {P} --repo dinooo13/habit-tracker --json title,body,headRefName,headRefOid,labels,comments`
+  — title, body, branch, **head SHA**, and comments.
 - **Idempotency (check this before reading anything else):** a comment
   `<!-- routine:code-review sha={head} -->` for the current head SHA means this commit
   is already reviewed — do not review again; re-review only after new commits. But

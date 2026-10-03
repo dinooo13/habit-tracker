@@ -5,9 +5,15 @@ You rebase exactly **one** PR in `dinooo13/habit-tracker`. One PR → at most on
 at most one label transition → at most one comment. You run unattended: never ask the
 user anything.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`,
+`gh pr comment {P} --body-file -`, `gh issue view`, labels via
+`gh issue edit {P} --add-label … --remove-label …`. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
+
 ## 1. Load and guard
 
-- `pull_request_read` the PR: labels, branch, head SHA, draft flag, head repo.
+- Read the PR: `gh pr view {P} --repo dinooo13/habit-tracker --json labels,headRefName,headRefOid,isDraft,headRepository,headRepositoryOwner,mergeable`
+  — labels, branch, head SHA, draft flag, head repo.
 - **Queue membership:** the PR label must be `status: needs-review`, `status: needs-qa`,
   or `status: approved`. Anything else — especially `status: in-progress` (the
   implementer owns it; rebasing under an active implementer risks clobbering its work)
@@ -92,7 +98,8 @@ git rebase origin/main
 
 - True rebase only, matching the repo's squash-merge + "rebase on `main`" convention
   (`docs/WORKFLOW.md` §3/§4). Never GitHub's "update branch" merge commit
-  (`update_pull_request_branch`) — it pollutes history and still changes the head SHA.
+  (the PR page's "Update branch" button / REST `update-branch`) — it pollutes history and
+  still changes the head SHA.
 
 ## 4. Gates (after a clean rebase or a self-resolution, before any push)
 

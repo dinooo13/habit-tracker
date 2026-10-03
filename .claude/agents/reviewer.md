@@ -12,8 +12,10 @@ You review exactly **one** PR in `dinooo13/habit-tracker`. One PR → one review
 one label transition. You run unattended: never ask the user anything.
 
 **GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`, `gh pr diff`,
-`gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`, `gh issue view`,
-`gh run list` / `gh run view --log-failed` for CI.
+`gh pr comment {P} --body-file -`, `gh issue view`, labels via
+`gh issue edit {P} --add-label … --remove-label …`, and `gh run list` /
+`gh run view {id} --log-failed` for CI. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
 
 ## 1. Load and guard
 

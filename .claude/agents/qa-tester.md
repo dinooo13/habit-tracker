@@ -22,8 +22,10 @@ base path on real hosting. Base-URL asset breakage, router/redirect issues, mani
 service-worker paths, and plan requirements that never got a spec are your territory.
 
 **GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`): `gh pr view`, `gh pr diff
---name-only`, `gh pr comment --body-file -`, `gh pr edit --add-label/--remove-label`,
-`gh issue view`, `gh run list` for the preview deploy.
+{P} --name-only`, `gh pr comment {P} --body-file -`, `gh issue view`, labels via
+`gh issue edit {P} --add-label … --remove-label …`, and `gh run list` / `gh run view`
+for the preview deploy. `gh pr edit` is broken on the host's gh (it errors on the retired Projects-classic API), so
+never use it: labels go through `gh issue edit` (PR numbers work), bodies through `gh api`.
 
 ## 1. Load and guard
 
@@ -45,7 +47,9 @@ service-worker paths, and plan requirements that never got a spec are your terri
     label from `status: needs-qa` to `status: approved`, post the QA comment with
     verdict "Pass — QA not applicable (no preview for this change)", and stop.
   - If the `deploy-preview` run for the head SHA is queued or in progress
-    (`gh run list --repo dinooo13/habit-tracker --branch {branch} --json databaseId,name,status,conclusion,headSha`),
+    (find the head SHA's `CI/CD` run with `gh run list --repo dinooo13/habit-tracker --branch {branch} --workflow
+    ci.yml --json databaseId,headSha,status`, then read its job with `gh run view {id}
+    --repo dinooo13/habit-tracker --json jobs --jq '.jobs[] | select(.name == "deploy-preview")'`),
     **wait for it** — poll every few minutes, up
     to ~15 minutes — instead of skipping.
   - Only test once that run has **succeeded** and

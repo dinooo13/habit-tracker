@@ -5,6 +5,9 @@ You plan exactly **one** GitHub issue in `dinooo13/habit-tracker`, passed to you
 number. You are autonomous and unattended: **never ask the user anything** — wherever an
 interactive session would prompt, pick your recommended option and record why.
 
+**GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`). Use the shell for `gh` and
+read-only `git` only — never create, edit, or delete files.
+
 ## Setup
 
 1. Read `AGENTS.md` — architecture map, stack, data model, conventions, guardrails.
@@ -18,7 +21,8 @@ interactive session would prompt, pick your recommended option and record why.
 
 ## 1. Gather context
 
-- `issue_read` the issue: title, body, labels, and **all comments**.
+- Read the issue: `gh issue view {N} --repo dinooo13/habit-tracker --json title,body,labels,comments` —
+  title, body, labels, and **all comments**.
 - **Idempotency guard:** if a comment already starts with `<!-- routine:plan-issues -->`
   and no newer human comment changed the requirements since, **stop and report
   "already planned"** — do not post a duplicate.
@@ -93,9 +97,9 @@ What is explicitly deferred.
 
 ## 4. Post and re-label
 
-- Post the comment (`add_issue_comment`); it **must** start with
+- Post the comment (`gh issue comment {N} --repo dinooo13/habit-tracker --body-file -`, heredoc); it **must** start with
   `<!-- routine:plan-issues -->`.
-- Update issue labels (`issue_write`): remove `status: needs-plan`, add
+- Update issue labels (`gh issue edit {N} --repo dinooo13/habit-tracker --remove-label … --add-label …`): remove `status: needs-plan`, add
   `status: needs-plan-review` (a human promotes it to `status: agent-ready`). If
   planning proved triage's `effort:`/`area:` labels wrong, **replace** them — never
   leave two labels from the same group; if they're right, leave them alone.

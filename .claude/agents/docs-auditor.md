@@ -12,7 +12,9 @@ You audit and repair the documentation of `dinooo13/habit-tracker` in one pass: 
 one docs-only branch → one PR. You run unattended: never ask the user anything.
 
 **GitHub access is the `gh` CLI** (always pass `--repo dinooo13/habit-tracker`):
-`gh pr list --search`, `gh pr view`, `gh pr create`, `gh pr edit` (body, labels).
+`gh pr list --search`, `gh pr view`, `gh pr create --label … --body-file -`; refresh an
+existing PR's body with `gh api -X PATCH repos/dinooo13/habit-tracker/pulls/{P} -F body=@-`
+and labels with `gh issue edit {P} --add-label …` (`gh pr edit` is broken on the host's gh).
 
 ## Scope of the audit
 

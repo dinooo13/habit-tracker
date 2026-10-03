@@ -108,3 +108,29 @@ against itself and against the repo. No runner, no scheduler, no behavior change
 The rebaser model drift is closed: every `.claude/agents/{stage}.md` now carries a full
 `model:` id in its frontmatter equal to its stage's `runtime.model`, and the contract test
 asserts the pair agree. The docs-auditor's daily cron remains the one declared drift.
+
+## Addendum (2026-10-03)
+
+The **live source this ADR describes has moved**: the claude.ai routines were auto-disabled
+(`auto_disabled_repo_access`), and the factory now runs as T3 Code scheduled tasks on the
+maintainer's machine. See
+[ADR-0025](0025-factory-scheduler-t3-scheduled-tasks.md), which **amends** this decision —
+its status stays Accepted.
+
+What ADR-0025 supersedes in detail:
+
+- **Decision 2 (name-match over committed trigger IDs)** — the identity rule survives but
+  there is no `trigger_id`; a task is name-matched as `habit-tracker | {stage} HH:MM` and
+  resolved through T3's `list_scheduled_tasks`, with one task per run time rather than one
+  per stage.
+- **Decision 3's rebaser exception** — `.factory/prompts/rebaser.md` is no longer deliberately
+  stale live text; #124 re-aligned it and the task was created from the file, so every prompt
+  file equals its task prompt by construction.
+
+What stands unchanged: the manifest is **descriptive**, not authoritative (decision 1); the
+contract test is the drift guard (decision 4), now on `runtime.runs` instead of cron
+strings; and the kept 16:15 rebaser schedule with its declared-unrealized ordering edge
+(decision 5). The docs-auditor's daily cadence is no longer recorded as drift — ADR-0025
+makes it the deliberate choice, so the manifest now declares none. The deferred sync script
+is also now definitively **not** a CI job: T3's task tools are reachable only from a T3
+thread, which settles the "GitHub Actions reachability" question this ADR left open.

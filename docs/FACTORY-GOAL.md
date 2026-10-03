@@ -3,14 +3,14 @@
 > Status: **direction, not a plan.** Nothing here is implemented. A roadmap will be derived
 > from this document separately.
 >
-> Last updated: 2026-08-29
+> Last updated: 2026-10-03
 
 ## The goal
 
 Evolve the agent pipeline that builds this repository into a **portable software factory**:
 a versioned, reviewable, backend-neutral system that takes work from an issue tracker to
-merged code, and that can run wherever we point it — today claude.ai routines, later a
-devcontainer, GitHub Actions, or an always-on VM.
+merged code, and that can run wherever we point it — today T3 Code scheduled tasks on one
+machine, later a devcontainer, GitHub Actions, or an always-on VM.
 
 The factory should be good enough to improve itself: it observes its own runs, and files
 issues against its own design.
@@ -37,6 +37,21 @@ plan approval and merge.
 What the cloud environment provides for free, and what portability must therefore replace:
 `mcp__github__*` tooling, a `playwright-cli` binary, a prepared checkout with write auth,
 worktree isolation, and push notifications.
+
+### Update (2026-10-03)
+
+The cloud control plane went away rather than being replaced on purpose: all seven routines
+were auto-disabled (`ended_reason: auto_disabled_repo_access`, last run ~2026-09-13). The
+factory now runs as **11 T3 Code scheduled tasks** (one per stage run time) in the
+`habit-tracker` T3 project on the maintainer's machine, and agents reach GitHub through the
+authenticated `gh` CLI instead of `mcp__github__*` (#124). The move is recorded in
+[ADR-0025](adr/0025-factory-scheduler-t3-scheduled-tasks.md).
+
+What T3 provides for free, in place of the cloud list above: a fresh worktree branched from
+`origin/main` per run, an authenticated `gh` with write access, and the host's real browser
+for QA (no network allowlist). What is lost with no local equivalent: run push
+notifications, `autofix_on_pr_create`, and any run at all while the host is off — the
+availability question the portability goal above was always aimed at.
 
 ## Target properties
 
@@ -70,11 +85,12 @@ worktree isolation, and push notifications.
 
 ### Tracker
 - The issue tracker is the source of truth for what work to pick up. It must be pluggable.
-- The adapter that replaces `mcp__github__*` **is** the tracker abstraction. It should be
+- The adapter that replaces today's direct `gh` calls **is** the tracker abstraction. It should be
   designed in neutral terms — `list_items(state)`, `set_state`, `comment`, `link_pr` — and
   not as a thin `gh` wrapper that would need re-abstracting later. Labels become a state
   vocabulary that GitHub happens to implement as labels.
-- Agents must not call `gh` directly either; that re-couples them to one tracker.
+- Agents must not call `gh` directly either; that re-couples them to one tracker. (Interim:
+  since #124 they do, through `Bash` — this remains the target, not the current state.)
 
 ### Full auto
 - Running an item from plan to merge unattended must be **possible**, opt-in per item rather
@@ -119,7 +135,8 @@ worktree isolation, and push notifications.
 
 ## Constraints and traps
 
-- **Never run cloud routines and a second scheduler against the same repo simultaneously.**
+- **Never run two schedulers against the same repo simultaneously** — e.g. the T3 tasks and
+  re-enabled cloud routines.
   Every stage now declares an idempotency guard in `.factory/factory.yml` (#86, ADR-0023) —
   reviewer and QA per head SHA, triage by comment fingerprint, planner end-of-run,
   implementer and rebaser structurally. But the guards are **advisory**: they narrow the

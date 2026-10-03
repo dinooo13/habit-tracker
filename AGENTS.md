@@ -14,7 +14,7 @@ diagrams and `docs/adr/` for the recorded design decisions.
 
 | Command | What it does |
 | --- | --- |
-| `scripts/setup-agent-env.sh [--no-browser]` | Provision a working environment: dependencies (required) plus browser tooling (best-effort). Idempotent. Called by the devcontainer, the `SessionStart` hook, and the cloud routines. |
+| `scripts/setup-agent-env.sh [--no-browser]` | Provision a working environment: dependencies (required) plus browser tooling (best-effort). Idempotent. Called by the devcontainer, the `SessionStart` hook, and the T3 scheduled-task runs (via the `SessionStart` hook; the qa-tester task prompt runs it with browser tooling). |
 | `npm install` | Install dependencies (runs `nuxt prepare` via `postinstall`). |
 | `npm run dev` | Start the dev server with HMR. |
 | `npm run test` | Run the Vitest suite once (`vitest run`). |
@@ -164,7 +164,8 @@ stay at the call sites.
 - Development workflow (issues → branches → PRs, labels): `docs/WORKFLOW.md`
 - Agent factory: `.claude/agents/` (per-item agents + pipeline README), `.codex/agents/`
   (the Codex mirror), and `.factory/` (`factory.yml` machine-readable manifest + verbatim
-  routine prompts, guarded by `tests/factory-contract.test.ts`, ADR-0021)
+  task prompts, guarded by `tests/factory-contract.test.ts`, ADR-0021, ADR-0025 (T3
+  scheduled tasks))
 
 ## Contributing flow (brief)
 

@@ -108,7 +108,7 @@ CI runs the same four gates (its build job runs `npm run generate`, the deployab
 Triage, planning, implementation, branch upkeep, first-pass review, acceptance QA on
 the PR preview deployment, and documentation upkeep are automated by seven
 repo-committed agents (`.claude/agents/`: `triage`, `planner`, `implementer`,
-`rebaser`, `reviewer`, `qa-tester`, `docs-auditor`) driven by thin cloud routines. New issues without a `status:` label are
+`rebaser`, `reviewer`, `qa-tester`, `docs-auditor`) driven by thin T3 Code scheduled tasks on the maintainer's machine (11 fixed-time tasks, [`.factory/factory.yml`](../.factory/factory.yml)). New issues without a `status:` label are
 triaged automatically (labels + dedupe) into the planner queue. Status labels form the state machine: they live on the **issue** until a PR
 exists (`needs-plan` → `needs-plan-review` → `agent-ready` → `in-progress`), then the
 build → review → QA loop is driven by the **PR** label (`in-progress` → `needs-review`
@@ -125,8 +125,8 @@ requirements are still being written — no agent applies, removes, or acts on i
 Every stage declares an idempotency guard in
 [`.factory/factory.yml`](../.factory/factory.yml) (ADR-0023) so a re-run does not redo
 finished work; the guards are advisory (they narrow the duplicate-work window rather than
-close it), so running the cloud routines alongside a second scheduler at once stays a
-standing constraint. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
+close it), so running the T3 tasks alongside any second scheduler (including re-enabled
+cloud routines) at once stays a standing constraint. Full detail in [`.claude/agents/README.md`](../.claude/agents/README.md).
 
 ## 7. When to write an ADR
 

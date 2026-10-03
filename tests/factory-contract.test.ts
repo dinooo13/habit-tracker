@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 
 // Static contract test for the agent-factory manifest (.factory/factory.yml,
-// ADR-0021, ADR-0023). It guards the manifest against itself and against the repo —
-// no network, no routines API. The suite is green because the manifest is
-// DESCRIPTIVE: the one remaining known drift (docs-auditor's daily cron) and the one
-// knowingly unrealized ordering (reviewer.order_after rebaser) are declared, not hidden.
+// ADR-0021, ADR-0023, ADR-0025). It guards the manifest against itself and against the
+// repo — no network, no T3 API (T3's task tools are reachable only from a T3 thread,
+// never from CI). The suite is green because the manifest is DESCRIPTIVE: the one
+// knowingly unrealized ordering (reviewer.order_after rebaser) is declared, not hidden.
 //
 // What it enforces:
 //   1. every `agent` / `prompt` path resolves to a file that exists (and prompts
@@ -18,11 +18,13 @@ import { parse } from 'yaml'
 //   3. no produced state is left unconsumed, except states a human consumes
 //      (`human-gate: true` stages) — needs-plan-review and approved;
 //   4. every `order_after.realized` flag matches the value computed from the two
-//      stages' crons, so a cron edit without re-annotating fails the build;
-//   5. every `runtime.schedule` respects the one-hour minimum cron interval;
-//   6. schema is version 2, every stage declares an `idempotency` block whose `kind`
-//      is in the tightened enum and is never `none` (ADR-0023 T1/T2), with a
-//      substantive `note` (T3);
+//      stages' run times, so a schedule edit without re-annotating fails the build;
+//   5. every `runtime.runs` list is well-formed (non-empty, unique, valid HH:MM) and
+//      respects the one-hour pipeline-policy minimum between two runs of one stage;
+//   6. schema is version 3 with a `scheduler:` block of the declared shape, the stages
+//      describe exactly eleven T3 tasks, and every stage declares an `idempotency`
+//      block whose `kind` is in the tightened enum and is never `none`
+//      (ADR-0023 T1/T2), with a substantive `note` (T3);
 //   7. the top-level `markers:` registry is well-formed — unique ids, one
 //      `routine:{name}` family per entry, declared producer/consumer stages, a
 //      non-empty `consumed_by`, `<!-- routine:` prefixes, and only the
@@ -34,7 +36,7 @@ import { parse } from 'yaml'
 //      in every consumer agent file (T7), with the family/placeholder extractors
 //      carrying their own negative-case proofs (T10); and
 //  10. every stage pins a non-empty `runtime.model`, and its agent file's frontmatter
-//      `model:` is the identical full id — the model lives in two layers (routine +
+//      `model:` is the identical full id — the pin lives in two layers (manifest +
 //      agent file) and this keeps them from drifting apart again.
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
@@ -63,7 +65,7 @@ interface Stage {
   'produces': string[]
   'human-gate': boolean
   'idempotency': Idempotency
-  'runtime': { schedule: string, model: string, enabled: boolean, environment: string }
+  'runtime': { runs: string[], model: string, enabled: boolean }
   'order_after': OrderAfter[]
   'concurrency': number
   'wip_limit': number | null
@@ -76,8 +78,21 @@ interface Marker {
   purpose?: string
 }
 
+interface Scheduler {
+  kind: string
+  project: string
+  task_name: string
+  timezone: string
+  thread: string
+  worktree: string
+  prompt_source: string
+  model: string
+  runs_only_while_host_up: boolean
+}
+
 interface Manifest {
   version: number
+  scheduler: Scheduler
   allowed_tools: string[]
   markers: Marker[]
   stages: Stage[]
@@ -109,8 +124,14 @@ const DAY_MINUTES = 24 * 60
 // every realized edge here picks up within ~5h15m. Twelve hours cleanly separates
 // "same-cycle pickup" from "waits for the next morning" (issue #85 §1.1: "+14h").
 const REALIZED_MAX_GAP_MINUTES = 12 * 60
-// Minimum interval the routines allow between two runs of one schedule.
-const MIN_CRON_INTERVAL_MINUTES = 60
+// Pipeline policy, not a T3 limit: two runs of one stage stay at least an hour apart,
+// because the idempotency guards are advisory and need the window to settle (ADR-0023).
+const MIN_RUN_INTERVAL_MINUTES = 60
+// What the eleven `runs` entries add up to (ADR-0025): one T3 scheduled task per stage
+// per run time. A changed task count must therefore be a visible manifest edit.
+const EXPECTED_TASK_COUNT = 11
+// A machine-local run time, exactly as T3's `fixed_time.timeOfDay` accepts it.
+const RUN_TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
 /** The `routine:{name}` family of a marker id — the stable prefix that a rename must
  * keep in sync across the manifest and the agent files. Extracts the
@@ -128,28 +149,19 @@ function markerPlaceholders(id: string): string[] {
   return [...id.matchAll(/\{(\w+)\}/g)].map(match => match[1]!)
 }
 
-/** Expand one cron field to concrete values. Supports `*` and comma lists — the
- * only forms the pipeline schedules use (no ranges or steps). */
-function expandField(field: string, max: number): number[] {
-  if (field === '*') {
-    return Array.from({ length: max }, (_, i) => i)
-  }
-  return field.split(',').map(part => Number.parseInt(part, 10))
-}
-
-/** All local run times of a cron, as minutes-of-day, ascending and de-duplicated.
- * Only the minute and hour fields matter for daily schedules. */
-function cronRunMinutes(cron: string): number[] {
-  const [minute, hour] = cron.trim().split(/\s+/)
-  const minutes = expandField(minute, 60)
-  const hours = expandField(hour, 24)
-  const runs = new Set<number>()
-  for (const h of hours) {
-    for (const m of minutes) {
-      runs.add(h * 60 + m)
+/** A stage's `runtime.runs` as minutes-of-day, ascending and de-duplicated. Each entry
+ * is one T3 `fixed_time` task; a malformed time throws rather than silently parsing to
+ * NaN, so a typo fails the build instead of skewing the ordering math. */
+function runMinutes(runs: string[]): number[] {
+  const minutes = new Set<number>()
+  for (const run of runs) {
+    if (!RUN_TIME.test(run)) {
+      throw new Error(`runtime.runs entry is not a machine-local HH:MM time: "${run}"`)
     }
+    const [hour, minute] = run.split(':')
+    minutes.add(Number.parseInt(hour!, 10) * 60 + Number.parseInt(minute!, 10))
   }
-  return [...runs].sort((a, b) => a - b)
+  return [...minutes].sort((a, b) => a - b)
 }
 
 /** Forward distance on the 24h circle; a coincident time counts as a full day
@@ -160,40 +172,55 @@ function forwardGap(from: number, to: number): number {
 }
 
 /** Smallest wait from any prerequisite run to the next dependent run. */
-function minPickupGap(prereqCron: string, depCron: string): number {
-  const prereqRuns = cronRunMinutes(prereqCron)
-  const depRuns = cronRunMinutes(depCron)
+function minPickupGap(prereqRuns: string[], depRuns: string[]): number {
   let best = Number.POSITIVE_INFINITY
-  for (const p of prereqRuns) {
-    for (const d of depRuns) {
+  for (const p of runMinutes(prereqRuns)) {
+    for (const d of runMinutes(depRuns)) {
       best = Math.min(best, forwardGap(p, d))
     }
   }
   return best
 }
 
-function computeRealized(prereqCron: string, depCron: string): boolean {
-  return minPickupGap(prereqCron, depCron) < REALIZED_MAX_GAP_MINUTES
+function computeRealized(prereqRuns: string[], depRuns: string[]): boolean {
+  return minPickupGap(prereqRuns, depRuns) < REALIZED_MAX_GAP_MINUTES
 }
 
-/** Smallest interval between two consecutive runs of one schedule (cyclic). */
-function minRunInterval(cron: string): number {
-  const runs = cronRunMinutes(cron)
-  if (runs.length <= 1) {
+/** Smallest interval between two consecutive runs of one stage (cyclic). */
+function minRunInterval(runs: string[]): number {
+  const minutes = runMinutes(runs)
+  if (minutes.length <= 1) {
     return DAY_MINUTES
   }
   let best = Number.POSITIVE_INFINITY
-  for (let i = 0; i < runs.length; i++) {
-    best = Math.min(best, forwardGap(runs[i]!, runs[(i + 1) % runs.length]!))
+  for (let i = 0; i < minutes.length; i++) {
+    best = Math.min(best, forwardGap(minutes[i]!, minutes[(i + 1) % minutes.length]!))
   }
   return best
 }
 
 describe('factory manifest — shape', () => {
-  it('declares version 2 and a top-level allowed_tools list', () => {
-    expect(manifest.version).toBe(2)
+  it('declares version 3 and a top-level allowed_tools list', () => {
+    expect(manifest.version).toBe(3)
     expect(Array.isArray(manifest.allowed_tools)).toBe(true)
     expect(manifest.allowed_tools.length).toBeGreaterThan(0)
+  })
+
+  it('describes the T3 scheduled-task runtime in one top-level scheduler block', () => {
+    // The shape is asserted, not the free-text values: `project`, `timezone`, and the
+    // rest are prose for a reader, while these three carry the 1:N stage→task mapping
+    // and the prompt contract the rest of the manifest is read against (ADR-0025).
+    const scheduler = manifest.scheduler
+    expect(scheduler, 'manifest declares no scheduler block').toBeTruthy()
+    expect(scheduler.kind).toBe('t3-scheduled-task')
+    expect(scheduler.task_name, 'task_name must template the stage').toContain('{stage}')
+    expect(scheduler.task_name, 'task_name must template the run time').toContain('{time}')
+    expect(scheduler.prompt_source, 'prompt_source must template the stage').toContain('{stage}')
+  })
+
+  it('describes exactly eleven T3 tasks across the seven stages', () => {
+    const tasks = stages.reduce((total, stage) => total + stage.runtime.runs.length, 0)
+    expect(tasks).toBe(EXPECTED_TASK_COUNT)
   })
 
   it('names the seven pipeline stages exactly once each', () => {
@@ -400,17 +427,50 @@ describe('factory manifest — markers are grounded in the agent files (ADR-0023
   })
 })
 
-describe('factory manifest — order_after realized matches the crons (§3.5)', () => {
-  it('each realized flag equals the value computed from both stages’ schedules', () => {
+describe('factory manifest — runs are well-formed (ADR-0025)', () => {
+  it('gives every stage a non-empty list of unique, valid HH:MM run times', () => {
+    for (const stage of stages) {
+      const runs = stage.runtime.runs
+      expect(Array.isArray(runs), `${stage.name} runtime.runs is not a list`).toBe(true)
+      expect(runs.length, `${stage.name} declares no run times`).toBeGreaterThan(0)
+      for (const run of runs) {
+        expect(RUN_TIME.test(run), `${stage.name} run time "${run}" is not HH:MM`).toBe(true)
+      }
+      expect(
+        new Set(runs).size,
+        `${stage.name} repeats a run time (${runs.join(', ')}) — two tasks would share a name`,
+      ).toBe(runs.length)
+    }
+  })
+
+  it('declares a boolean enabled flag on every stage', () => {
+    // Type check only: the value is descriptive, and all eleven tasks are currently
+    // disabled pending a human smoke-test run (ADR-0025 decision 6).
+    for (const stage of stages) {
+      expect(typeof stage.runtime.enabled, `${stage.name} runtime.enabled type`).toBe('boolean')
+    }
+  })
+
+  it('is a real guard: a malformed run time throws instead of parsing to NaN', () => {
+    expect(() => runMinutes(['24:00'])).toThrow(/HH:MM/)
+    expect(() => runMinutes(['2:00'])).toThrow(/HH:MM/)
+    expect(() => runMinutes(['16:60'])).toThrow(/HH:MM/)
+    expect(runMinutes(['02:00', '11:00'])).toEqual([120, 660])
+  })
+})
+
+describe('factory manifest — order_after realized matches the run times (§3.5)', () => {
+  it('each realized flag equals the value computed from both stages’ run times', () => {
     for (const stage of stages) {
       for (const dep of stage.order_after) {
         const prereq = stageByName.get(dep.stage)
         expect(prereq, `${stage.name} order_after unknown stage "${dep.stage}"`).toBeTruthy()
-        const computed = computeRealized(prereq!.runtime.schedule, stage.runtime.schedule)
+        const computed = computeRealized(prereq!.runtime.runs, stage.runtime.runs)
         expect(
           dep.realized,
           `${stage.name} order_after ${dep.stage}: declared realized=${dep.realized} `
-          + `but crons (${prereq!.runtime.schedule} → ${stage.runtime.schedule}) compute ${computed}`,
+          + `but runs ([${prereq!.runtime.runs.join(', ')}] → [${stage.runtime.runs.join(', ')}]) `
+          + `compute ${computed}`,
         ).toBe(computed)
       }
     }
@@ -425,21 +485,21 @@ describe('factory manifest — order_after realized matches the crons (§3.5)', 
   })
 
   it('is a real guard: rescheduling rebaser to just before reviewer would flip realized to true', () => {
-    // Regression proof that a cron edit is caught. If rebaser moved to 05:00 (an
+    // Regression proof that a `runs` edit is caught. If rebaser moved to 05:00 (an
     // hour before the 06:00 reviewer), the declared realized=false would no longer
-    // match the crons and the assertion above would fail.
-    expect(computeRealized('15 16 * * *', '0 6,16 * * *')).toBe(false)
-    expect(computeRealized('0 5 * * *', '0 6,16 * * *')).toBe(true)
+    // match the run times and the assertion above would fail.
+    expect(computeRealized(['16:15'], ['06:00', '16:00'])).toBe(false)
+    expect(computeRealized(['05:00'], ['06:00', '16:00'])).toBe(true)
   })
 })
 
-describe('factory manifest — schedules respect the one-hour minimum (§3.7)', () => {
-  it('no schedule runs two jobs less than an hour apart', () => {
+describe('factory manifest — runs respect the one-hour minimum (pipeline policy, ADR-0023)', () => {
+  it('no stage runs two tasks less than an hour apart', () => {
     for (const stage of stages) {
       expect(
-        minRunInterval(stage.runtime.schedule),
-        `${stage.name} schedule "${stage.runtime.schedule}" runs sub-hourly`,
-      ).toBeGreaterThanOrEqual(MIN_CRON_INTERVAL_MINUTES)
+        minRunInterval(stage.runtime.runs),
+        `${stage.name} runs [${stage.runtime.runs.join(', ')}] sub-hourly`,
+      ).toBeGreaterThanOrEqual(MIN_RUN_INTERVAL_MINUTES)
     }
   })
 })
@@ -454,9 +514,10 @@ function agentFrontmatter(path: string): Record<string, unknown> {
   return parse(match[1]!) as Record<string, unknown>
 }
 
-describe('factory manifest — agent frontmatter model equals the routine model', () => {
+describe('factory manifest — agent frontmatter model equals the manifest pin', () => {
   // Full ids only (`claude-opus-5`, not `opus`): an alias floats to whatever the
-  // runtime resolves it to, so it cannot be compared against the routine's pin.
+  // runtime resolves it to, so it cannot be compared against the declared pin. T3 has
+  // no per-task model, so `runtime.model` IS the per-item agent pin (ADR-0025).
   const FULL_MODEL_ID = /^claude-[a-z0-9-]+$/
 
   it('every stage pins a full model id in runtime.model', () => {

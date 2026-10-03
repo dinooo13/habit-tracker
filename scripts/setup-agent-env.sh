@@ -2,8 +2,9 @@
 #
 # Provision an environment for working on habit-tracker.
 #
-# Callers: cloud routine setup, .devcontainer postCreateCommand, the Claude Code
-# SessionStart hook (.claude/settings.json), and humans on a fresh checkout.
+# Callers: the T3 scheduled-task runs (via the Claude Code SessionStart hook in
+# .claude/settings.json, and the qa-tester task prompt by path for browser tooling),
+# .devcontainer postCreateCommand, and humans on a fresh checkout.
 #
 # Contract:
 #   exit 0        the repo is installable and the gates in docs/WORKFLOW.md §5 can run
